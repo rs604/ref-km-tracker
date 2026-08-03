@@ -355,6 +355,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
         Reports
       </button>
+      <button class="nav-item" data-tab="payments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Payments
+      </button>
       <button class="nav-item" data-tab="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
@@ -376,6 +380,7 @@
       <div id="tab-employees" class="tab-content" style="display:none"></div>
       <div id="tab-vehicles" class="tab-content" style="display:none"></div>
       <div id="tab-reports" class="tab-content" style="display:none"></div>
+      <div id="tab-payments" class="tab-content" style="display:none"></div>
       <div id="tab-settings" class="tab-content" style="display:none"></div>
     </div>
   </div>
@@ -396,6 +401,10 @@
     <button class="bottom-nav-item" data-tab="reports">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
       Reports
+    </button>
+    <button class="bottom-nav-item" data-tab="payments">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Payments
     </button>
     <button class="bottom-nav-item" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -441,6 +450,7 @@
     employees: ['Employees', 'Manage team members, roles, and rates'],
     vehicles: ['Vehicles', 'Manage company and employee-owned vehicles'],
     reports: ['Reports', 'Browse and filter all vehicle log entries'],
+    payments: ['Payments', 'See what is owed and record payments made'],
     settings: ['Settings', 'Configure system-wide rules'],
   };
 
@@ -518,6 +528,7 @@
     renderEmployees();
     renderVehicles();
     renderReports();
+    renderPayments();
     renderSettings();
   }
 
@@ -624,30 +635,15 @@
     });
   }
 
-  function renderReports() {
-    const employeeOptions = dashboardData.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    const vehicleOptions = dashboardData.vehicles.map(v => `<option value="${v.id}">${v.vehicle_name}</option>`).join('');
+  let activeFilters = { employee: '', vehicle: '', status: '', from: '', to: '' };
 
+  function renderReports() {
     let html = `<div class="panel">
-      <div class="panel-body">
-        <div class="form-grid">
-          <div class="field"><label>Employee</label><select id="filterEmployee"><option value="">All employees</option>${employeeOptions}</select></div>
-          <div class="field"><label>Vehicle</label><select id="filterVehicle"><option value="">All vehicles</option>${vehicleOptions}</select></div>
-          <div class="field"><label>Status</label><select id="filterStatus">
-            <option value="">All statuses</option>
-            <option value="pending_evening">Pending Evening</option>
-            <option value="calculated">Calculated</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="paid">Paid</option>
-          </select></div>
-          <div class="field"></div>
-          <div class="field"><label>From Date</label><input type="date" id="filterFrom" /></div>
-          <div class="field"><label>To Date</label><input type="date" id="filterTo" /></div>
-        </div>
+      <div class="panel-body" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div id="activeFilterChips" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
         <div style="display:flex; gap:8px;">
-          <button class="btn" id="applyFiltersBtn">Apply Filters</button>
-          <button class="btn btn-outline" id="resetFiltersBtn">Reset</button>
+          <button class="btn" id="openFiltersBtn">Filters</button>
+          <button class="btn btn-outline" id="clearFiltersBtn">Clear All Filters</button>
         </div>
       </div>
     </div>
@@ -658,39 +654,94 @@
 
     document.getElementById('tab-reports').innerHTML = html;
 
-    function applyFilters() {
-      const emp = document.getElementById('filterEmployee').value;
-      const veh = document.getElementById('filterVehicle').value;
-      const status = document.getElementById('filterStatus').value;
-      const from = document.getElementById('filterFrom').value;
-      const to = document.getElementById('filterTo').value;
-
-      let filtered = dashboardData.entries.filter(e => {
-        if (emp && e.employee_id !== emp) return false;
-        if (veh && e.vehicle_id !== veh) return false;
-        if (status && e.status !== status) return false;
-        if (from && e.entry_date < from) return false;
-        if (to && e.entry_date > to) return false;
-        return true;
-      });
-
-      document.getElementById('reportsCountLabel').textContent = `${filtered.length} Entr${filtered.length === 1 ? 'y' : 'ies'}`;
-      document.getElementById('reportsTableArea').innerHTML = filtered.length === 0
-        ? '<div class="empty-state">No entries match these filters.</div>'
-        : buildTable(filtered, false);
-    }
-
-    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
-    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-      document.getElementById('filterEmployee').value = '';
-      document.getElementById('filterVehicle').value = '';
-      document.getElementById('filterStatus').value = '';
-      document.getElementById('filterFrom').value = '';
-      document.getElementById('filterTo').value = '';
-      applyFilters();
+    document.getElementById('openFiltersBtn').addEventListener('click', openFiltersModal);
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+      activeFilters = { employee: '', vehicle: '', status: '', from: '', to: '' };
+      applyReportFilters();
     });
 
-    applyFilters();
+    applyReportFilters();
+  }
+
+  function openFiltersModal() {
+    const employeeOptions = dashboardData.employees.map(e => `<option value="${e.id}" ${activeFilters.employee === e.id ? 'selected' : ''}>${e.name}</option>`).join('');
+    const vehicleOptions = dashboardData.vehicles.map(v => `<option value="${v.id}" ${activeFilters.vehicle === v.id ? 'selected' : ''}>${v.vehicle_name}</option>`).join('');
+    const statusOpts = ['pending_evening','calculated','approved','rejected','paid'].map(s => `<option value="${s}" ${activeFilters.status === s ? 'selected' : ''}>${s.replace('_',' ')}</option>`).join('');
+
+    const modalHtml = `
+      <div class="auth-card" style="max-width:420px" onclick="event.stopPropagation()">
+        <p class="auth-title" style="margin-bottom:14px;">Filter Entries</p>
+        <div class="form-grid">
+          <div class="field"><label>Employee</label><select id="modalFilterEmployee"><option value="">All employees</option>${employeeOptions}</select></div>
+          <div class="field"><label>Vehicle</label><select id="modalFilterVehicle"><option value="">All vehicles</option>${vehicleOptions}</select></div>
+          <div class="field"><label>Status</label><select id="modalFilterStatus"><option value="">All statuses</option>${statusOpts}</select></div>
+          <div class="field"></div>
+          <div class="field"><label>From Date</label><input type="date" id="modalFilterFrom" value="${activeFilters.from}" /></div>
+          <div class="field"><label>To Date</label><input type="date" id="modalFilterTo" value="${activeFilters.to}" /></div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" id="modalCancelBtn" style="flex:1">Cancel</button>
+          <button class="btn" id="modalApplyBtn" style="flex:1">Apply Filters</button>
+        </div>
+      </div>`;
+
+    let modal = document.getElementById('filtersModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'lightbox';
+      modal.id = 'filtersModal';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+    }
+    modal.innerHTML = modalHtml;
+    modal.classList.add('open');
+
+    document.getElementById('modalCancelBtn').addEventListener('click', () => modal.classList.remove('open'));
+    document.getElementById('modalApplyBtn').addEventListener('click', () => {
+      activeFilters = {
+        employee: document.getElementById('modalFilterEmployee').value,
+        vehicle: document.getElementById('modalFilterVehicle').value,
+        status: document.getElementById('modalFilterStatus').value,
+        from: document.getElementById('modalFilterFrom').value,
+        to: document.getElementById('modalFilterTo').value,
+      };
+      modal.classList.remove('open');
+      applyReportFilters();
+    });
+  }
+
+  function applyReportFilters() {
+    const chipsArea = document.getElementById('activeFilterChips');
+    const chips = [];
+    if (activeFilters.employee) {
+      const emp = dashboardData.employees.find(e => e.id === activeFilters.employee);
+      chips.push(`Employee: ${emp ? emp.name : '—'}`);
+    }
+    if (activeFilters.vehicle) {
+      const veh = dashboardData.vehicles.find(v => v.id === activeFilters.vehicle);
+      chips.push(`Vehicle: ${veh ? veh.vehicle_name : '—'}`);
+    }
+    if (activeFilters.status) chips.push(`Status: ${activeFilters.status.replace('_',' ')}`);
+    if (activeFilters.from) chips.push(`From: ${activeFilters.from}`);
+    if (activeFilters.to) chips.push(`To: ${activeFilters.to}`);
+
+    chipsArea.innerHTML = chips.length === 0
+      ? '<span style="color:var(--muted); font-size:12.5px;">No filters applied</span>'
+      : chips.map(c => `<span class="role-tag" style="font-size:11px;">${c}</span>`).join('');
+
+    const filtered = dashboardData.entries.filter(e => {
+      if (activeFilters.employee && e.employee_id !== activeFilters.employee) return false;
+      if (activeFilters.vehicle && e.vehicle_id !== activeFilters.vehicle) return false;
+      if (activeFilters.status && e.status !== activeFilters.status) return false;
+      if (activeFilters.from && e.entry_date < activeFilters.from) return false;
+      if (activeFilters.to && e.entry_date > activeFilters.to) return false;
+      return true;
+    });
+
+    document.getElementById('reportsCountLabel').textContent = `${filtered.length} Entr${filtered.length === 1 ? 'y' : 'ies'}`;
+    document.getElementById('reportsTableArea').innerHTML = filtered.length === 0
+      ? '<div class="empty-state">No entries match these filters.</div>'
+      : buildTable(filtered, false);
   }
 
   function renderEmployees() {
@@ -712,13 +763,33 @@
     html += `<div class="panel"><div class="panel-header"><span class="panel-title">All Employees</span></div><div class="panel-body">`;
     if (dashboardData.employees.length === 0) html += '<div class="empty-state">No employees yet.</div>';
     dashboardData.employees.forEach(emp => {
-      html += `<div class="roster-item">
-        <div><div class="roster-name">${emp.name}<span class="role-tag">${emp.role}</span></div>
-        <div class="roster-meta">${emp.mobile_number} · ${emp.status}</div></div>
-        <div>
-        ${emp.status === 'active' && emp.role !== 'owner' ? `<button class="btn btn-sm btn-danger init-removal-btn" data-id="${emp.id}">Remove</button>` : ''}
-        ${emp.status === 'pending_removal' && currentUser.role === 'owner' ? `<button class="btn btn-sm approve-removal-btn" data-id="${emp.id}">Confirm Removal</button>` : ''}
+      const ownVehicles = dashboardData.vehicles.filter(v => v.ownership_type === 'employee' && v.owner_employee_id === emp.id);
+      const assignedVehicle = dashboardData.vehicles.find(v => v.id === emp.assigned_vehicle_id);
+      let vehicleControl = '';
+      if (emp.role === 'employee' || emp.role === 'admin') {
+        if (ownVehicles.length === 0) {
+          vehicleControl = `<div class="roster-meta" style="margin-top:4px;">No vehicle registered for this employee yet — add one in Vehicles tab (Employee-owned).</div>`;
+        } else {
+          const options = ownVehicles.map(v => `<option value="${v.id}" ${v.id === emp.assigned_vehicle_id ? 'selected' : ''}>${v.vehicle_name}</option>`).join('');
+          vehicleControl = `<div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+            <select class="assign-vehicle-select" data-emp="${emp.id}" style="max-width:220px; padding:6px 8px; font-size:12.5px;">
+              <option value="">Select vehicle to assign</option>${options}
+            </select>
+            <button class="btn btn-sm assign-vehicle-btn" data-emp="${emp.id}">Assign</button>
+          </div>
+          ${assignedVehicle ? `<div class="roster-meta" style="margin-top:4px;">Currently assigned: <strong>${assignedVehicle.vehicle_name}</strong></div>` : `<div class="roster-meta" style="margin-top:4px; color:var(--amber);">No vehicle assigned yet — employee cannot submit readings.</div>`}`;
+        }
+      }
+      html += `<div class="roster-item" style="align-items:flex-start; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+          <div><div class="roster-name">${emp.name}<span class="role-tag">${emp.role}</span></div>
+          <div class="roster-meta">${emp.mobile_number} · ${emp.status}</div></div>
+          <div>
+          ${emp.status === 'active' && emp.role !== 'owner' ? `<button class="btn btn-sm btn-danger init-removal-btn" data-id="${emp.id}">Remove</button>` : ''}
+          ${emp.status === 'pending_removal' && currentUser.role === 'owner' ? `<button class="btn btn-sm approve-removal-btn" data-id="${emp.id}">Confirm Removal</button>` : ''}
+          </div>
         </div>
+        ${vehicleControl}
       </div>`;
     });
     html += '</div></div>';
@@ -751,6 +822,16 @@
       btn.addEventListener('click', async () => {
         if (!confirm('Confirm PERMANENT removal? This cannot be undone.')) return;
         const res = await apiAdmin({ action: 'approve_removal', employee_id: btn.dataset.id });
+        if (res.success) loadDashboard(); else alert(res.error);
+      });
+    });
+    document.querySelectorAll('.assign-vehicle-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const empId = btn.dataset.emp;
+        const select = document.querySelector(`.assign-vehicle-select[data-emp="${empId}"]`);
+        const vehicleId = select.value;
+        if (!vehicleId) { alert('Select a vehicle first.'); return; }
+        const res = await apiAdmin({ action: 'assign_vehicle', employee_id: empId, vehicle_id: vehicleId });
         if (res.success) loadDashboard(); else alert(res.error);
       });
     });
@@ -804,6 +885,117 @@
       if (res.success) { msg.className = 'msg success'; msg.textContent = 'Vehicle added.'; loadDashboard(); }
       else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add vehicle.'; }
     });
+  }
+
+  function renderPayments() {
+    // Group APPROVED (unpaid) entries by employee + month
+    const owedGroups = {};
+    dashboardData.entries.filter(e => e.status === 'approved').forEach(e => {
+      const [year, month] = e.entry_date.split('-');
+      const key = `${e.employee_id}_${year}_${month}`;
+      if (!owedGroups[key]) {
+        owedGroups[key] = { employee_id: e.employee_id, year: Number(year), month: Number(month), km: 0, cost: 0, count: 0 };
+      }
+      owedGroups[key].km += Number(e.km_traveled || 0);
+      owedGroups[key].cost += Number(e.cost || 0);
+      owedGroups[key].count += 1;
+    });
+
+    const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    let owedRows = '';
+    Object.values(owedGroups).forEach(g => {
+      const emp = dashboardData.employees.find(e => e.id === g.employee_id);
+      owedRows += `<div class="roster-item">
+        <div>
+          <div class="roster-name">${emp ? emp.name : '—'}</div>
+          <div class="roster-meta">${monthNames[g.month]} ${g.year} · ${g.count} entr${g.count === 1 ? 'y' : 'ies'} · ${g.km} km</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="num-cell">₹${g.cost.toFixed(2)}</span>
+          <button class="btn btn-sm mark-paid-btn" data-emp="${g.employee_id}" data-month="${g.month}" data-year="${g.year}">Mark as Paid</button>
+        </div>
+      </div>`;
+    });
+
+    let historyRows = '';
+    (dashboardData.paymentBatches || []).forEach(b => {
+      historyRows += `<div class="roster-item">
+        <div>
+          <div class="roster-name">${b.employees?.name || '—'}</div>
+          <div class="roster-meta">${monthNames[b.period_month]} ${b.period_year} · ${b.total_km} km · Paid ${b.paid_at ? new Date(b.paid_at).toLocaleDateString() : ''}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="num-cell">₹${Number(b.total_cost).toFixed(2)}</span>
+          <button class="btn btn-sm btn-outline view-slip-btn" data-batch="${b.id}">View Slip</button>
+        </div>
+      </div>`;
+    });
+
+    let html = `<div class="panel">
+      <div class="panel-header header-pending"><span class="panel-title">Amount Owed<span class="count-chip">${Object.keys(owedGroups).length}</span></span></div>
+      <div class="panel-body">${Object.keys(owedGroups).length === 0 ? '<div class="empty-state">Nothing owed right now — all approved entries have been paid.</div>' : owedRows}</div>
+    </div>
+    <div class="panel">
+      <div class="panel-header header-recent"><span class="panel-title">Payment History</span></div>
+      <div class="panel-body">${historyRows === '' ? '<div class="empty-state">No payments recorded yet.</div>' : historyRows}</div>
+    </div>`;
+
+    document.getElementById('tab-payments').innerHTML = html;
+
+    document.querySelectorAll('.mark-paid-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Mark this period as paid? This will generate a payment slip and cannot be undone.')) return;
+        btn.disabled = true;
+        btn.textContent = '...';
+        const res = await apiAdmin({ action: 'mark_paid', employee_id: btn.dataset.emp, period_month: Number(btn.dataset.month), period_year: Number(btn.dataset.year) });
+        if (res.success) {
+          loadDashboard();
+        } else {
+          alert(res.error || 'Failed to mark as paid');
+          btn.disabled = false;
+          btn.textContent = 'Mark as Paid';
+        }
+      });
+    });
+
+    document.querySelectorAll('.view-slip-btn').forEach(btn => {
+      btn.addEventListener('click', () => printSlip(btn.dataset.batch));
+    });
+  }
+
+  function printSlip(batchId) {
+    const batch = (dashboardData.paymentBatches || []).find(b => b.id === batchId);
+    if (!batch) { alert('Slip not found'); return; }
+    const entries = dashboardData.entries.filter(e => e.payment_batch_id === batchId).sort((a,b) => a.entry_date.localeCompare(b.entry_date));
+    const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    let rows = entries.map(e => `<tr>
+      <td style="padding:6px 10px; border:1px solid #ccc;">${e.entry_date}</td>
+      <td style="padding:6px 10px; border:1px solid #ccc;">${e.vehicles?.vehicle_name || ''}</td>
+      <td style="padding:6px 10px; border:1px solid #ccc; text-align:right;">${e.km_traveled}</td>
+      <td style="padding:6px 10px; border:1px solid #ccc; text-align:right;">₹${e.rate_applied}</td>
+      <td style="padding:6px 10px; border:1px solid #ccc; text-align:right;">₹${e.cost}</td>
+    </tr>`).join('');
+
+    const html = `<!DOCTYPE html><html><head><title>Payment Slip</title>
+    <style>body{font-family:Arial,sans-serif; padding:30px; color:#1a2229;} h1{font-size:18px; margin-bottom:2px;} table{border-collapse:collapse; width:100%; margin-top:16px;} th{background:#eee; padding:6px 10px; border:1px solid #ccc; text-align:left;} .total{font-weight:bold; font-size:15px; margin-top:14px; text-align:right;}</style>
+    </head><body>
+      <h1>REF — Raghbir Erectors &amp; Fabricators</h1>
+      <p style="color:#666; margin-top:0;">Vehicle KM Payment Slip</p>
+      <p><strong>Employee:</strong> ${batch.employees?.name || ''}<br/>
+      <strong>Period:</strong> ${monthNames[batch.period_month]} ${batch.period_year}<br/>
+      <strong>Paid on:</strong> ${batch.paid_at ? new Date(batch.paid_at).toLocaleString() : ''}</p>
+      <table><thead><tr><th>Date</th><th>Vehicle</th><th style="text-align:right;">KM</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <div class="total">Total KM: ${batch.total_km} &nbsp;|&nbsp; Total Paid: ₹${Number(batch.total_cost).toFixed(2)}</div>
+      <p style="color:#999; font-size:11px; margin-top:30px;">Generated ${new Date().toLocaleString()}</p>
+      <script>window.print();</script>
+    </body></html>`;
+
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
   }
 
   function renderSettings() {

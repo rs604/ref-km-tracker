@@ -193,10 +193,8 @@
 
     <form id="readingForm">
       <div class="field">
-        <label for="vehicleSelect">Vehicle</label>
-        <select id="vehicleSelect" required>
-          <option value="">Loading vehicles...</option>
-        </select>
+        <label>Vehicle</label>
+        <div id="vehicleDisplay" style="padding:12px 14px; background:#fafbfc; border:1px solid var(--line); border-radius:8px; font-size:14.5px; color:var(--muted);">Loading...</div>
       </div>
       <div class="field">
         <label>Odometer Photo</label>
@@ -370,31 +368,31 @@
     submitBtn.disabled = !(compressedPhotoBase64 && currentLocation && readingVal && SELECTED_VEHICLE_ID);
   }
   document.getElementById('reading').addEventListener('input', checkFormReady);
-  document.getElementById('vehicleSelect').addEventListener('change', (e) => {
-    SELECTED_VEHICLE_ID = e.target.value || null;
-    checkFormReady();
-  });
 
-  async function loadVehicles() {
-    const select = document.getElementById('vehicleSelect');
+  async function loadMyVehicle() {
+    const display = document.getElementById('vehicleDisplay');
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-vehicles`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-my-vehicle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({ employee_id: EMPLOYEE_ID })
       });
       const data = await res.json();
-      if (data.success && data.vehicles.length > 0) {
-        select.innerHTML = '<option value="">Select a vehicle</option>' +
-          data.vehicles.map(v => `<option value="${v.id}">${v.vehicle_name}</option>`).join('');
+      if (data.success && data.vehicle) {
+        SELECTED_VEHICLE_ID = data.vehicle.id;
+        display.textContent = data.vehicle.vehicle_name;
+        display.style.color = 'var(--text)';
       } else {
-        select.innerHTML = '<option value="">No vehicles available — contact admin</option>';
+        display.textContent = 'No vehicle assigned to your account. Contact admin.';
+        display.style.color = 'var(--danger)';
       }
     } catch (err) {
-      select.innerHTML = '<option value="">Could not load vehicles</option>';
+      display.textContent = 'Could not load vehicle. Check your connection.';
+      display.style.color = 'var(--danger)';
     }
+    checkFormReady();
   }
-  loadVehicles();
+  loadMyVehicle();
 
   requestLocation();
 
