@@ -85,6 +85,23 @@
   }
   .btn:hover { background: var(--steel-dark); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.btn-loading {
+    background: var(--muted) !important;
+    color: #fff !important;
+    cursor: wait;
+    opacity: 1;
+  }
+  .btn.btn-loading::after {
+    content: '';
+    width: 12px; height: 12px;
+    margin-left: 4px;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-top-color: #fff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: btn-spin 0.6s linear infinite;
+  }
+  @keyframes btn-spin { to { transform: rotate(360deg); } }
   .btn-block { width: 100%; }
   .btn-outline { background: transparent; border-color: var(--border); color: var(--ink); }
   .btn-outline:hover { background: var(--surface-sunken); }
@@ -438,6 +455,19 @@
   let currentUser = null;
   let dashboardData = null;
 
+  function setButtonLoading(btn, isLoading, loadingText, originalText) {
+    if (isLoading) {
+      btn.dataset.originalText = originalText !== undefined ? originalText : btn.textContent;
+      btn.disabled = true;
+      btn.classList.add('btn-loading');
+      btn.textContent = loadingText || 'Processing';
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      btn.textContent = btn.dataset.originalText || originalText || btn.textContent;
+    }
+  }
+
   const authGate = document.getElementById('authGate');
   const appShell = document.getElementById('appShell');
   const loginMsg = document.getElementById('loginMsg');
@@ -473,7 +503,10 @@
     const mobile = document.getElementById('loginMobile').value.trim();
     const pin = document.getElementById('loginPin').value.trim();
     loginMsg.className = 'msg';
+    const btn = document.getElementById('loginBtn');
+    setButtonLoading(btn, true, 'Signing in');
     const data = await apiLogin(mobile, pin);
+    setButtonLoading(btn, false);
     if (data.success) {
       if (!['admin', 'owner'].includes(data.employee.role)) {
         loginMsg.className = 'msg error';
@@ -550,13 +583,16 @@
   document.getElementById('rejectConfirmBtn').addEventListener('click', async () => {
     const reason = document.getElementById('rejectReasonInput').value.trim();
     const msg = document.getElementById('rejectMsg');
+    const btn = document.getElementById('rejectConfirmBtn');
     msg.className = 'msg';
     if (!reason) {
       msg.className = 'msg error';
       msg.textContent = 'A reason is required to reject this entry.';
       return;
     }
+    setButtonLoading(btn, true, 'Rejecting');
     const res = await apiAdmin({ action: 'reject_entry', entry_id: pendingRejectId, reason });
+    setButtonLoading(btn, false);
     if (res.success) {
       document.getElementById('rejectModal').classList.remove('open');
       pendingRejectId = null;
@@ -618,11 +654,10 @@
 
     document.querySelectorAll('.approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        btn.textContent = '...';
+        setButtonLoading(btn, true, 'Approving');
         const res = await apiAdmin({ action: 'approve_entry', entry_id: btn.dataset.id });
         if (res.success) loadDashboard();
-        else { alert(res.error || 'Failed to approve'); btn.disabled = false; btn.textContent = 'Approve'; }
+        else { alert(res.error || 'Failed to approve'); setButtonLoading(btn, false); }
       });
     });
     document.querySelectorAll('.reject-btn').forEach(btn => {
@@ -793,7 +828,9 @@
 
     document.getElementById('addEmpBtn').addEventListener('click', async () => {
       const msg = document.getElementById('addEmpMsg');
+      const btn = document.getElementById('addEmpBtn');
       msg.className = 'msg';
+      setButtonLoading(btn, true, 'Adding');
       const res = await apiAdmin({
         action: 'add_employee',
         name: document.getElementById('newEmpName').value.trim(),
@@ -803,21 +840,23 @@
         rate_per_km: document.getElementById('newEmpRate').value || null,
       });
       if (res.success) { msg.className = 'msg success'; msg.textContent = `Added ${res.employee.name}.`; loadDashboard(); }
-      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add employee.'; }
+      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add employee.'; setButtonLoading(btn, false); }
     });
 
     document.querySelectorAll('.init-removal-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Initiate removal? Their login will be blocked immediately.')) return;
+        setButtonLoading(btn, true, 'Processing');
         const res = await apiAdmin({ action: 'initiate_removal', employee_id: btn.dataset.id });
-        if (res.success) loadDashboard(); else alert(res.error);
+        if (res.success) loadDashboard(); else { alert(res.error); setButtonLoading(btn, false); }
       });
     });
     document.querySelectorAll('.approve-removal-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Confirm PERMANENT removal? This cannot be undone.')) return;
+        setButtonLoading(btn, true, 'Processing');
         const res = await apiAdmin({ action: 'approve_removal', employee_id: btn.dataset.id });
-        if (res.success) loadDashboard(); else alert(res.error);
+        if (res.success) loadDashboard(); else { alert(res.error); setButtonLoading(btn, false); }
       });
     });
     document.querySelectorAll('.assign-vehicle-btn').forEach(btn => {
@@ -826,8 +865,9 @@
         const select = document.querySelector(`.assign-vehicle-select[data-emp="${empId}"]`);
         const vehicleId = select.value;
         if (!vehicleId) { alert('Select a vehicle first.'); return; }
+        setButtonLoading(btn, true, 'Assigning');
         const res = await apiAdmin({ action: 'assign_vehicle', employee_id: empId, vehicle_id: vehicleId });
-        if (res.success) loadDashboard(); else alert(res.error);
+        if (res.success) loadDashboard(); else { alert(res.error); setButtonLoading(btn, false); }
       });
     });
   }
@@ -868,7 +908,9 @@
 
     document.getElementById('addVehBtn').addEventListener('click', async () => {
       const msg = document.getElementById('addVehMsg');
+      const btn = document.getElementById('addVehBtn');
       msg.className = 'msg';
+      setButtonLoading(btn, true, 'Adding');
       const ownership = document.getElementById('newVehOwnership').value;
       const res = await apiAdmin({
         action: 'add_vehicle',
@@ -878,7 +920,7 @@
         owner_employee_id: ownership === 'employee' ? document.getElementById('newVehOwnerEmp').value : null,
       });
       if (res.success) { msg.className = 'msg success'; msg.textContent = 'Vehicle added.'; loadDashboard(); }
-      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add vehicle.'; }
+      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add vehicle.'; setButtonLoading(btn, false); }
     });
   }
 
@@ -941,15 +983,13 @@
     document.querySelectorAll('.mark-paid-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Mark this period as paid? This will generate a payment slip and cannot be undone.')) return;
-        btn.disabled = true;
-        btn.textContent = '...';
+        setButtonLoading(btn, true, 'Processing', 'Mark as Paid');
         const res = await apiAdmin({ action: 'mark_paid', employee_id: btn.dataset.emp, period_month: Number(btn.dataset.month), period_year: Number(btn.dataset.year) });
         if (res.success) {
           loadDashboard();
         } else {
           alert(res.error || 'Failed to mark as paid');
-          btn.disabled = false;
-          btn.textContent = 'Mark as Paid';
+          setButtonLoading(btn, false, null, 'Mark as Paid');
         }
       });
     });
@@ -1006,8 +1046,11 @@
 
     document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
       const msg = document.getElementById('settingsMsg');
+      const btn = document.getElementById('saveSettingsBtn');
       msg.className = 'msg';
+      setButtonLoading(btn, true, 'Saving');
       const res = await apiAdmin({ action: 'update_settings', max_daily_km: document.getElementById('maxKmInput').value });
+      setButtonLoading(btn, false);
       if (res.success) { msg.className = 'msg success'; msg.textContent = 'Settings updated.'; }
       else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to update settings.'; }
     });
