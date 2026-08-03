@@ -3,176 +3,386 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin Dashboard — REF KM Tracker</title>
+<title>REF ERP — Admin</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
   :root {
-    --bg: #eef1f4;
+    --ink: #1a2229;
+    --paper: #f4f6f8;
     --surface: #ffffff;
-    --line: #dde2e8;
-    --primary: #3b5b74;
-    --primary-dark: #2c4457;
-    --text: #263238;
-    --muted: #6b7684;
-    --danger: #a5453a;
+    --surface-sunken: #eef1f4;
+    --border: #d8dee5;
+    --steel: #2d4a5e;
+    --steel-dark: #1f3547;
+    --steel-tint: #e7edf1;
+    --amber: #b7791f;
+    --amber-bg: #fbf1de;
+    --green: #2f7a52;
+    --green-bg: #e7f3ec;
+    --slate: #5b6b7a;
+    --slate-bg: #eaedf0;
+    --danger: #a13d33;
     --danger-bg: #fbeceb;
-    --success: #3a7a5d;
-    --success-bg: #eaf5ef;
-    --warn: #8a6d1f;
-    --warn-bg: #fbf3df;
+    --muted: #6b7684;
+    --sidebar-w: 232px;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    color: var(--text);
-    padding-bottom: 60px;
+    background: var(--paper);
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    font-size: 14px;
   }
-  .wrap { max-width: 700px; margin: 0 auto; padding: 0 16px; }
-  .topbar {
-    background: var(--primary);
+  h1, h2, h3, .label-face { font-family: 'IBM Plex Sans', sans-serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  #authGate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px 26px;
+  }
+  .auth-brand { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 2px; color: var(--steel); margin-bottom: 4px; }
+  .auth-title { font-size: 20px; font-weight: 650; margin: 0 0 22px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--surface-sunken);
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--steel); background: #fff; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: var(--steel);
     color: #fff;
-    padding: 16px;
-    margin-bottom: 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'IBM Plex Sans', sans-serif;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--steel-dark); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-block { width: 100%; }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--ink); }
+  .btn-outline:hover { background: var(--surface-sunken); }
+  .btn-danger { background: var(--danger); }
+  .btn-danger:hover { background: #872f27; }
+  .btn-sm { padding: 6px 11px; font-size: 12px; }
+
+  .msg { margin-top: 12px; padding: 9px 11px; border-radius: 6px; font-size: 12.5px; display: none; line-height: 1.5; }
+  .msg.error { display: block; background: var(--danger-bg); border: 1px solid #efd2cf; color: var(--danger); }
+  .msg.success { display: block; background: var(--green-bg); border: 1px solid #cfe4d8; color: var(--green); }
+
+  .app-shell { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--steel-dark);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
+  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 14px 10px; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.72);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 3px;
+    border-left: 3px solid transparent;
+    text-align: left;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.09); color: #fff; border-left-color: var(--amber); font-weight: 600; }
+  .nav-item svg { flex-shrink: 0; width: 17px; height: 17px; }
+  .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11.5px; color: rgba(255,255,255,0.5); }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .topbar-title { font-size: 15.5px; font-weight: 700; }
-  .topbar-sub { font-size: 11px; opacity: 0.75; font-weight: 500; letter-spacing: 0.5px; }
+  .topbar-title { font-size: 17px; font-weight: 650; }
+  .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .user-chip { font-size: 12.5px; color: var(--muted); text-align: right; }
+  .user-chip .name { color: var(--ink); font-weight: 600; }
 
-  .tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
-  .tab-btn {
-    padding: 9px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--line);
-    background: #fff;
+  .content { padding: 24px 28px; flex: 1; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'IBM Plex Sans', sans-serif; }
+  .panel-body { padding: 18px; }
+  .count-chip { font-size: 11px; font-weight: 700; background: var(--amber-bg); color: var(--amber); padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+
+  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
+
+  table.ledger { width: 100%; border-collapse: collapse; }
+  table.ledger th {
+    text-align: left;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
     color: var(--muted);
     font-weight: 600;
+    padding: 10px 12px;
+    background: var(--surface-sunken);
+    border-bottom: 1px solid var(--border);
+  }
+  table.ledger td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
     font-size: 13px;
-    cursor: pointer;
-    white-space: nowrap;
   }
-  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  table.ledger tr:last-child td { border-bottom: none; }
+  table.ledger tr.row-pending td:first-child { border-left: 3px solid var(--amber); }
+  table.ledger tr.row-approved td:first-child { border-left: 3px solid var(--green); }
+  table.ledger tr.row-paid td:first-child { border-left: 3px solid var(--slate); }
+  table.ledger tr.row-open td:first-child { border-left: 3px solid var(--border); }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 18px;
-    margin-bottom: 14px;
-    box-shadow: 0 1px 3px rgba(38,50,56,0.05);
+  .photo-thumb {
+    width: 40px; height: 40px;
+    border-radius: 5px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--surface-sunken);
   }
-  .entry-row {
+  .photo-missing {
+    width: 40px; height: 40px;
+    border-radius: 5px;
+    border: 1px dashed var(--border);
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--line);
-    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 9px;
+    text-align: center;
+    background: var(--surface-sunken);
   }
-  .entry-row:last-child { border-bottom: none; }
-  .entry-name { font-weight: 650; font-size: 14px; }
-  .entry-meta { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
-  .status-pill {
-    font-size: 10.5px;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-  }
-  .status-calculated { background: var(--warn-bg); color: var(--warn); }
-  .status-approved { background: var(--success-bg); color: var(--success); }
-  .status-paid { background: #e4e9ee; color: var(--primary); }
-  .status-pending_evening { background: #f0f0f0; color: var(--muted); }
+  .reading-cell { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; }
+  .reading-cell .time { color: var(--muted); font-size: 10.5px; display: block; margin-top: 1px; }
+  .num-cell { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; }
 
-  button.action-btn {
-    padding: 7px 14px;
-    border-radius: 7px;
-    border: none;
-    background: var(--primary);
-    color: #fff;
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  button.action-btn:hover { background: var(--primary-dark); }
-  button.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  button.danger-btn { background: var(--danger); }
+  .status-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+  .status-tag.calculated { background: var(--amber-bg); color: var(--amber); }
+  .status-tag.approved { background: var(--green-bg); color: var(--green); }
+  .status-tag.paid { background: var(--slate-bg); color: var(--slate); }
+  .status-tag.pending_evening { background: var(--surface-sunken); color: var(--muted); }
 
-  label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; font-weight: 500; }
-  .field { margin-bottom: 12px; }
-  input, select {
-    width: 100%;
-    background: #fafbfc;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(20,26,32,0.88);
+    display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
   }
-  input:focus, select:focus { border-color: var(--primary); background: #fff; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 80vh; border-radius: 6px; }
+  .lightbox-caption { position: absolute; bottom: 24px; color: #fff; font-size: 13px; text-align: center; }
+  .lightbox-close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 28px; cursor: pointer; background: none; border: none; }
 
-  .section-title { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
-  .msg {
-    margin-top: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    display: none;
-    line-height: 1.5;
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+  .form-grid .field.full { grid-column: 1 / -1; }
+
+  .roster-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .roster-item:last-child { border-bottom: none; }
+  .roster-name { font-weight: 600; font-size: 13.5px; }
+  .roster-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .role-tag { font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--steel-tint); color: var(--steel); text-transform: uppercase; margin-left: 7px; }
+
+  .bottom-nav { display: none; }
+
+  @media (max-width: 880px) {
+    .sidebar { display: none; }
+    .content { padding: 16px; padding-bottom: 84px; }
+    .topbar { padding: 14px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+
+    .bottom-nav {
+      display: flex;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 9px 4px 8px;
+      border: none; background: none;
+      border-top: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 10.5px; font-weight: 600;
+      cursor: pointer;
+    }
+    .bottom-nav-item.active { color: var(--steel); border-top-color: var(--amber); }
+    .bottom-nav-item svg { width: 19px; height: 19px; }
+
+    table.ledger thead { display: none; }
+    table.ledger, table.ledger tbody, table.ledger tr, table.ledger td { display: block; width: 100%; }
+    table.ledger tr {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-bottom: 10px;
+      padding: 4px 0;
+      border-left-width: 1px !important;
+    }
+    table.ledger tr.row-pending { border-left: 3px solid var(--amber) !important; }
+    table.ledger tr.row-approved { border-left: 3px solid var(--green) !important; }
+    table.ledger tr.row-paid { border-left: 3px solid var(--slate) !important; }
+    table.ledger td {
+      border-bottom: none;
+      padding: 6px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    table.ledger td::before {
+      content: attr(data-label);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    table.ledger td.action-cell { justify-content: flex-end; padding-top: 10px; }
   }
-  .msg.error { display: block; background: var(--danger-bg); border: 1px solid #f0d3d0; color: var(--danger); }
-  .msg.success { display: block; background: var(--success-bg); border: 1px solid #cfe6da; color: var(--success); }
-  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 20px 0; }
-  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .list-item:last-child { border-bottom: none; }
-  .list-item-name { font-weight: 600; font-size: 13.5px; }
-  .list-item-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .role-pill { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: #e4e9ee; color: var(--primary); text-transform: uppercase; }
-  .loading { text-align: center; padding: 40px 0; color: var(--muted); }
 </style>
 </head>
 <body>
-<div class="topbar">
-  <span class="topbar-title">REF</span>
-  <span class="topbar-sub">ADMIN DASHBOARD</span>
+
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-brand">REF ERP</div>
+    <p class="auth-title">Admin Sign-in</p>
+    <div class="field"><label>Mobile Number</label><input type="tel" id="loginMobile" /></div>
+    <div class="field"><label>PIN</label><input type="password" id="loginPin" /></div>
+    <button class="btn btn-block" id="loginBtn">Sign in</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
 </div>
-<div class="wrap">
-  <div id="authGate">
-    <div class="card">
-      <p class="section-title">Admin Login Required</p>
-      <div class="field">
-        <label>Mobile Number</label>
-        <input type="tel" id="loginMobile" placeholder="10-digit mobile number" />
+
+<div class="app-shell" id="appShell" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="name">REF</div>
+      <div class="tag">ERP · VEHICLE MODULE</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <button class="nav-item active" data-tab="approvals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        Approvals
+      </button>
+      <button class="nav-item" data-tab="employees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Employees
+      </button>
+      <button class="nav-item" data-tab="vehicles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
+        Vehicles
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+    <div class="sidebar-footer">Raghbir Erectors &amp; Fabricators</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="pageTitle">Approvals</div>
+        <div class="topbar-sub" id="pageSub">Review and approve daily vehicle log entries</div>
       </div>
-      <div class="field">
-        <label>PIN</label>
-        <input type="password" id="loginPin" placeholder="PIN" />
-      </div>
-      <button class="action-btn" id="loginBtn" style="width:100%">Log In</button>
-      <div class="msg" id="loginMsg"></div>
+      <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
+    </div>
+    <div class="content">
+      <div id="tab-approvals" class="tab-content"></div>
+      <div id="tab-employees" class="tab-content" style="display:none"></div>
+      <div id="tab-vehicles" class="tab-content" style="display:none"></div>
+      <div id="tab-settings" class="tab-content" style="display:none"></div>
     </div>
   </div>
 
-  <div id="dashboardArea" style="display:none">
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="approvals">Approvals</button>
-      <button class="tab-btn" data-tab="employees">Employees</button>
-      <button class="tab-btn" data-tab="vehicles">Vehicles</button>
-      <button class="tab-btn" data-tab="settings">Settings</button>
-    </div>
-
-    <div id="tab-approvals" class="tab-content"></div>
-    <div id="tab-employees" class="tab-content" style="display:none"></div>
-    <div id="tab-vehicles" class="tab-content" style="display:none"></div>
-    <div id="tab-settings" class="tab-content" style="display:none"></div>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item active" data-tab="approvals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      Approvals
+    </button>
+    <button class="bottom-nav-item" data-tab="employees">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+      Employees
+    </button>
+    <button class="bottom-nav-item" data-tab="vehicles">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
+      Vehicles
+    </button>
+    <button class="bottom-nav-item" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
   </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">&times;</button>
+  <img id="lightboxImg" src="" alt="Odometer photo" />
+  <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
 <script>
@@ -183,8 +393,15 @@
   let dashboardData = null;
 
   const authGate = document.getElementById('authGate');
-  const dashboardArea = document.getElementById('dashboardArea');
+  const appShell = document.getElementById('appShell');
   const loginMsg = document.getElementById('loginMsg');
+
+  const pageTitles = {
+    approvals: ['Approvals', 'Review and approve daily vehicle log entries'],
+    employees: ['Employees', 'Manage team members, roles, and rates'],
+    vehicles: ['Vehicles', 'Manage company and employee-owned vehicles'],
+    settings: ['Settings', 'Configure system-wide rules'],
+  };
 
   async function apiLogin(mobile, pin) {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
@@ -217,7 +434,9 @@
       }
       currentUser = data.employee;
       authGate.style.display = 'none';
-      dashboardArea.style.display = 'block';
+      appShell.style.display = 'flex';
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
       loadDashboard();
     } else {
       loginMsg.className = 'msg error';
@@ -225,17 +444,29 @@
     }
   });
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-      btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+  function switchTab(tab) {
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
     });
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById('tab-' + tab).style.display = 'block';
+    document.getElementById('pageTitle').textContent = pageTitles[tab][0];
+    document.getElementById('pageSub').textContent = pageTitles[tab][1];
+  }
+  document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
+  function openLightbox(url, caption) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('lightboxCaption').textContent = caption || '';
+    document.getElementById('lightbox').classList.add('open');
+  }
+  document.getElementById('lightboxClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('open'));
+  document.getElementById('lightbox').addEventListener('click', (e) => { if (e.target.id === 'lightbox') e.currentTarget.classList.remove('open'); });
+
   async function loadDashboard() {
-    document.getElementById('tab-approvals').innerHTML = '<div class="loading">Loading...</div>';
+    document.getElementById('tab-approvals').innerHTML = '<div class="empty-state">Loading...</div>';
     const data = await apiAdmin({ action: 'get_dashboard' });
     if (!data.success) {
       document.getElementById('tab-approvals').innerHTML = `<div class="msg error" style="display:block">${data.error}</div>`;
@@ -248,125 +479,132 @@
     renderSettings();
   }
 
+  function photoCell(url, missing, label, time, location) {
+    if (url) {
+      return `<img src="${url}" class="photo-thumb" onclick="openLightbox('${url}', '${label} · ${time || ''} · ${(location||'').replace(/'/g,"")}')" />`;
+    }
+    if (missing) return `<div class="photo-missing">no photo</div>`;
+    return `<div class="photo-missing">—</div>`;
+  }
+
   function renderApprovals() {
     const pending = dashboardData.entries.filter(e => e.status === 'calculated');
     const rest = dashboardData.entries.filter(e => e.status !== 'calculated');
-    let html = `<div class="card"><p class="section-title">Pending Approval (${pending.length})</p>`;
-    if (pending.length === 0) {
-      html += '<div class="empty-state">No entries waiting for approval.</div>';
-    } else {
-      pending.forEach(e => {
-        html += renderEntryRow(e, true);
-      });
-    }
-    html += '</div>';
 
-    html += `<div class="card"><p class="section-title">Recent Entries</p>`;
-    if (rest.length === 0) {
-      html += '<div class="empty-state">No other entries yet.</div>';
-    } else {
-      rest.slice(0, 20).forEach(e => { html += renderEntryRow(e, false); });
+    function buildTable(rows, showApprove) {
+      let html = `<table class="ledger"><thead><tr>
+        <th>Employee</th><th>Date</th><th>Vehicle</th><th>Morning</th><th>Evening</th><th>KM</th><th>Cost</th><th>Status</th>${showApprove ? '<th></th>' : ''}
+      </tr></thead><tbody>`;
+      rows.forEach(e => {
+        const rowClass = e.status === 'calculated' ? 'row-pending' : e.status === 'approved' ? 'row-approved' : e.status === 'paid' ? 'row-paid' : 'row-open';
+        html += `<tr class="${rowClass}">
+          <td data-label="Employee">${e.employees?.name || '—'}</td>
+          <td data-label="Date" class="mono">${e.entry_date}</td>
+          <td data-label="Vehicle">${e.vehicles?.vehicle_name || '—'}</td>
+          <td data-label="Morning">
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${photoCell(e.morning_photo_signed_url, e.morning_photo_missing, 'Morning', e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString() : '', e.morning_location_text)}
+              <div class="reading-cell">${e.morning_reading ?? '—'}<span class="time">${e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
+            </div>
+          </td>
+          <td data-label="Evening">
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${photoCell(e.evening_photo_signed_url, e.evening_photo_missing, 'Evening', e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString() : '', e.evening_location_text)}
+              <div class="reading-cell">${e.evening_reading ?? '—'}<span class="time">${e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
+            </div>
+          </td>
+          <td data-label="KM" class="num-cell">${e.km_traveled ?? '—'}</td>
+          <td data-label="Cost" class="num-cell">${e.cost !== null ? '₹' + e.cost : '—'}</td>
+          <td data-label="Status"><span class="status-tag ${e.status}">${e.status.replace('_',' ')}</span></td>
+          ${showApprove ? `<td class="action-cell" data-label=""><button class="btn btn-sm approve-btn" data-id="${e.id}">Approve</button></td>` : ''}
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      return html;
     }
-    html += '</div>';
+
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Pending Approval<span class="count-chip">${pending.length}</span></span></div>
+      <div class="panel-body" style="padding:0">`;
+    html += pending.length === 0 ? '<div class="empty-state">Nothing waiting for approval.</div>' : buildTable(pending, true);
+    html += `</div></div>`;
+
+    html += `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Recent Entries</span></div>
+      <div class="panel-body" style="padding:0">`;
+    html += rest.length === 0 ? '<div class="empty-state">No other entries yet.</div>' : buildTable(rest.slice(0, 25), false);
+    html += `</div></div>`;
 
     document.getElementById('tab-approvals').innerHTML = html;
 
     document.querySelectorAll('.approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        btn.textContent = 'Approving...';
+        btn.textContent = '...';
         const res = await apiAdmin({ action: 'approve_entry', entry_id: btn.dataset.id });
-        if (res.success) {
-          loadDashboard();
-        } else {
-          alert(res.error || 'Failed to approve');
-          btn.disabled = false;
-          btn.textContent = 'Approve';
-        }
+        if (res.success) loadDashboard();
+        else { alert(res.error || 'Failed to approve'); btn.disabled = false; btn.textContent = 'Approve'; }
       });
     });
   }
 
-  function renderEntryRow(e, showApprove) {
-    const empName = e.employees?.name || 'Unknown';
-    const vehName = e.vehicles?.vehicle_name || 'Unknown';
-    const km = e.km_traveled !== null ? `${e.km_traveled} km` : '—';
-    const cost = e.cost !== null ? `₹${e.cost}` : '—';
-    const photoWarn = (e.morning_photo_missing || e.evening_photo_missing) ? ' ⚠️ photo missing' : '';
-    return `
-      <div class="entry-row">
-        <div>
-          <div class="entry-name">${empName}</div>
-          <div class="entry-meta">${e.entry_date} · ${vehName} · ${km} · ${cost}${photoWarn}</div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
-          <span class="status-pill status-${e.status}">${e.status.replace('_',' ')}</span>
-          ${showApprove ? `<button class="action-btn approve-btn" data-id="${e.id}">Approve</button>` : ''}
-        </div>
-      </div>`;
-  }
-
   function renderEmployees() {
-    let html = `<div class="card">
-      <p class="section-title">Add Employee</p>
-      <div class="field"><label>Name</label><input id="newEmpName" /></div>
-      <div class="field"><label>Mobile Number</label><input id="newEmpMobile" /></div>
-      <div class="field"><label>PIN (4-6 digits)</label><input id="newEmpPin" type="password" /></div>
-      <div class="field"><label>Role</label>
-        <select id="newEmpRole"><option value="employee">Employee</option><option value="admin">Admin</option></select>
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Add Employee</span></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field"><label>Name</label><input id="newEmpName" /></div>
+          <div class="field"><label>Mobile Number</label><input id="newEmpMobile" /></div>
+          <div class="field"><label>PIN (4-6 digits)</label><input id="newEmpPin" type="password" /></div>
+          <div class="field"><label>Role</label><select id="newEmpRole"><option value="employee">Employee</option><option value="admin">Admin</option></select></div>
+          <div class="field full"><label>Rate per KM (only if employee owns their vehicle)</label><input id="newEmpRate" type="number" placeholder="Optional" /></div>
+        </div>
+        <button class="btn" id="addEmpBtn">Add Employee</button>
+        <div class="msg" id="addEmpMsg"></div>
       </div>
-      <div class="field"><label>Rate per KM (only if this employee owns their vehicle)</label><input id="newEmpRate" type="number" placeholder="Optional" /></div>
-      <button class="action-btn" id="addEmpBtn" style="width:100%">Add Employee</button>
-      <div class="msg" id="addEmpMsg"></div>
     </div>`;
 
-    html += `<div class="card"><p class="section-title">All Employees</p>`;
+    html += `<div class="panel"><div class="panel-header"><span class="panel-title">All Employees</span></div><div class="panel-body">`;
+    if (dashboardData.employees.length === 0) html += '<div class="empty-state">No employees yet.</div>';
     dashboardData.employees.forEach(emp => {
-      html += `<div class="list-item">
+      html += `<div class="roster-item">
+        <div><div class="roster-name">${emp.name}<span class="role-tag">${emp.role}</span></div>
+        <div class="roster-meta">${emp.mobile_number} · ${emp.status}</div></div>
         <div>
-          <div class="list-item-name">${emp.name} <span class="role-pill">${emp.role}</span></div>
-          <div class="list-item-meta">${emp.mobile_number} · ${emp.status}</div>
+        ${emp.status === 'active' && emp.role !== 'owner' ? `<button class="btn btn-sm btn-danger init-removal-btn" data-id="${emp.id}">Remove</button>` : ''}
+        ${emp.status === 'pending_removal' && currentUser.role === 'owner' ? `<button class="btn btn-sm approve-removal-btn" data-id="${emp.id}">Confirm Removal</button>` : ''}
         </div>
-        ${emp.status === 'active' && emp.role !== 'owner' ? `<button class="action-btn danger-btn init-removal-btn" data-id="${emp.id}">Remove</button>` : ''}
-        ${emp.status === 'pending_removal' && currentUser.role === 'owner' ? `<button class="action-btn approve-removal-btn" data-id="${emp.id}">Confirm Removal</button>` : ''}
       </div>`;
     });
-    html += '</div>';
+    html += '</div></div>';
 
     document.getElementById('tab-employees').innerHTML = html;
 
     document.getElementById('addEmpBtn').addEventListener('click', async () => {
       const msg = document.getElementById('addEmpMsg');
       msg.className = 'msg';
-      const payload = {
+      const res = await apiAdmin({
         action: 'add_employee',
         name: document.getElementById('newEmpName').value.trim(),
         mobile_number: document.getElementById('newEmpMobile').value.trim(),
         pin: document.getElementById('newEmpPin').value.trim(),
         role: document.getElementById('newEmpRole').value,
         rate_per_km: document.getElementById('newEmpRate').value || null,
-      };
-      const res = await apiAdmin(payload);
-      if (res.success) {
-        msg.className = 'msg success';
-        msg.textContent = `Added ${res.employee.name} successfully.`;
-        loadDashboard();
-      } else {
-        msg.className = 'msg error';
-        msg.textContent = res.error || 'Failed to add employee.';
-      }
+      });
+      if (res.success) { msg.className = 'msg success'; msg.textContent = `Added ${res.employee.name}.`; loadDashboard(); }
+      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add employee.'; }
     });
 
     document.querySelectorAll('.init-removal-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Initiate removal for this employee? Their login will be blocked immediately.')) return;
+        if (!confirm('Initiate removal? Their login will be blocked immediately.')) return;
         const res = await apiAdmin({ action: 'initiate_removal', employee_id: btn.dataset.id });
         if (res.success) loadDashboard(); else alert(res.error);
       });
     });
     document.querySelectorAll('.approve-removal-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Confirm PERMANENT removal of this employee? This cannot be undone.')) return;
+        if (!confirm('Confirm PERMANENT removal? This cannot be undone.')) return;
         const res = await apiAdmin({ action: 'approve_removal', employee_id: btn.dataset.id });
         if (res.success) loadDashboard(); else alert(res.error);
       });
@@ -374,38 +612,31 @@
   }
 
   function renderVehicles() {
-    const employeeOptions = dashboardData.employees
-      .filter(e => e.status === 'active')
-      .map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    const employeeOptions = dashboardData.employees.filter(e => e.status === 'active').map(e => `<option value="${e.id}">${e.name}</option>`).join('');
 
-    let html = `<div class="card">
-      <p class="section-title">Add Vehicle</p>
-      <div class="field"><label>Vehicle Name</label><input id="newVehName" placeholder="e.g. Bike - PB10AB1234" /></div>
-      <div class="field"><label>Ownership</label>
-        <select id="newVehOwnership">
-          <option value="company">Company-owned</option>
-          <option value="employee">Employee-owned</option>
-        </select>
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Add Vehicle</span></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field full"><label>Vehicle Name</label><input id="newVehName" placeholder="e.g. Bike - PB10AB1234" /></div>
+          <div class="field"><label>Ownership</label><select id="newVehOwnership"><option value="company">Company-owned</option><option value="employee">Employee-owned</option></select></div>
+          <div class="field" id="companyRateField"><label>Rate per KM</label><input id="newVehRate" type="number" /></div>
+          <div class="field" id="employeeOwnerField" style="display:none"><label>Owner Employee</label><select id="newVehOwnerEmp">${employeeOptions}</select></div>
+        </div>
+        <button class="btn" id="addVehBtn">Add Vehicle</button>
+        <div class="msg" id="addVehMsg"></div>
       </div>
-      <div class="field" id="companyRateField"><label>Rate per KM</label><input id="newVehRate" type="number" /></div>
-      <div class="field" id="employeeOwnerField" style="display:none"><label>Owner Employee</label>
-        <select id="newVehOwnerEmp">${employeeOptions}</select>
-      </div>
-      <button class="action-btn" id="addVehBtn" style="width:100%">Add Vehicle</button>
-      <div class="msg" id="addVehMsg"></div>
     </div>`;
 
-    html += `<div class="card"><p class="section-title">All Vehicles</p>`;
+    html += `<div class="panel"><div class="panel-header"><span class="panel-title">All Vehicles</span></div><div class="panel-body">`;
+    if (dashboardData.vehicles.length === 0) html += '<div class="empty-state">No vehicles yet.</div>';
     dashboardData.vehicles.forEach(v => {
       const rateInfo = v.ownership_type === 'company' ? `₹${v.rate_per_km}/km` : 'Employee-owned';
-      html += `<div class="list-item">
-        <div>
-          <div class="list-item-name">${v.vehicle_name}</div>
-          <div class="list-item-meta">${v.ownership_type} · ${rateInfo}</div>
-        </div>
+      html += `<div class="roster-item">
+        <div><div class="roster-name">${v.vehicle_name}</div><div class="roster-meta">${v.ownership_type} · ${rateInfo}</div></div>
       </div>`;
     });
-    html += '</div>';
+    html += '</div></div>';
 
     document.getElementById('tab-vehicles').innerHTML = html;
 
@@ -418,33 +649,26 @@
       const msg = document.getElementById('addVehMsg');
       msg.className = 'msg';
       const ownership = document.getElementById('newVehOwnership').value;
-      const payload = {
+      const res = await apiAdmin({
         action: 'add_vehicle',
         vehicle_name: document.getElementById('newVehName').value.trim(),
         ownership_type: ownership,
         rate_per_km: ownership === 'company' ? document.getElementById('newVehRate').value : null,
         owner_employee_id: ownership === 'employee' ? document.getElementById('newVehOwnerEmp').value : null,
-      };
-      const res = await apiAdmin(payload);
-      if (res.success) {
-        msg.className = 'msg success';
-        msg.textContent = 'Vehicle added successfully.';
-        loadDashboard();
-      } else {
-        msg.className = 'msg error';
-        msg.textContent = res.error || 'Failed to add vehicle.';
-      }
+      });
+      if (res.success) { msg.className = 'msg success'; msg.textContent = 'Vehicle added.'; loadDashboard(); }
+      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to add vehicle.'; }
     });
   }
 
   function renderSettings() {
-    let html = `<div class="card">
-      <p class="section-title">Daily Distance Limit</p>
-      <div class="field"><label>Max KM allowed per day (evening minus morning)</label>
-        <input id="maxKmInput" type="number" value="${dashboardData.settings.max_daily_km}" />
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Daily Distance Limit</span></div>
+      <div class="panel-body">
+        <div class="field" style="max-width:280px"><label>Max KM allowed per day</label><input id="maxKmInput" type="number" value="${dashboardData.settings.max_daily_km}" /></div>
+        <button class="btn" id="saveSettingsBtn">Save</button>
+        <div class="msg" id="settingsMsg"></div>
       </div>
-      <button class="action-btn" id="saveSettingsBtn" style="width:100%">Save</button>
-      <div class="msg" id="settingsMsg"></div>
     </div>`;
     document.getElementById('tab-settings').innerHTML = html;
 
@@ -452,13 +676,8 @@
       const msg = document.getElementById('settingsMsg');
       msg.className = 'msg';
       const res = await apiAdmin({ action: 'update_settings', max_daily_km: document.getElementById('maxKmInput').value });
-      if (res.success) {
-        msg.className = 'msg success';
-        msg.textContent = 'Settings updated.';
-      } else {
-        msg.className = 'msg error';
-        msg.textContent = res.error || 'Failed to update settings.';
-      }
+      if (res.success) { msg.className = 'msg success'; msg.textContent = 'Settings updated.'; }
+      else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to update settings.'; }
     });
   }
 </script>
