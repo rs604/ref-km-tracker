@@ -990,12 +990,12 @@
       <tbody>${rows}</tbody></table>
       <div class="total">Total KM: ${batch.total_km} &nbsp;|&nbsp; Total Paid: ₹${Number(batch.total_cost).toFixed(2)}</div>
       <p style="color:#999; font-size:11px; margin-top:30px;">Generated ${new Date().toLocaleString()}</p>
-      <script>window.print();</script>
     </body></html>`;
 
     const w = window.open('', '_blank');
     w.document.write(html);
     w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
   }
 
   function renderSettings() {
