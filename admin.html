@@ -313,10 +313,55 @@
 
   @media (max-width: 880px) {
     .sidebar { display: none; }
-    .content { padding: 16px; }
-    .topbar { padding: 14px 16px; }
-    .subtabs { padding: 0 16px 2px; }
-    .form-grid { grid-template-columns: 1fr; }
+    .content { padding: 14px; }
+    .topbar { padding: 12px 14px; }
+    .subtabs { padding: 0 14px 0; -webkit-overflow-scrolling: touch; }
+    .subtab-item { padding: 12px 2px; font-size: 12.5px; }
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .panel-body { padding: 14px; }
+
+    /* Prevent iOS Safari from auto-zooming when tapping inputs */
+    input, select, textarea { font-size: 16px !important; }
+
+    /* Compact topbar on small screens: role text hides, name stays */
+    .topbar-title { font-size: 15.5px; }
+    .topbar-sub { font-size: 11px; }
+    .user-chip { font-size: 12px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-chip #userRole { display: none; }
+
+    /* Roster rows (employees/vehicles/payments) must wrap instead of overflowing off-screen */
+    .roster-item {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .roster-item > div:first-child { flex: 1 1 100%; }
+    .roster-item > div:last-child {
+      flex: 1 1 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-start;
+    }
+
+    /* Vehicle-assignment control row (select + Assign button) */
+    .roster-item select.assign-vehicle-select {
+      max-width: 100% !important;
+      flex: 1 1 auto;
+    }
+
+    /* Modals: never exceed viewport height, scroll internally if content + keyboard is tall */
+    .auth-card {
+      max-height: 88vh;
+      overflow-y: auto;
+      width: calc(100% - 20px);
+      padding: 22px 18px;
+    }
+
+    /* Button groups inside table action cells must wrap on very narrow phones */
+    table.ledger td.action-cell > div { flex-wrap: wrap; justify-content: flex-end; }
+
+    /* Standalone submit buttons: full-width for easier tapping on mobile */
+    #addEmpBtn, #addVehBtn, #saveSettingsBtn { width: 100%; }
 
     .table-scroll { max-height: none; overflow: visible; }
     table.ledger thead { display: none; }
