@@ -256,34 +256,50 @@
   .roster-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
   .role-tag { font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--steel-tint); color: var(--steel); text-transform: uppercase; margin-left: 7px; }
 
-  .bottom-nav { display: none; }
+  .subtabs {
+    display: flex;
+    gap: 24px;
+    padding: 0 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .subtab-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 13px 2px;
+    border: none;
+    background: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .subtab-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .subtab-item:hover { color: var(--steel); }
+  .subtab-item.active { color: var(--steel); border-bottom-color: var(--steel); }
+  .subtab-settings { margin-left: auto; padding: 13px 4px; }
+
+  .nav-future-note {
+    padding: 10px 20px;
+    color: rgba(255,255,255,0.35);
+    font-size: 11px;
+    font-style: italic;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
 
   @media (max-width: 880px) {
     .sidebar { display: none; }
-    .content { padding: 16px; padding-bottom: 84px; }
+    .content { padding: 16px; }
     .topbar { padding: 14px 16px; }
+    .subtabs { padding: 0 16px 2px; }
     .form-grid { grid-template-columns: 1fr; }
-
-    .bottom-nav {
-      display: flex;
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      z-index: 100;
-    }
-    .bottom-nav-item {
-      flex: 1;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      padding: 9px 4px 8px;
-      border: none; background: none;
-      border-top: 2px solid transparent;
-      color: var(--muted);
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 10.5px; font-weight: 600;
-      cursor: pointer;
-    }
-    .bottom-nav-item.active { color: var(--steel); border-top-color: var(--amber); }
-    .bottom-nav-item svg { width: 19px; height: 19px; }
 
     .table-scroll { max-height: none; overflow: visible; }
     table.ledger thead { display: none; }
@@ -336,33 +352,14 @@
   <div class="sidebar">
     <div class="sidebar-brand">
       <div class="name">REF</div>
-      <div class="tag">ERP · VEHICLE MODULE</div>
+      <div class="tag">ERP</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
-      <button class="nav-item active" data-tab="approvals">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-        Approvals
-      </button>
-      <button class="nav-item" data-tab="employees">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Employees
-      </button>
-      <button class="nav-item" data-tab="vehicles">
+      <button class="nav-item active" data-module="vehicle-readings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
-        Vehicles
+        Vehicle Readings
       </button>
-      <button class="nav-item" data-tab="reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
-        Reports
-      </button>
-      <button class="nav-item" data-tab="payments">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        Payments
-      </button>
-      <button class="nav-item" data-tab="settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
-      </button>
+      <div class="nav-future-note">More ERP modules will appear here as they're added</div>
     </nav>
     <div class="sidebar-footer">Raghbir Erectors &amp; Fabricators</div>
   </div>
@@ -370,11 +367,38 @@
   <div class="main">
     <div class="topbar">
       <div>
-        <div class="topbar-title" id="pageTitle">Approvals</div>
-        <div class="topbar-sub" id="pageSub">Review and approve daily vehicle log entries</div>
+        <div class="topbar-title" id="pageTitle">Vehicle Readings</div>
+        <div class="topbar-sub" id="pageSub">Daily odometer tracking, approvals, and payments</div>
       </div>
       <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
     </div>
+
+    <div class="subtabs" id="subtabsNav">
+      <button class="subtab-item active" data-tab="approvals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        Approvals
+      </button>
+      <button class="subtab-item" data-tab="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
+        Reports
+      </button>
+      <button class="subtab-item" data-tab="payments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Payments
+      </button>
+      <button class="subtab-item" data-tab="employees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+        Employees
+      </button>
+      <button class="subtab-item" data-tab="vehicles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
+        Vehicles
+      </button>
+      <button class="subtab-item subtab-settings" data-tab="settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
     <div class="content">
       <div id="tab-approvals" class="tab-content"></div>
       <div id="tab-employees" class="tab-content" style="display:none"></div>
@@ -383,33 +407,6 @@
       <div id="tab-payments" class="tab-content" style="display:none"></div>
       <div id="tab-settings" class="tab-content" style="display:none"></div>
     </div>
-  </div>
-
-  <div class="bottom-nav">
-    <button class="bottom-nav-item active" data-tab="approvals">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-      Approvals
-    </button>
-    <button class="bottom-nav-item" data-tab="employees">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
-      Employees
-    </button>
-    <button class="bottom-nav-item" data-tab="vehicles">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
-      Vehicles
-    </button>
-    <button class="bottom-nav-item" data-tab="reports">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
-      Reports
-    </button>
-    <button class="bottom-nav-item" data-tab="payments">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      Payments
-    </button>
-    <button class="bottom-nav-item" data-tab="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
-    </button>
   </div>
 </div>
 
@@ -496,15 +493,13 @@
   });
 
   function switchTab(tab) {
-    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(b => {
+    document.querySelectorAll('.subtab-item').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     document.getElementById('tab-' + tab).style.display = 'block';
-    document.getElementById('pageTitle').textContent = pageTitles[tab][0];
-    document.getElementById('pageSub').textContent = pageTitles[tab][1];
   }
-  document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(btn => {
+  document.querySelectorAll('.subtab-item').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
