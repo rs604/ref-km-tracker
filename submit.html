@@ -96,7 +96,7 @@
 
   label { display: block; font-size: 12.5px; color: var(--muted); margin: 0 0 6px; font-weight: 500; }
   .field { margin-bottom: 16px; }
-  input {
+  input, select {
     width: 100%;
     background: #fafbfc;
     border: 1px solid var(--line);
@@ -173,8 +173,14 @@
 </head>
 <body>
 <div class="topbar">
-  <span class="topbar-title">REF</span>
-  <span class="topbar-sub">KM TRACKER</span>
+  <div>
+    <span class="topbar-title">REF</span>
+    <span class="topbar-sub">KM TRACKER</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span class="topbar-sub" id="empNameDisplay"></span>
+    <button onclick="sessionStorage.clear(); window.location.href='index.html';" style="background:none; border:1px solid rgba(255,255,255,0.4); color:#fff; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;">Log out</button>
+  </div>
 </div>
 <div class="wrap">
   <p class="page-title">Submit Odometer Reading</p>
@@ -186,6 +192,12 @@
     </div>
 
     <form id="readingForm">
+      <div class="field">
+        <label for="vehicleSelect">Vehicle</label>
+        <select id="vehicleSelect" required>
+          <option value="">Loading vehicles...</option>
+        </select>
+      </div>
       <div class="field">
         <label>Odometer Photo</label>
         <div class="photo-box" id="photoBox">
@@ -223,8 +235,15 @@
 
   // For this test screen: hardcoded logged-in employee + vehicle
   // (In the real app, these come from the login session)
-  const EMPLOYEE_ID = "6f27dc83-3e9b-4144-b29e-906d01ececde"; // Raghbir Singh (owner) - test
-  const VEHICLE_ID = "022e4a7b-6395-44bf-92e2-7ea208521f5f"; // Test Vehicle - Company Bike
+  // Real logged-in session (set during login on index.html)
+  const EMPLOYEE_ID = sessionStorage.getItem('employee_id');
+  const EMPLOYEE_NAME = sessionStorage.getItem('employee_name');
+  let SELECTED_VEHICLE_ID = null;
+
+  if (!EMPLOYEE_ID) {
+    window.location.href = 'index.html';
+  }
+  document.getElementById('empNameDisplay').textContent = EMPLOYEE_NAME || '';
 
   let entryType = "morning";
   let compressedPhotoBase64 = null;
@@ -348,9 +367,34 @@
 
   function checkFormReady() {
     const readingVal = document.getElementById('reading').value;
-    submitBtn.disabled = !(compressedPhotoBase64 && currentLocation && readingVal);
+    submitBtn.disabled = !(compressedPhotoBase64 && currentLocation && readingVal && SELECTED_VEHICLE_ID);
   }
   document.getElementById('reading').addEventListener('input', checkFormReady);
+  document.getElementById('vehicleSelect').addEventListener('change', (e) => {
+    SELECTED_VEHICLE_ID = e.target.value || null;
+    checkFormReady();
+  });
+
+  async function loadVehicles() {
+    const select = document.getElementById('vehicleSelect');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-vehicles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ employee_id: EMPLOYEE_ID })
+      });
+      const data = await res.json();
+      if (data.success && data.vehicles.length > 0) {
+        select.innerHTML = '<option value="">Select a vehicle</option>' +
+          data.vehicles.map(v => `<option value="${v.id}">${v.vehicle_name}</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">No vehicles available — contact admin</option>';
+      }
+    } catch (err) {
+      select.innerHTML = '<option value="">Could not load vehicles</option>';
+    }
+  }
+  loadVehicles();
 
   requestLocation();
 
@@ -373,7 +417,7 @@
         },
         body: JSON.stringify({
           employee_id: EMPLOYEE_ID,
-          vehicle_id: VEHICLE_ID,
+          vehicle_id: SELECTED_VEHICLE_ID,
           entry_type: entryType,
           reading: parseFloat(reading),
           photo_base64: compressedPhotoBase64,
