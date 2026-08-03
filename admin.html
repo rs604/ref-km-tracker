@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard — REF KM Tracker</title>
+<style>
+  :root {
+    --bg: #eef1f4;
+    --surface: #ffffff;
+    --line: #dde2e8;
+    --primary: #3b5b74;
+    --primary-dark: #2c4457;
+    --text: #263238;
+    --muted: #6b7684;
+    --danger: #a5453a;
+    --danger-bg: #fbeceb;
+    --success: #3a7a5d;
+    --success-bg: #eaf5ef;
+    --warn: #8a6d1f;
+    --warn-bg: #fbf3df;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    padding-bottom: 60px;
+  }
+  .wrap { max-width: 700px; margin: 0 auto; padding: 0 16px; }
+  .topbar {
+    background: var(--primary);
+    color: #fff;
+    padding: 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-title { font-size: 15.5px; font-weight: 700; }
+  .topbar-sub { font-size: 11px; opacity: 0.75; font-weight: 500; letter-spacing: 0.5px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
+  .tab-btn {
+    padding: 9px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(38,50,56,0.05);
+  }
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 10px;
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-name { font-weight: 650; font-size: 14px; }
+  .entry-meta { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+  .status-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .status-calculated { background: var(--warn-bg); color: var(--warn); }
+  .status-approved { background: var(--success-bg); color: var(--success); }
+  .status-paid { background: #e4e9ee; color: var(--primary); }
+  .status-pending_evening { background: #f0f0f0; color: var(--muted); }
+
+  button.action-btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.action-btn:hover { background: var(--primary-dark); }
+  button.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.danger-btn { background: var(--danger); }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; font-weight: 500; }
+  .field { margin-bottom: 12px; }
+  input, select {
+    width: 100%;
+    background: #fafbfc;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--primary); background: #fff; }
+
+  .section-title { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+  .msg {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+    line-height: 1.5;
+  }
+  .msg.error { display: block; background: var(--danger-bg); border: 1px solid #f0d3d0; color: var(--danger); }
+  .msg.success { display: block; background: var(--success-bg); border: 1px solid #cfe6da; color: var(--success); }
+  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 20px 0; }
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .list-item:last-child { border-bottom: none; }
+  .list-item-name { font-weight: 600; font-size: 13.5px; }
+  .list-item-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .role-pill { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: #e4e9ee; color: var(--primary); text-transform: uppercase; }
+  .loading { text-align: center; padding: 40px 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">REF</span>
+  <span class="topbar-sub">ADMIN DASHBOARD</span>
+</div>
+<div class="wrap">
+  <div id="authGate">
+    <div class="card">
+      <p class="section-title">Admin Login Required</p>
+      <div class="field">
+        <label>Mobile Number</label>
+        <input type="tel" id="loginMobile" placeholder="10-digit mobile number" />
+      </div>
+      <div class="field">
+        <label>PIN</label>
+        <input type="password" id="loginPin" placeholder="PIN" />
+      </div>
+      <button class="action-btn" id="loginBtn" style="width:100%">Log In</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <div id="dashboardArea" style="display:none">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="approvals">Approvals</button>
+      <button class="tab-btn" data-tab="employees">Employees</button>
+      <button class="tab-btn" data-tab="vehicles">Vehicles</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <div id="tab-approvals" class="tab-content"></div>
+    <div id="tab-employees" class="tab-content" style="display:none"></div>
+    <div id="tab-vehicles" class="tab-content" style="display:none"></div>
+    <div id="tab-settings" class="tab-content" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://mamamjohuuacxezcwgqv.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_uqu742FOxl_J1VqWOsrtjw_-Ja4QfNa";
+
+  let currentUser = null;
+  let dashboardData = null;
+
+  const authGate = document.getElementById('authGate');
+  const dashboardArea = document.getElementById('dashboardArea');
+  const loginMsg = document.getElementById('loginMsg');
+
+  async function apiLogin(mobile, pin) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ mobile_number: mobile, pin })
+    });
+    return res.json();
+  }
+
+  async function apiAdmin(payload) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ requester_id: currentUser.id, ...payload })
+    });
+    return res.json();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const mobile = document.getElementById('loginMobile').value.trim();
+    const pin = document.getElementById('loginPin').value.trim();
+    loginMsg.className = 'msg';
+    const data = await apiLogin(mobile, pin);
+    if (data.success) {
+      if (!['admin', 'owner'].includes(data.employee.role)) {
+        loginMsg.className = 'msg error';
+        loginMsg.textContent = 'This login does not have admin access.';
+        return;
+      }
+      currentUser = data.employee;
+      authGate.style.display = 'none';
+      dashboardArea.style.display = 'block';
+      loadDashboard();
+    } else {
+      loginMsg.className = 'msg error';
+      loginMsg.textContent = data.error || 'Login failed.';
+    }
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+    });
+  });
+
+  async function loadDashboard() {
+    document.getElementById('tab-approvals').innerHTML = '<div class="loading">Loading...</div>';
+    const data = await apiAdmin({ action: 'get_dashboard' });
+    if (!data.success) {
+      document.getElementById('tab-approvals').innerHTML = `<div class="msg error" style="display:block">${data.error}</div>`;
+      return;
+    }
+    dashboardData = data;
+    renderApprovals();
+    renderEmployees();
+    renderVehicles();
+    renderSettings();
+  }
+
+  function renderApprovals() {
+    const pending = dashboardData.entries.filter(e => e.status === 'calculated');
+    const rest = dashboardData.entries.filter(e => e.status !== 'calculated');
+    let html = `<div class="card"><p class="section-title">Pending Approval (${pending.length})</p>`;
+    if (pending.length === 0) {
+      html += '<div class="empty-state">No entries waiting for approval.</div>';
+    } else {
+      pending.forEach(e => {
+        html += renderEntryRow(e, true);
+      });
+    }
+    html += '</div>';
+
+    html += `<div class="card"><p class="section-title">Recent Entries</p>`;
+    if (rest.length === 0) {
+      html += '<div class="empty-state">No other entries yet.</div>';
+    } else {
+      rest.slice(0, 20).forEach(e => { html += renderEntryRow(e, false); });
+    }
+    html += '</div>';
+
+    document.getElementById('tab-approvals').innerHTML = html;
+
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Approving...';
+        const res = await apiAdmin({ action: 'approve_entry', entry_id: btn.dataset.id });
+        if (res.success) {
+          loadDashboard();
+        } else {
+          alert(res.error || 'Failed to approve');
+          btn.disabled = false;
+          btn.textContent = 'Approve';
+        }
+      });
+    });
+  }
+
+  function renderEntryRow(e, showApprove) {
+    const empName = e.employees?.name || 'Unknown';
+    const vehName = e.vehicles?.vehicle_name || 'Unknown';
+    const km = e.km_traveled !== null ? `${e.km_traveled} km` : '—';
+    const cost = e.cost !== null ? `₹${e.cost}` : '—';
+    const photoWarn = (e.morning_photo_missing || e.evening_photo_missing) ? ' ⚠️ photo missing' : '';
+    return `
+      <div class="entry-row">
+        <div>
+          <div class="entry-name">${empName}</div>
+          <div class="entry-meta">${e.entry_date} · ${vehName} · ${km} · ${cost}${photoWarn}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+          <span class="status-pill status-${e.status}">${e.status.replace('_',' ')}</span>
+          ${showApprove ? `<button class="action-btn approve-btn" data-id="${e.id}">Approve</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderEmployees() {
+    let html = `<div class="card">
+      <p class="section-title">Add Employee</p>
+      <div class="field"><label>Name</label><input id="newEmpName" /></div>
+      <div class="field"><label>Mobile Number</label><input id="newEmpMobile" /></div>
+      <div class="field"><label>PIN (4-6 digits)</label><input id="newEmpPin" type="password" /></div>
+      <div class="field"><label>Role</label>
+        <select id="newEmpRole"><option value="employee">Employee</option><option value="admin">Admin</option></select>
+      </div>
+      <div class="field"><label>Rate per KM (only if this employee owns their vehicle)</label><input id="newEmpRate" type="number" placeholder="Optional" /></div>
+      <button class="action-btn" id="addEmpBtn" style="width:100%">Add Employee</button>
+      <div class="msg" id="addEmpMsg"></div>
+    </div>`;
+
+    html += `<div class="card"><p class="section-title">All Employees</p>`;
+    dashboardData.employees.forEach(emp => {
+      html += `<div class="list-item">
+        <div>
+          <div class="list-item-name">${emp.name} <span class="role-pill">${emp.role}</span></div>
+          <div class="list-item-meta">${emp.mobile_number} · ${emp.status}</div>
+        </div>
+        ${emp.status === 'active' && emp.role !== 'owner' ? `<button class="action-btn danger-btn init-removal-btn" data-id="${emp.id}">Remove</button>` : ''}
+        ${emp.status === 'pending_removal' && currentUser.role === 'owner' ? `<button class="action-btn approve-removal-btn" data-id="${emp.id}">Confirm Removal</button>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('tab-employees').innerHTML = html;
+
+    document.getElementById('addEmpBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('addEmpMsg');
+      msg.className = 'msg';
+      const payload = {
+        action: 'add_employee',
+        name: document.getElementById('newEmpName').value.trim(),
+        mobile_number: document.getElementById('newEmpMobile').value.trim(),
+        pin: document.getElementById('newEmpPin').value.trim(),
+        role: document.getElementById('newEmpRole').value,
+        rate_per_km: document.getElementById('newEmpRate').value || null,
+      };
+      const res = await apiAdmin(payload);
+      if (res.success) {
+        msg.className = 'msg success';
+        msg.textContent = `Added ${res.employee.name} successfully.`;
+        loadDashboard();
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = res.error || 'Failed to add employee.';
+      }
+    });
+
+    document.querySelectorAll('.init-removal-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Initiate removal for this employee? Their login will be blocked immediately.')) return;
+        const res = await apiAdmin({ action: 'initiate_removal', employee_id: btn.dataset.id });
+        if (res.success) loadDashboard(); else alert(res.error);
+      });
+    });
+    document.querySelectorAll('.approve-removal-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Confirm PERMANENT removal of this employee? This cannot be undone.')) return;
+        const res = await apiAdmin({ action: 'approve_removal', employee_id: btn.dataset.id });
+        if (res.success) loadDashboard(); else alert(res.error);
+      });
+    });
+  }
+
+  function renderVehicles() {
+    const employeeOptions = dashboardData.employees
+      .filter(e => e.status === 'active')
+      .map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+    let html = `<div class="card">
+      <p class="section-title">Add Vehicle</p>
+      <div class="field"><label>Vehicle Name</label><input id="newVehName" placeholder="e.g. Bike - PB10AB1234" /></div>
+      <div class="field"><label>Ownership</label>
+        <select id="newVehOwnership">
+          <option value="company">Company-owned</option>
+          <option value="employee">Employee-owned</option>
+        </select>
+      </div>
+      <div class="field" id="companyRateField"><label>Rate per KM</label><input id="newVehRate" type="number" /></div>
+      <div class="field" id="employeeOwnerField" style="display:none"><label>Owner Employee</label>
+        <select id="newVehOwnerEmp">${employeeOptions}</select>
+      </div>
+      <button class="action-btn" id="addVehBtn" style="width:100%">Add Vehicle</button>
+      <div class="msg" id="addVehMsg"></div>
+    </div>`;
+
+    html += `<div class="card"><p class="section-title">All Vehicles</p>`;
+    dashboardData.vehicles.forEach(v => {
+      const rateInfo = v.ownership_type === 'company' ? `₹${v.rate_per_km}/km` : 'Employee-owned';
+      html += `<div class="list-item">
+        <div>
+          <div class="list-item-name">${v.vehicle_name}</div>
+          <div class="list-item-meta">${v.ownership_type} · ${rateInfo}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('tab-vehicles').innerHTML = html;
+
+    document.getElementById('newVehOwnership').addEventListener('change', (e) => {
+      document.getElementById('companyRateField').style.display = e.target.value === 'company' ? 'block' : 'none';
+      document.getElementById('employeeOwnerField').style.display = e.target.value === 'employee' ? 'block' : 'none';
+    });
+
+    document.getElementById('addVehBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('addVehMsg');
+      msg.className = 'msg';
+      const ownership = document.getElementById('newVehOwnership').value;
+      const payload = {
+        action: 'add_vehicle',
+        vehicle_name: document.getElementById('newVehName').value.trim(),
+        ownership_type: ownership,
+        rate_per_km: ownership === 'company' ? document.getElementById('newVehRate').value : null,
+        owner_employee_id: ownership === 'employee' ? document.getElementById('newVehOwnerEmp').value : null,
+      };
+      const res = await apiAdmin(payload);
+      if (res.success) {
+        msg.className = 'msg success';
+        msg.textContent = 'Vehicle added successfully.';
+        loadDashboard();
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = res.error || 'Failed to add vehicle.';
+      }
+    });
+  }
+
+  function renderSettings() {
+    let html = `<div class="card">
+      <p class="section-title">Daily Distance Limit</p>
+      <div class="field"><label>Max KM allowed per day (evening minus morning)</label>
+        <input id="maxKmInput" type="number" value="${dashboardData.settings.max_daily_km}" />
+      </div>
+      <button class="action-btn" id="saveSettingsBtn" style="width:100%">Save</button>
+      <div class="msg" id="settingsMsg"></div>
+    </div>`;
+    document.getElementById('tab-settings').innerHTML = html;
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('settingsMsg');
+      msg.className = 'msg';
+      const res = await apiAdmin({ action: 'update_settings', max_daily_km: document.getElementById('maxKmInput').value });
+      if (res.success) {
+        msg.className = 'msg success';
+        msg.textContent = 'Settings updated.';
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = res.error || 'Failed to update settings.';
+      }
+    });
+  }
+</script>
+</body>
+</html>
