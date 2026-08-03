@@ -351,6 +351,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
         Vehicles
       </button>
+      <button class="nav-item" data-tab="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
+        Reports
+      </button>
       <button class="nav-item" data-tab="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
@@ -371,6 +375,7 @@
       <div id="tab-approvals" class="tab-content"></div>
       <div id="tab-employees" class="tab-content" style="display:none"></div>
       <div id="tab-vehicles" class="tab-content" style="display:none"></div>
+      <div id="tab-reports" class="tab-content" style="display:none"></div>
       <div id="tab-settings" class="tab-content" style="display:none"></div>
     </div>
   </div>
@@ -387,6 +392,10 @@
     <button class="bottom-nav-item" data-tab="vehicles">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
       Vehicles
+    </button>
+    <button class="bottom-nav-item" data-tab="reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
+      Reports
     </button>
     <button class="bottom-nav-item" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -428,9 +437,10 @@
   const loginMsg = document.getElementById('loginMsg');
 
   const pageTitles = {
-    approvals: ['Approvals', 'Review and approve daily vehicle log entries'],
+    approvals: ['Approvals', 'Entries waiting for your review'],
     employees: ['Employees', 'Manage team members, roles, and rates'],
     vehicles: ['Vehicles', 'Manage company and employee-owned vehicles'],
+    reports: ['Reports', 'Browse and filter all vehicle log entries'],
     settings: ['Settings', 'Configure system-wide rules'],
   };
 
@@ -507,6 +517,7 @@
     renderApprovals();
     renderEmployees();
     renderVehicles();
+    renderReports();
     renderSettings();
   }
 
@@ -550,58 +561,51 @@
     }
   });
 
+  function buildTable(rows, showActions) {
+    let html = `<div class="table-scroll"><table class="ledger"><thead><tr>
+      <th>Employee</th><th>Date</th><th>Vehicle</th><th>Morning</th><th>Evening</th><th>KM</th><th>Cost</th><th>Status</th>${showActions ? '<th>Action</th>' : ''}
+    </tr></thead><tbody>`;
+    rows.forEach(e => {
+      const rowClass = e.status === 'calculated' ? 'row-pending' : e.status === 'approved' ? 'row-approved' : e.status === 'rejected' ? 'row-rejected' : e.status === 'paid' ? 'row-paid' : 'row-open';
+      const rejectionNote = e.status === 'rejected' && e.rejection_reason ? `<div class="rejection-note">Reason: ${e.rejection_reason}</div>` : '';
+      html += `<tr class="${rowClass}">
+        <td data-label="Employee">${e.employees?.name || '—'}</td>
+        <td data-label="Date" class="mono">${e.entry_date}</td>
+        <td data-label="Vehicle">${e.vehicles?.vehicle_name || '—'}</td>
+        <td data-label="Morning">
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${photoCell(e.morning_photo_signed_url, e.morning_photo_missing, 'Morning', e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString() : '', e.morning_location_text)}
+            <div class="reading-cell">${e.morning_reading ?? '—'}<span class="time">${e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
+          </div>
+        </td>
+        <td data-label="Evening">
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${photoCell(e.evening_photo_signed_url, e.evening_photo_missing, 'Evening', e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString() : '', e.evening_location_text)}
+            <div class="reading-cell">${e.evening_reading ?? '—'}<span class="time">${e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
+          </div>
+        </td>
+        <td data-label="KM" class="num-cell">${e.km_traveled ?? '—'}</td>
+        <td data-label="Cost" class="num-cell">${e.cost !== null ? '₹' + e.cost : '—'}</td>
+        <td data-label="Status"><span class="status-tag ${e.status}">${e.status.replace('_',' ')}</span>${rejectionNote}</td>
+        ${showActions ? `<td class="action-cell" data-label="">
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm approve-btn" data-id="${e.id}">Approve</button>
+            <button class="btn btn-sm btn-danger reject-btn" data-id="${e.id}">Reject</button>
+          </div>
+        </td>` : ''}
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
   function renderApprovals() {
     const pending = dashboardData.entries.filter(e => e.status === 'calculated');
-    const rest = dashboardData.entries.filter(e => e.status !== 'calculated');
-
-    function buildTable(rows, showActions) {
-      let html = `<div class="table-scroll"><table class="ledger"><thead><tr>
-        <th>Employee</th><th>Date</th><th>Vehicle</th><th>Morning</th><th>Evening</th><th>KM</th><th>Cost</th><th>Status</th>${showActions ? '<th>Action</th>' : ''}
-      </tr></thead><tbody>`;
-      rows.forEach(e => {
-        const rowClass = e.status === 'calculated' ? 'row-pending' : e.status === 'approved' ? 'row-approved' : e.status === 'rejected' ? 'row-rejected' : e.status === 'paid' ? 'row-paid' : 'row-open';
-        const rejectionNote = e.status === 'rejected' && e.rejection_reason ? `<div class="rejection-note">Reason: ${e.rejection_reason}</div>` : '';
-        html += `<tr class="${rowClass}">
-          <td data-label="Employee">${e.employees?.name || '—'}</td>
-          <td data-label="Date" class="mono">${e.entry_date}</td>
-          <td data-label="Vehicle">${e.vehicles?.vehicle_name || '—'}</td>
-          <td data-label="Morning">
-            <div style="display:flex; align-items:center; gap:8px;">
-              ${photoCell(e.morning_photo_signed_url, e.morning_photo_missing, 'Morning', e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString() : '', e.morning_location_text)}
-              <div class="reading-cell">${e.morning_reading ?? '—'}<span class="time">${e.morning_timestamp ? new Date(e.morning_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
-            </div>
-          </td>
-          <td data-label="Evening">
-            <div style="display:flex; align-items:center; gap:8px;">
-              ${photoCell(e.evening_photo_signed_url, e.evening_photo_missing, 'Evening', e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString() : '', e.evening_location_text)}
-              <div class="reading-cell">${e.evening_reading ?? '—'}<span class="time">${e.evening_timestamp ? new Date(e.evening_timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span></div>
-            </div>
-          </td>
-          <td data-label="KM" class="num-cell">${e.km_traveled ?? '—'}</td>
-          <td data-label="Cost" class="num-cell">${e.cost !== null ? '₹' + e.cost : '—'}</td>
-          <td data-label="Status"><span class="status-tag ${e.status}">${e.status.replace('_',' ')}</span>${rejectionNote}</td>
-          ${showActions ? `<td class="action-cell" data-label="">
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-sm approve-btn" data-id="${e.id}">Approve</button>
-              <button class="btn btn-sm btn-danger reject-btn" data-id="${e.id}">Reject</button>
-            </div>
-          </td>` : ''}
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
-      return html;
-    }
 
     let html = `<div class="panel">
       <div class="panel-header header-pending"><span class="panel-title">Pending Approval<span class="count-chip">${pending.length}</span></span></div>
       <div class="panel-body" style="padding:0">`;
-    html += pending.length === 0 ? '<div class="empty-state">Nothing waiting for approval.</div>' : buildTable(pending, true);
-    html += `</div></div>`;
-
-    html += `<div class="panel">
-      <div class="panel-header header-recent"><span class="panel-title">Recent Entries</span></div>
-      <div class="panel-body" style="padding:0">`;
-    html += rest.length === 0 ? '<div class="empty-state">No other entries yet.</div>' : buildTable(rest.slice(0, 25), false);
+    html += pending.length === 0 ? '<div class="empty-state">Nothing waiting for approval. See the Reports tab for full history.</div>' : buildTable(pending, true);
     html += `</div></div>`;
 
     document.getElementById('tab-approvals').innerHTML = html;
@@ -618,6 +622,75 @@
     document.querySelectorAll('.reject-btn').forEach(btn => {
       btn.addEventListener('click', () => openRejectModal(btn.dataset.id));
     });
+  }
+
+  function renderReports() {
+    const employeeOptions = dashboardData.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    const vehicleOptions = dashboardData.vehicles.map(v => `<option value="${v.id}">${v.vehicle_name}</option>`).join('');
+
+    let html = `<div class="panel">
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field"><label>Employee</label><select id="filterEmployee"><option value="">All employees</option>${employeeOptions}</select></div>
+          <div class="field"><label>Vehicle</label><select id="filterVehicle"><option value="">All vehicles</option>${vehicleOptions}</select></div>
+          <div class="field"><label>Status</label><select id="filterStatus">
+            <option value="">All statuses</option>
+            <option value="pending_evening">Pending Evening</option>
+            <option value="calculated">Calculated</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="paid">Paid</option>
+          </select></div>
+          <div class="field"></div>
+          <div class="field"><label>From Date</label><input type="date" id="filterFrom" /></div>
+          <div class="field"><label>To Date</label><input type="date" id="filterTo" /></div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="applyFiltersBtn">Apply Filters</button>
+          <button class="btn btn-outline" id="resetFiltersBtn">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title" id="reportsCountLabel">All Entries</span></div>
+      <div class="panel-body" style="padding:0" id="reportsTableArea"></div>
+    </div>`;
+
+    document.getElementById('tab-reports').innerHTML = html;
+
+    function applyFilters() {
+      const emp = document.getElementById('filterEmployee').value;
+      const veh = document.getElementById('filterVehicle').value;
+      const status = document.getElementById('filterStatus').value;
+      const from = document.getElementById('filterFrom').value;
+      const to = document.getElementById('filterTo').value;
+
+      let filtered = dashboardData.entries.filter(e => {
+        if (emp && e.employee_id !== emp) return false;
+        if (veh && e.vehicle_id !== veh) return false;
+        if (status && e.status !== status) return false;
+        if (from && e.entry_date < from) return false;
+        if (to && e.entry_date > to) return false;
+        return true;
+      });
+
+      document.getElementById('reportsCountLabel').textContent = `${filtered.length} Entr${filtered.length === 1 ? 'y' : 'ies'}`;
+      document.getElementById('reportsTableArea').innerHTML = filtered.length === 0
+        ? '<div class="empty-state">No entries match these filters.</div>'
+        : buildTable(filtered, false);
+    }
+
+    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+      document.getElementById('filterEmployee').value = '';
+      document.getElementById('filterVehicle').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value = '';
+      applyFilters();
+    });
+
+    applyFilters();
   }
 
   function renderEmployees() {
