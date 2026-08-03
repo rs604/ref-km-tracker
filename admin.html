@@ -163,12 +163,15 @@
     align-items: center;
     justify-content: space-between;
   }
+  .panel-header.header-pending { background: var(--amber-bg); border-bottom-color: #ecd9ae; }
+  .panel-header.header-recent { background: var(--slate-bg); border-bottom-color: #d2d9df; }
   .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'IBM Plex Sans', sans-serif; }
   .panel-body { padding: 18px; }
-  .count-chip { font-size: 11px; font-weight: 700; background: var(--amber-bg); color: var(--amber); padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+  .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
 
   .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
 
+  .table-scroll { max-height: 480px; overflow-y: auto; }
   table.ledger { width: 100%; border-collapse: collapse; }
   table.ledger th {
     text-align: left;
@@ -180,16 +183,26 @@
     padding: 10px 12px;
     background: var(--surface-sunken);
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
+  table.ledger th:last-child { border-right: none; }
   table.ledger td {
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     vertical-align: middle;
     font-size: 13px;
   }
+  table.ledger td:last-child { border-right: none; }
   table.ledger tr:last-child td { border-bottom: none; }
+  table.ledger tr.row-pending { background: #fffdf8; }
   table.ledger tr.row-pending td:first-child { border-left: 3px solid var(--amber); }
   table.ledger tr.row-approved td:first-child { border-left: 3px solid var(--green); }
+  table.ledger tr.row-rejected { background: #fdf7f6; }
+  table.ledger tr.row-rejected td:first-child { border-left: 3px solid var(--danger); }
   table.ledger tr.row-paid td:first-child { border-left: 3px solid var(--slate); }
   table.ledger tr.row-open td:first-child { border-left: 3px solid var(--border); }
 
@@ -220,8 +233,10 @@
   .status-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
   .status-tag.calculated { background: var(--amber-bg); color: var(--amber); }
   .status-tag.approved { background: var(--green-bg); color: var(--green); }
+  .status-tag.rejected { background: var(--danger-bg); color: var(--danger); }
   .status-tag.paid { background: var(--slate-bg); color: var(--slate); }
   .status-tag.pending_evening { background: var(--surface-sunken); color: var(--muted); }
+  .rejection-note { font-size: 11px; color: var(--danger); margin-top: 3px; font-style: italic; }
 
   .lightbox {
     position: fixed; inset: 0; background: rgba(20,26,32,0.88);
@@ -270,6 +285,7 @@
     .bottom-nav-item.active { color: var(--steel); border-top-color: var(--amber); }
     .bottom-nav-item svg { width: 19px; height: 19px; }
 
+    .table-scroll { max-height: none; overflow: visible; }
     table.ledger thead { display: none; }
     table.ledger, table.ledger tbody, table.ledger tr, table.ledger td { display: block; width: 100%; }
     table.ledger tr {
@@ -385,6 +401,21 @@
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
+<div class="lightbox" id="rejectModal">
+  <div class="auth-card" style="max-width:380px" onclick="event.stopPropagation()">
+    <p class="auth-title" style="margin-bottom:14px;">Reject Entry</p>
+    <div class="field">
+      <label>Reason for rejection (required)</label>
+      <textarea id="rejectReasonInput" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-family:inherit; font-size:14px; background:var(--surface-sunken); outline:none; resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-outline" id="rejectCancelBtn" style="flex:1">Cancel</button>
+      <button class="btn btn-danger" id="rejectConfirmBtn" style="flex:1">Reject Entry</button>
+    </div>
+    <div class="msg" id="rejectMsg"></div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = "https://mamamjohuuacxezcwgqv.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_uqu742FOxl_J1VqWOsrtjw_-Ja4QfNa";
@@ -487,16 +518,49 @@
     return `<div class="photo-missing">—</div>`;
   }
 
+  let pendingRejectId = null;
+
+  function openRejectModal(entryId) {
+    pendingRejectId = entryId;
+    document.getElementById('rejectReasonInput').value = '';
+    document.getElementById('rejectMsg').className = 'msg';
+    document.getElementById('rejectModal').classList.add('open');
+  }
+  document.getElementById('rejectCancelBtn').addEventListener('click', () => {
+    document.getElementById('rejectModal').classList.remove('open');
+    pendingRejectId = null;
+  });
+  document.getElementById('rejectConfirmBtn').addEventListener('click', async () => {
+    const reason = document.getElementById('rejectReasonInput').value.trim();
+    const msg = document.getElementById('rejectMsg');
+    msg.className = 'msg';
+    if (!reason) {
+      msg.className = 'msg error';
+      msg.textContent = 'A reason is required to reject this entry.';
+      return;
+    }
+    const res = await apiAdmin({ action: 'reject_entry', entry_id: pendingRejectId, reason });
+    if (res.success) {
+      document.getElementById('rejectModal').classList.remove('open');
+      pendingRejectId = null;
+      loadDashboard();
+    } else {
+      msg.className = 'msg error';
+      msg.textContent = res.error || 'Failed to reject entry.';
+    }
+  });
+
   function renderApprovals() {
     const pending = dashboardData.entries.filter(e => e.status === 'calculated');
     const rest = dashboardData.entries.filter(e => e.status !== 'calculated');
 
-    function buildTable(rows, showApprove) {
-      let html = `<table class="ledger"><thead><tr>
-        <th>Employee</th><th>Date</th><th>Vehicle</th><th>Morning</th><th>Evening</th><th>KM</th><th>Cost</th><th>Status</th>${showApprove ? '<th></th>' : ''}
+    function buildTable(rows, showActions) {
+      let html = `<div class="table-scroll"><table class="ledger"><thead><tr>
+        <th>Employee</th><th>Date</th><th>Vehicle</th><th>Morning</th><th>Evening</th><th>KM</th><th>Cost</th><th>Status</th>${showActions ? '<th>Action</th>' : ''}
       </tr></thead><tbody>`;
       rows.forEach(e => {
-        const rowClass = e.status === 'calculated' ? 'row-pending' : e.status === 'approved' ? 'row-approved' : e.status === 'paid' ? 'row-paid' : 'row-open';
+        const rowClass = e.status === 'calculated' ? 'row-pending' : e.status === 'approved' ? 'row-approved' : e.status === 'rejected' ? 'row-rejected' : e.status === 'paid' ? 'row-paid' : 'row-open';
+        const rejectionNote = e.status === 'rejected' && e.rejection_reason ? `<div class="rejection-note">Reason: ${e.rejection_reason}</div>` : '';
         html += `<tr class="${rowClass}">
           <td data-label="Employee">${e.employees?.name || '—'}</td>
           <td data-label="Date" class="mono">${e.entry_date}</td>
@@ -515,22 +579,27 @@
           </td>
           <td data-label="KM" class="num-cell">${e.km_traveled ?? '—'}</td>
           <td data-label="Cost" class="num-cell">${e.cost !== null ? '₹' + e.cost : '—'}</td>
-          <td data-label="Status"><span class="status-tag ${e.status}">${e.status.replace('_',' ')}</span></td>
-          ${showApprove ? `<td class="action-cell" data-label=""><button class="btn btn-sm approve-btn" data-id="${e.id}">Approve</button></td>` : ''}
+          <td data-label="Status"><span class="status-tag ${e.status}">${e.status.replace('_',' ')}</span>${rejectionNote}</td>
+          ${showActions ? `<td class="action-cell" data-label="">
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-sm approve-btn" data-id="${e.id}">Approve</button>
+              <button class="btn btn-sm btn-danger reject-btn" data-id="${e.id}">Reject</button>
+            </div>
+          </td>` : ''}
         </tr>`;
       });
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       return html;
     }
 
     let html = `<div class="panel">
-      <div class="panel-header"><span class="panel-title">Pending Approval<span class="count-chip">${pending.length}</span></span></div>
+      <div class="panel-header header-pending"><span class="panel-title">Pending Approval<span class="count-chip">${pending.length}</span></span></div>
       <div class="panel-body" style="padding:0">`;
     html += pending.length === 0 ? '<div class="empty-state">Nothing waiting for approval.</div>' : buildTable(pending, true);
     html += `</div></div>`;
 
     html += `<div class="panel">
-      <div class="panel-header"><span class="panel-title">Recent Entries</span></div>
+      <div class="panel-header header-recent"><span class="panel-title">Recent Entries</span></div>
       <div class="panel-body" style="padding:0">`;
     html += rest.length === 0 ? '<div class="empty-state">No other entries yet.</div>' : buildTable(rest.slice(0, 25), false);
     html += `</div></div>`;
@@ -545,6 +614,9 @@
         if (res.success) loadDashboard();
         else { alert(res.error || 'Failed to approve'); btn.disabled = false; btn.textContent = 'Approve'; }
       });
+    });
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', () => openRejectModal(btn.dataset.id));
     });
   }
 
