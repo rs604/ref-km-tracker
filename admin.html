@@ -183,6 +183,8 @@
   .panel-header.header-pending { background: var(--amber-bg); border-bottom-color: #ecd9ae; }
   .panel-header.header-recent { background: var(--slate-bg); border-bottom-color: #d2d9df; }
   .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'IBM Plex Sans', sans-serif; }
+  .section-label { font-size: 12.5px; font-weight: 700; color: var(--steel); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .category-content, .cptab-content, .etab-content, .hrtab-content { }
   .panel-body { padding: 18px; }
   .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
 
@@ -417,9 +419,13 @@
       <div class="tag">ERP</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
-      <button class="nav-item active" data-module="vehicle-readings">
+      <button class="nav-item active" data-module="km-tracker">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
         Km Tracker
+      </button>
+      <button class="nav-item" data-module="control-panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Control Panel
       </button>
       <div class="nav-future-note">More ERP modules will appear here as they're added</div>
     </nav>
@@ -435,39 +441,73 @@
       <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
     </div>
 
-    <div class="subtabs" id="subtabsNav">
-      <button class="subtab-item active" data-tab="approvals">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-        Approvals
-      </button>
-      <button class="subtab-item" data-tab="reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
-        Reports
-      </button>
-      <button class="subtab-item" data-tab="payments">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        Payments
-      </button>
-      <button class="subtab-item" data-tab="employees">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
-        Employees
-      </button>
-      <button class="subtab-item" data-tab="vehicles">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
-        Vehicles
-      </button>
-      <button class="subtab-item subtab-settings" data-tab="settings" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
+    <!-- Km Tracker module -->
+    <div id="module-km-tracker" class="module-content">
+      <div class="subtabs" id="subtabsNav">
+        <button class="subtab-item active" data-tab="approvals">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+          Approvals
+        </button>
+        <button class="subtab-item" data-tab="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-6 4 3 4-7"/></svg>
+          Reports
+        </button>
+        <button class="subtab-item" data-tab="payments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          Payments
+        </button>
+        <button class="subtab-item subtab-settings" data-tab="settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <div class="content">
+        <div id="tab-approvals" class="tab-content"></div>
+        <div id="tab-reports" class="tab-content" style="display:none"></div>
+        <div id="tab-payments" class="tab-content" style="display:none"></div>
+        <div id="tab-settings" class="tab-content" style="display:none"></div>
+      </div>
     </div>
 
-    <div class="content">
-      <div id="tab-approvals" class="tab-content"></div>
-      <div id="tab-employees" class="tab-content" style="display:none"></div>
-      <div id="tab-vehicles" class="tab-content" style="display:none"></div>
-      <div id="tab-reports" class="tab-content" style="display:none"></div>
-      <div id="tab-payments" class="tab-content" style="display:none"></div>
-      <div id="tab-settings" class="tab-content" style="display:none"></div>
+    <!-- Control Panel module -->
+    <div id="module-control-panel" class="module-content" style="display:none">
+      <div class="subtabs" id="cpSubtabsNav">
+        <button class="subtab-item active" data-cptab="masters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l9 4.5v9L12 20l-9-4.5v-9z"/></svg>
+          Masters
+        </button>
+        <button class="subtab-item" data-cptab="admin-panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg>
+          Admin Panel
+        </button>
+      </div>
+
+      <!-- Masters sub-view -->
+      <div id="cptab-masters" class="cptab-content">
+        <div class="subtabs" id="masterCategoryNav" style="padding-left:28px;">
+          <button class="subtab-item active" data-category="hr">HR</button>
+        </div>
+        <div id="category-hr" class="category-content">
+          <div class="subtabs" id="hrSubtabsNav" style="padding-left:28px;">
+            <button class="subtab-item active" data-hrtab="employee-master">Employee Master</button>
+            <button class="subtab-item" data-hrtab="hr-dropdowns">HR Dropdowns</button>
+          </div>
+          <div class="content">
+            <div id="hrtab-employee-master" class="hrtab-content"></div>
+            <div id="hrtab-hr-dropdowns" class="hrtab-content" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Panel sub-view -->
+      <div id="cptab-admin-panel" class="cptab-content" style="display:none">
+        <div class="content">
+          <div class="panel">
+            <div class="panel-body empty-state">
+              Role-based permissions will be configured here once roles are finalized as the ERP grows.
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -544,6 +584,29 @@
     return res.json();
   }
 
+  async function apiHR(payload) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/hr-actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ requester_id: currentUser.id, ...payload })
+    });
+    return res.json();
+  }
+
+  let controlPanelLoaded = false;
+  let dropdownsData = null;
+  let employeeListData = null;
+
+  async function loadControlPanel() {
+    controlPanelLoaded = true;
+    const dd = await apiHR({ action: 'get_dropdowns' });
+    if (dd.success) dropdownsData = dd.dropdowns;
+    const el = await apiHR({ action: 'get_employee_list' });
+    if (el.success) employeeListData = el.employees;
+    renderHRDropdowns();
+    renderEmployeeMasterList();
+  }
+
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const mobile = document.getElementById('loginMobile').value.trim();
     const pin = document.getElementById('loginPin').value.trim();
@@ -570,15 +633,61 @@
     }
   });
 
+  // --- Module switching (Km Tracker vs Control Panel) ---
+  const moduleTitles = {
+    'km-tracker': ['Km Tracker', 'Daily odometer tracking, approvals, and payments'],
+    'control-panel': ['Control Panel', 'Masters, configuration, and administration'],
+  };
+  document.querySelectorAll('#sidebarNav .nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sidebarNav .nav-item').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.module-content').forEach(m => m.style.display = 'none');
+      document.getElementById('module-' + btn.dataset.module).style.display = 'block';
+      document.getElementById('pageTitle').textContent = moduleTitles[btn.dataset.module][0];
+      document.getElementById('pageSub').textContent = moduleTitles[btn.dataset.module][1];
+      if (btn.dataset.module === 'control-panel' && !controlPanelLoaded) {
+        loadControlPanel();
+      }
+    });
+  });
+
+  // --- Km Tracker's own subtabs (Approvals / Reports / Payments / Settings) ---
   function switchTab(tab) {
-    document.querySelectorAll('.subtab-item').forEach(b => {
+    document.querySelectorAll('#subtabsNav .subtab-item').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
-    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('#module-km-tracker .tab-content').forEach(c => c.style.display = 'none');
     document.getElementById('tab-' + tab).style.display = 'block';
   }
-  document.querySelectorAll('.subtab-item').forEach(btn => {
+  document.querySelectorAll('#subtabsNav .subtab-item').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // --- Control Panel's top-level subtabs (Masters / Admin Panel) ---
+  document.querySelectorAll('#cpSubtabsNav .subtab-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#cpSubtabsNav .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.cptab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('cptab-' + btn.dataset.cptab).style.display = 'block';
+    });
+  });
+
+  // --- Masters' category subtabs (only HR exists today) ---
+  document.querySelectorAll('#masterCategoryNav .subtab-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#masterCategoryNav .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.category-content').forEach(c => c.style.display = 'none');
+      document.getElementById('category-' + btn.dataset.category).style.display = 'block';
+    });
+  });
+
+  // --- HR's own subtabs (Employee Master / HR Dropdowns) ---
+  document.querySelectorAll('#hrSubtabsNav .subtab-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#hrSubtabsNav .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.hrtab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('hrtab-' + btn.dataset.hrtab).style.display = 'block';
+    });
   });
 
   function openLightbox(url, caption) {
@@ -598,8 +707,6 @@
     }
     dashboardData = data;
     renderApprovals();
-    renderEmployees();
-    renderVehicles();
     renderReports();
     renderPayments();
     renderSettings();
@@ -1099,6 +1206,575 @@
       if (res.success) { msg.className = 'msg success'; msg.textContent = 'Settings updated.'; }
       else { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to update settings.'; }
     });
+  }
+
+  // ============ HR DROPDOWNS ============
+  const DROPDOWN_CONFIG = [
+    { table: 'branches', label: 'Branch' },
+    { table: 'departments', label: 'Department' },
+    { table: 'designations', label: 'Designation' },
+    { table: 'employee_categories', label: 'Employee Category' },
+    { table: 'states', label: 'State' },
+    { table: 'cities', label: 'City', needsState: true },
+    { table: 'relationships', label: 'Relationship' },
+    { table: 'asset_types', label: 'Asset Type' },
+    { table: 'salary_components', label: 'Salary Component', isSalary: true },
+  ];
+
+  function renderHRDropdowns() {
+    if (!dropdownsData) {
+      document.getElementById('hrtab-hr-dropdowns').innerHTML = '<div class="empty-state">Loading...</div>';
+      return;
+    }
+    let html = '';
+    DROPDOWN_CONFIG.forEach(cfg => {
+      const items = dropdownsData[cfg.table] || [];
+      html += `<div class="panel">
+        <div class="panel-header"><span class="panel-title">${cfg.label} Master<span class="count-chip">${items.length}</span></span></div>
+        <div class="panel-body">
+          <div class="form-grid" style="align-items:end; margin-bottom:14px;">
+            <div class="field"><label>${cfg.label} Name</label><input type="text" class="dd-name-input" data-table="${cfg.table}" /></div>
+            ${cfg.needsState ? `<div class="field"><label>State</label><select class="dd-state-select" data-table="${cfg.table}">
+              <option value="">Select state</option>
+              ${(dropdownsData.states || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+            </select></div>` : ''}
+            ${cfg.isSalary ? `<div class="field"><label>Type</label><select class="dd-calc-type" data-table="${cfg.table}">
+              <option value="fixed">Fixed Amount</option><option value="percentage">Percentage of Basic</option>
+            </select></div>
+            <div class="field"><label>Value</label><input type="number" class="dd-value-input" data-table="${cfg.table}" /></div>` : ''}
+            <div class="field"><button class="btn dd-add-btn" data-table="${cfg.table}">Add</button></div>
+          </div>
+          <div class="msg" id="dd-msg-${cfg.table}"></div>
+          <div class="table-scroll" style="max-height:280px;">
+            <table class="ledger"><thead><tr>
+              <th>Name</th>${cfg.needsState ? '<th>State</th>' : ''}${cfg.isSalary ? '<th>Type</th><th>Value</th>' : ''}<th>Status</th><th>Action</th>
+            </tr></thead><tbody>
+              ${items.length === 0 ? `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:16px;">No ${cfg.label.toLowerCase()}s yet.</td></tr>` : items.map(item => `
+                <tr class="${item.is_active ? 'row-approved' : 'row-open'}">
+                  <td data-label="Name">${item.name}</td>
+                  ${cfg.needsState ? `<td data-label="State">${(dropdownsData.states || []).find(s => s.id === item.state_id)?.name || '—'}</td>` : ''}
+                  ${cfg.isSalary ? `<td data-label="Type">${item.calculation_type}</td><td data-label="Value" class="num-cell">${item.calculation_type === 'percentage' ? item.value + '%' : '₹' + item.value}</td>` : ''}
+                  <td data-label="Status"><span class="status-tag ${item.is_active ? 'approved' : 'pending_evening'}">${item.is_active ? 'Active' : 'Inactive'}</span></td>
+                  <td data-label="Action" class="action-cell"><button class="btn btn-sm btn-outline dd-toggle-btn" data-table="${cfg.table}" data-id="${item.id}" data-active="${item.is_active}">${item.is_active ? 'Deactivate' : 'Activate'}</button></td>
+                </tr>`).join('')}
+            </tbody></table>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    document.getElementById('hrtab-hr-dropdowns').innerHTML = html;
+
+    document.querySelectorAll('.dd-add-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const table = btn.dataset.table;
+        const nameInput = document.querySelector(`.dd-name-input[data-table="${table}"]`);
+        const msg = document.getElementById(`dd-msg-${table}`);
+        msg.className = 'msg';
+        const fields = { name: nameInput.value.trim() };
+        if (!fields.name) { msg.className = 'msg error'; msg.textContent = 'Name is required.'; return; }
+
+        const stateSelect = document.querySelector(`.dd-state-select[data-table="${table}"]`);
+        if (stateSelect) fields.state_id = stateSelect.value;
+
+        const calcType = document.querySelector(`.dd-calc-type[data-table="${table}"]`);
+        const valueInput = document.querySelector(`.dd-value-input[data-table="${table}"]`);
+        if (calcType) fields.calculation_type = calcType.value;
+        if (valueInput) fields.value = valueInput.value;
+
+        setButtonLoading(btn, true, 'Adding');
+        const res = await apiHR({ action: 'add_dropdown_item', table, fields });
+        if (res.success) {
+          dropdownsData[table] = dropdownsData[table] || [];
+          dropdownsData[table].push(res.item);
+          renderHRDropdowns();
+        } else {
+          setButtonLoading(btn, false);
+          msg.className = 'msg error';
+          msg.textContent = res.error || 'Failed to add.';
+        }
+      });
+    });
+
+    document.querySelectorAll('.dd-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        setButtonLoading(btn, true, 'Updating');
+        const res = await apiHR({
+          action: 'toggle_dropdown_item',
+          table: btn.dataset.table,
+          id: btn.dataset.id,
+          is_active: btn.dataset.active !== 'true',
+        });
+        if (res.success) {
+          const idx = dropdownsData[btn.dataset.table].findIndex(i => i.id === btn.dataset.id);
+          if (idx >= 0) dropdownsData[btn.dataset.table][idx] = res.item;
+          renderHRDropdowns();
+        } else {
+          setButtonLoading(btn, false);
+          alert(res.error || 'Failed to update.');
+        }
+      });
+    });
+  }
+
+  // ============ EMPLOYEE MASTER (list view) ============
+  function renderEmployeeMasterList() {
+    if (!employeeListData) {
+      document.getElementById('hrtab-employee-master').innerHTML = '<div class="empty-state">Loading...</div>';
+      return;
+    }
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Employees<span class="count-chip">${employeeListData.length}</span></span></div>
+      <div class="panel-body" style="padding:14px 18px;">
+        <button class="btn" id="newEmployeeBtn">+ Add New Employee</button>
+      </div>
+      <div class="table-scroll">
+        <table class="ledger"><thead><tr>
+          <th>Code</th><th>Name</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
+        </tr></thead><tbody>
+          ${employeeListData.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No employees yet.</td></tr>' : employeeListData.map(e => `
+            <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
+              <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
+              <td data-label="Name">${e.name}<span class="role-tag">${e.role}</span></td>
+              <td data-label="Mobile">${e.mobile_number}</td>
+              <td data-label="Department">${e.departments?.name || '—'}</td>
+              <td data-label="Designation">${e.designations?.name || '—'}</td>
+              <td data-label="Category">${e.employee_categories?.name || '—'}</td>
+              <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
+              <td data-label="Action" class="action-cell">
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm btn-outline emp-edit-btn" data-id="${e.id}">Edit</button>
+                  ${e.status === 'active' ? `<button class="btn btn-sm btn-danger emp-status-btn" data-id="${e.id}" data-status="suspended">Suspend</button>` : ''}
+                  ${e.status === 'suspended' ? `<button class="btn btn-sm emp-status-btn" data-id="${e.id}" data-status="active">Resume</button>` : ''}
+                  ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline emp-status-btn" data-id="${e.id}" data-status="left">Mark Left</button>` : `<button class="btn btn-sm emp-status-btn" data-id="${e.id}" data-status="active">Reinstate</button>`}
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+    <div id="employeeFormArea"></div>`;
+
+    document.getElementById('hrtab-employee-master').innerHTML = html;
+
+    document.getElementById('newEmployeeBtn').addEventListener('click', () => openEmployeeForm(null));
+    document.querySelectorAll('.emp-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEmployeeForm(btn.dataset.id));
+    });
+    document.querySelectorAll('.emp-status-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const statusLabel = { active: 'reactivate', suspended: 'suspend', left: 'mark as left (their login will be blocked)' }[btn.dataset.status];
+        if (!confirm(`Are you sure you want to ${statusLabel} this employee?`)) return;
+        setButtonLoading(btn, true, 'Updating');
+        const res = await apiHR({ action: 'update_employee_status', employee_id: btn.dataset.id, new_status: btn.dataset.status });
+        if (res.success) {
+          const idx = employeeListData.findIndex(e => e.id === btn.dataset.id);
+          if (idx >= 0) employeeListData[idx].status = res.employee.status;
+          renderEmployeeMasterList();
+        } else {
+          setButtonLoading(btn, false);
+          alert(res.error || 'Failed to update status.');
+        }
+      });
+    });
+  }
+
+  async function openEmployeeForm(employeeId) {
+    const area = document.getElementById('employeeFormArea');
+    area.innerHTML = '<div class="panel"><div class="panel-body empty-state">Loading form...</div></div>';
+    area.scrollIntoView({ behavior: 'smooth' });
+
+    let detail = null;
+    if (employeeId) {
+      const res = await apiHR({ action: 'get_employee_detail', employee_id: employeeId });
+      if (res.success) detail = res;
+    }
+    renderEmployeeForm(employeeId, detail);
+  }
+
+  function opt(list, selectedId, labelKey) {
+    labelKey = labelKey || 'name';
+    return (list || []).filter(i => i.is_active !== false).map(i =>
+      `<option value="${i.id}" ${i.id === selectedId ? 'selected' : ''}>${i[labelKey]}</option>`
+    ).join('');
+  }
+
+  function renderEmployeeForm(employeeId, detail) {
+    const e = detail?.employee || {};
+    const dd = dropdownsData || {};
+
+    const html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span></div>
+      <div class="subtabs" style="padding-left:18px;" id="empFormSubtabs">
+        <button class="subtab-item active" data-etab="basic">Basic</button>
+        <button class="subtab-item" data-etab="personal">Personal</button>
+        <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
+        <button class="subtab-item" data-etab="vehicle">Vehicle KM</button>
+        <button class="subtab-item" data-etab="family">Family</button>
+        <button class="subtab-item" data-etab="education">Education</button>
+        <button class="subtab-item" data-etab="work">Work Experience</button>
+        <button class="subtab-item" data-etab="nominee">Reference &amp; Nominee</button>
+        <button class="subtab-item" data-etab="assets">Company Assets</button>
+      </div>
+      <div class="panel-body">
+
+        <div id="etab-basic" class="etab-content">
+          <div class="form-grid">
+            <div class="field"><label>Employee Code</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
+            <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
+            <div class="field"><label>Mobile Number *</label><input id="f_mobile_number" value="${e.mobile_number || ''}" /></div>
+            ${!employeeId ? `<div class="field"><label>PIN (4-6 digits) *</label><input id="f_pin" type="password" /></div>` : ''}
+            <div class="field"><label>Role</label><select id="f_role">
+              <option value="employee" ${e.role === 'employee' ? 'selected' : ''}>Employee</option>
+              <option value="admin" ${e.role === 'admin' ? 'selected' : ''}>Admin</option>
+            </select></div>
+            <div class="field"><label>Branch</label><select id="f_branch_id">${opt(dd.branches, e.branch_id)}</select></div>
+            <div class="field"><label>Department</label><select id="f_department_id">${opt(dd.departments, e.department_id)}</select></div>
+            <div class="field"><label>Designation</label><select id="f_designation_id">${opt(dd.designations, e.designation_id)}</select></div>
+            <div class="field"><label>Employee Category</label><select id="f_employee_category_id">${opt(dd.employee_categories, e.employee_category_id)}</select></div>
+            <div class="field"><label>Date of Joining</label><input type="date" id="f_date_of_joining" value="${e.date_of_joining || ''}" /></div>
+            <div class="field"><label>Wage Type</label><select id="f_wage_type">
+              <option ${e.wage_type === 'Monthly' ? 'selected' : ''}>Monthly</option>
+              <option ${e.wage_type === 'Daily' ? 'selected' : ''}>Daily</option>
+            </select></div>
+          </div>
+        </div>
+
+        <div id="etab-personal" class="etab-content" style="display:none">
+          <div class="form-grid">
+            <div class="field"><label>Father/Husband Name</label><input id="f_father_husband_name" value="${e.father_husband_name || ''}" /></div>
+            <div class="field"><label>Marital Status</label><select id="f_marital_status">
+              <option value="">—</option><option ${e.marital_status === 'Single' ? 'selected' : ''}>Single</option><option ${e.marital_status === 'Married' ? 'selected' : ''}>Married</option>
+            </select></div>
+            <div class="field"><label>Religion</label><input id="f_religion" value="${e.religion || ''}" /></div>
+            <div class="field"><label>Gender</label><select id="f_gender">
+              <option value="">—</option><option ${e.gender === 'Male' ? 'selected' : ''}>Male</option><option ${e.gender === 'Female' ? 'selected' : ''}>Female</option><option ${e.gender === 'Other' ? 'selected' : ''}>Other</option>
+            </select></div>
+            <div class="field"><label>Date of Birth</label><input type="date" id="f_date_of_birth" value="${e.date_of_birth || ''}" /></div>
+            <div class="field"><label>Blood Group</label><input id="f_blood_group" value="${e.blood_group || ''}" /></div>
+            <div class="field"><label>Place of Birth</label><input id="f_place_of_birth" value="${e.place_of_birth || ''}" /></div>
+            <div class="field"><label>Aadhar No</label><input id="f_aadhar_no" value="${e.aadhar_no || ''}" /></div>
+            <div class="field full"><label>Present Address</label><input id="f_present_address" value="${e.present_address || ''}" /></div>
+            <div class="field"><label>Present City</label><select id="f_present_city_id">${opt(dd.cities, e.present_city_id)}</select></div>
+            <div class="field"><label>Present State</label><select id="f_present_state_id">${opt(dd.states, e.present_state_id)}</select></div>
+            <div class="field"><label>Present Pincode</label><input id="f_present_pincode" value="${e.present_pincode || ''}" /></div>
+            <div class="field full"><label>Permanent Address</label><input id="f_permanent_address" value="${e.permanent_address || ''}" /></div>
+            <div class="field"><label>Permanent City</label><select id="f_permanent_city_id">${opt(dd.cities, e.permanent_city_id)}</select></div>
+            <div class="field"><label>Permanent State</label><select id="f_permanent_state_id">${opt(dd.states, e.permanent_state_id)}</select></div>
+            <div class="field"><label>Permanent Pincode</label><input id="f_permanent_pincode" value="${e.permanent_pincode || ''}" /></div>
+            <div class="field"><label>Tel (Home)</label><input id="f_tel_home" value="${e.tel_home || ''}" /></div>
+            <div class="field"><label>Driving License No</label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
+            <div class="field"><label>License Category</label><input id="f_driving_license_category" value="${e.driving_license_category || ''}" /></div>
+            <div class="field"><label>License Validity</label><input type="date" id="f_driving_license_validity" value="${e.driving_license_validity || ''}" /></div>
+          </div>
+          <p class="section-label">Emergency Contact</p>
+          <div class="form-grid">
+            <div class="field"><label>Name</label><input id="f_emergency_contact_name" value="${e.emergency_contact_name || ''}" /></div>
+            <div class="field"><label>Relation</label><input id="f_emergency_contact_relation" value="${e.emergency_contact_relation || ''}" /></div>
+            <div class="field"><label>Mobile</label><input id="f_emergency_contact_mobile" value="${e.emergency_contact_mobile || ''}" /></div>
+            <div class="field full"><label>Address</label><input id="f_emergency_contact_address" value="${e.emergency_contact_address || ''}" /></div>
+          </div>
+        </div>
+
+        <div id="etab-bank" class="etab-content" style="display:none">
+          <div class="form-grid">
+            <div class="field"><label>Bank Name</label><input id="f_bank_name" value="${e.bank_name || ''}" /></div>
+            <div class="field"><label>Account Number</label><input id="f_bank_account_number" value="${e.bank_account_number || ''}" /></div>
+            <div class="field"><label>IFSC Code</label><input id="f_bank_ifsc" value="${e.bank_ifsc || ''}" /></div>
+            <div class="field"><label>Branch</label><input id="f_bank_branch" value="${e.bank_branch || ''}" /></div>
+            <div class="field"><label>Account Holder Name</label><input id="f_bank_account_holder_name" value="${e.bank_account_holder_name || ''}" /></div>
+            <div class="field"><label>PAN Number</label><input id="f_pan_number" value="${e.pan_number || ''}" /></div>
+            <div class="field"><label>UAN Number</label><input id="f_uan_number" value="${e.uan_number || ''}" /></div>
+          </div>
+          <div class="form-grid" style="margin-top:8px;">
+            <div class="field"><label><input type="checkbox" id="f_pf_applicable" ${e.pf_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />PF Applicable</label></div>
+            <div class="field" id="pfNumberField" style="${e.pf_applicable ? '' : 'display:none'}"><label>PF Number</label><input id="f_pf_number" value="${e.pf_number || ''}" /></div>
+            <div class="field"><label><input type="checkbox" id="f_esi_applicable" ${e.esi_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />ESI Applicable</label></div>
+            <div class="field" id="esiNumberField" style="${e.esi_applicable ? '' : 'display:none'}"><label>ESI Number</label><input id="f_esi_number" value="${e.esi_number || ''}" /></div>
+          </div>
+        </div>
+
+        <div id="etab-vehicle" class="etab-content" style="display:none">
+          <div class="field"><label><input type="checkbox" id="f_vehicle_km_applicable" ${e.vehicle_km_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />Vehicle KM Payable Applicable</label></div>
+          <div id="vehicleDetailsField" class="form-grid" style="${e.vehicle_km_applicable ? '' : 'display:none'}; margin-top:10px;">
+            <div class="field"><label>Vehicle Number</label><input id="f_vehicle_number" placeholder="e.g. PB10AB1234" /></div>
+            <div class="field"><label>Rate per KM (₹)</label><input type="number" id="f_rate_per_km" value="${e.rate_per_km || ''}" /></div>
+            <div class="field full">
+              <label>Login Link (share with employee)</label>
+              <div style="display:flex; gap:8px;">
+                <input id="kmTrackerLink" value="https://km.refconveyors.net" readonly style="flex:1;" />
+                <button class="btn btn-outline" type="button" id="copyLinkBtn">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="etab-family" class="etab-content" style="display:none">
+          <div id="familyRows"></div>
+          <button class="btn btn-outline btn-sm" id="addFamilyRowBtn" type="button">+ Add Family Member</button>
+        </div>
+
+        <div id="etab-education" class="etab-content" style="display:none">
+          <div id="educationRows"></div>
+          <button class="btn btn-outline btn-sm" id="addEducationRowBtn" type="button">+ Add Qualification</button>
+        </div>
+
+        <div id="etab-work" class="etab-content" style="display:none">
+          <div id="workRows"></div>
+          <button class="btn btn-outline btn-sm" id="addWorkRowBtn" type="button">+ Add Work Experience</button>
+        </div>
+
+        <div id="etab-nominee" class="etab-content" style="display:none">
+          <p class="section-label">Reference</p>
+          <div class="form-grid">
+            <div class="field"><label><input type="checkbox" id="f_has_ref_employee" ${e.has_ref_employee ? 'checked' : ''} style="width:auto; margin-right:6px;" />Has reference of a REF employee</label></div>
+            <div class="field"></div>
+            <div class="field"><label>Reference Employee Name</label><input id="f_ref_employee_name" value="${e.ref_employee_name || ''}" /></div>
+            <div class="field"><label>Reference Contact</label><input id="f_ref_employee_contact" value="${e.ref_employee_contact || ''}" /></div>
+          </div>
+          <p class="section-label">Nominee</p>
+          <div id="nomineeRows"></div>
+          <button class="btn btn-outline btn-sm" id="addNomineeRowBtn" type="button">+ Add Nominee</button>
+        </div>
+
+        <div id="etab-assets" class="etab-content" style="display:none">
+          <div id="assetRows"></div>
+          <button class="btn btn-outline btn-sm" id="addAssetRowBtn" type="button">+ Add Asset</button>
+        </div>
+
+        <div style="margin-top:20px; display:flex; gap:10px;">
+          <button class="btn" id="saveEmployeeBtn">${employeeId ? 'Save Changes' : 'Create Employee'}</button>
+          <button class="btn btn-outline" id="cancelEmployeeBtn" type="button">Cancel</button>
+        </div>
+        <div class="msg" id="employeeFormMsg"></div>
+      </div>
+    </div>`;
+
+    document.getElementById('employeeFormArea').innerHTML = html;
+
+    // Sub-tab switching within the form
+    document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
+        document.getElementById('etab-' + btn.dataset.etab).style.display = 'block';
+      });
+    });
+
+    // PF/ESI conditional fields
+    document.getElementById('f_pf_applicable').addEventListener('change', (ev) => {
+      document.getElementById('pfNumberField').style.display = ev.target.checked ? 'block' : 'none';
+    });
+    document.getElementById('f_esi_applicable').addEventListener('change', (ev) => {
+      document.getElementById('esiNumberField').style.display = ev.target.checked ? 'block' : 'none';
+    });
+
+    // Vehicle KM conditional field
+    document.getElementById('f_vehicle_km_applicable').addEventListener('change', (ev) => {
+      document.getElementById('vehicleDetailsField').style.display = ev.target.checked ? 'grid' : 'none';
+    });
+    document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
+      navigator.clipboard.writeText('https://km.refconveyors.net');
+      const b = document.getElementById('copyLinkBtn');
+      b.textContent = 'Copied!';
+      setTimeout(() => b.textContent = 'Copy', 1500);
+    });
+
+    // Repeatable child-record sections
+    setupRepeatableSection('familyRows', 'addFamilyRowBtn', detail?.family || [], [
+      { key: 'member_name', label: 'Name' },
+      { key: 'relationship_id', label: 'Relationship', type: 'select', options: dd.relationships },
+      { key: 'age', label: 'Age', type: 'number' },
+      { key: 'is_dependent', label: 'Dependent', type: 'checkbox' },
+      { key: 'occupation', label: 'Occupation' },
+    ]);
+    setupRepeatableSection('educationRows', 'addEducationRowBtn', detail?.education || [], [
+      { key: 'qualification', label: 'Qualification' },
+      { key: 'institute_name', label: 'Institute' },
+      { key: 'board_university', label: 'Board/University' },
+      { key: 'passing_year', label: 'Passing Year' },
+      { key: 'percentage', label: 'Percentage' },
+    ]);
+    setupRepeatableSection('workRows', 'addWorkRowBtn', detail?.workExperience || [], [
+      { key: 'company_name', label: 'Company' },
+      { key: 'duration', label: 'Duration' },
+      { key: 'position', label: 'Position' },
+      { key: 'reason_for_leaving', label: 'Reason for Leaving' },
+    ]);
+    setupRepeatableSection('nomineeRows', 'addNomineeRowBtn', detail?.nominees || [], [
+      { key: 'name', label: 'Name' },
+      { key: 'relation', label: 'Relation' },
+      { key: 'dob_or_age', label: 'DOB/Age' },
+      { key: 'address', label: 'Address' },
+      { key: 'mobile', label: 'Mobile' },
+    ]);
+    setupRepeatableSection('assetRows', 'addAssetRowBtn', detail?.assets || [], [
+      { key: 'asset_type_id', label: 'Asset Type', type: 'select', options: dd.asset_types },
+      { key: 'asset_details', label: 'Details' },
+      { key: 'given_date', label: 'Given Date', type: 'date' },
+      { key: 'returned_date', label: 'Returned Date', type: 'date' },
+    ]);
+
+    document.getElementById('cancelEmployeeBtn').addEventListener('click', () => {
+      document.getElementById('employeeFormArea').innerHTML = '';
+    });
+
+    document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployeeForm(employeeId));
+  }
+
+  function setupRepeatableSection(containerId, addBtnId, initialRows, fields) {
+    const container = document.getElementById(containerId);
+    let rows = initialRows.length > 0 ? [...initialRows] : [];
+
+    function render() {
+      container.innerHTML = rows.map((row, idx) => `
+        <div class="form-grid repeat-row" data-idx="${idx}" style="border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:10px; position:relative;">
+          ${fields.map(f => {
+            const val = row[f.key] ?? '';
+            if (f.type === 'select') {
+              return `<div class="field"><label>${f.label}</label><select data-key="${f.key}">${opt(f.options, val)}</select></div>`;
+            }
+            if (f.type === 'checkbox') {
+              return `<div class="field"><label><input type="checkbox" data-key="${f.key}" ${val ? 'checked' : ''} style="width:auto; margin-right:6px;" />${f.label}</label></div>`;
+            }
+            return `<div class="field"><label>${f.label}</label><input type="${f.type || 'text'}" data-key="${f.key}" value="${val}" /></div>`;
+          }).join('')}
+          <button type="button" class="btn btn-sm btn-danger remove-row-btn" style="align-self:end;">Remove</button>
+        </div>`).join('');
+
+      container.querySelectorAll('.remove-row-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.closest('.repeat-row').dataset.idx);
+          syncRowsFromDOM();
+          rows.splice(idx, 1);
+          render();
+        });
+      });
+    }
+
+    function syncRowsFromDOM() {
+      container.querySelectorAll('.repeat-row').forEach((rowEl, idx) => {
+        fields.forEach(f => {
+          const input = rowEl.querySelector(`[data-key="${f.key}"]`);
+          if (!input) return;
+          rows[idx][f.key] = f.type === 'checkbox' ? input.checked : input.value;
+        });
+      });
+    }
+
+    document.getElementById(addBtnId).addEventListener('click', () => {
+      syncRowsFromDOM();
+      rows.push({});
+      render();
+    });
+
+    container.getRows = () => { syncRowsFromDOM(); return rows; };
+    render();
+  }
+
+  async function saveEmployeeForm(employeeId) {
+    const btn = document.getElementById('saveEmployeeBtn');
+    const msg = document.getElementById('employeeFormMsg');
+    msg.className = 'msg';
+
+    const val = (id) => document.getElementById(id)?.value || null;
+    const checked = (id) => document.getElementById(id)?.checked || false;
+
+    const core = {
+      employee_code: val('f_employee_code'),
+      name: val('f_name'),
+      mobile_number: val('f_mobile_number'),
+      role: val('f_role'),
+      branch_id: val('f_branch_id') || null,
+      department_id: val('f_department_id') || null,
+      designation_id: val('f_designation_id') || null,
+      employee_category_id: val('f_employee_category_id') || null,
+      date_of_joining: val('f_date_of_joining'),
+      wage_type: val('f_wage_type'),
+      father_husband_name: val('f_father_husband_name'),
+      marital_status: val('f_marital_status'),
+      religion: val('f_religion'),
+      gender: val('f_gender'),
+      date_of_birth: val('f_date_of_birth'),
+      blood_group: val('f_blood_group'),
+      place_of_birth: val('f_place_of_birth'),
+      aadhar_no: val('f_aadhar_no'),
+      present_address: val('f_present_address'),
+      present_city_id: val('f_present_city_id') || null,
+      present_state_id: val('f_present_state_id') || null,
+      present_pincode: val('f_present_pincode'),
+      permanent_address: val('f_permanent_address'),
+      permanent_city_id: val('f_permanent_city_id') || null,
+      permanent_state_id: val('f_permanent_state_id') || null,
+      permanent_pincode: val('f_permanent_pincode'),
+      tel_home: val('f_tel_home'),
+      driving_license_number: val('f_driving_license_number'),
+      driving_license_category: val('f_driving_license_category'),
+      driving_license_validity: val('f_driving_license_validity'),
+      emergency_contact_name: val('f_emergency_contact_name'),
+      emergency_contact_relation: val('f_emergency_contact_relation'),
+      emergency_contact_mobile: val('f_emergency_contact_mobile'),
+      emergency_contact_address: val('f_emergency_contact_address'),
+      bank_name: val('f_bank_name'),
+      bank_account_number: val('f_bank_account_number'),
+      bank_ifsc: val('f_bank_ifsc'),
+      bank_branch: val('f_bank_branch'),
+      bank_account_holder_name: val('f_bank_account_holder_name'),
+      pan_number: val('f_pan_number'),
+      uan_number: val('f_uan_number'),
+      pf_applicable: checked('f_pf_applicable'),
+      pf_number: checked('f_pf_applicable') ? val('f_pf_number') : null,
+      esi_applicable: checked('f_esi_applicable'),
+      esi_number: checked('f_esi_applicable') ? val('f_esi_number') : null,
+      vehicle_km_applicable: checked('f_vehicle_km_applicable'),
+      vehicle_number: checked('f_vehicle_km_applicable') ? val('f_vehicle_number') : null,
+      rate_per_km: checked('f_vehicle_km_applicable') ? val('f_rate_per_km') : null,
+      has_ref_employee: checked('f_has_ref_employee'),
+      ref_employee_name: val('f_ref_employee_name'),
+      ref_employee_contact: val('f_ref_employee_contact'),
+    };
+
+    if (!core.name || !core.mobile_number) {
+      msg.className = 'msg error';
+      msg.textContent = 'Name and mobile number are required.';
+      return;
+    }
+
+    setButtonLoading(btn, true, 'Saving');
+
+    let empResult;
+    if (employeeId) {
+      empResult = await apiHR({ action: 'update_employee', employee_id: employeeId, core });
+    } else {
+      const pin = val('f_pin');
+      if (!pin) { msg.className = 'msg error'; msg.textContent = 'PIN is required for a new employee.'; setButtonLoading(btn, false); return; }
+      empResult = await apiHR({ action: 'create_employee', core, pin });
+    }
+
+    if (!empResult.success) {
+      msg.className = 'msg error';
+      msg.textContent = empResult.error || 'Failed to save employee.';
+      setButtonLoading(btn, false);
+      return;
+    }
+
+    const finalEmployeeId = empResult.employee.id;
+
+    // Save all child record sections
+    const childSaves = [
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_family_members', records: document.getElementById('familyRows').getRows() }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_education', records: document.getElementById('educationRows').getRows() }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_work_experience', records: document.getElementById('workRows').getRows() }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_nominees', records: document.getElementById('nomineeRows').getRows() }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_assets', records: document.getElementById('assetRows').getRows() }),
+    ];
+    await Promise.all(childSaves);
+
+    msg.className = 'msg success';
+    msg.textContent = 'Employee saved successfully.';
+    const listRes = await apiHR({ action: 'get_employee_list' });
+    if (listRes.success) employeeListData = listRes.employees;
+    setTimeout(() => renderEmployeeMasterList(), 800);
   }
 </script>
 </body>
