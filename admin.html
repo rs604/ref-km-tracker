@@ -1912,7 +1912,12 @@
           <div id="nomineeRows"></div>
         </div>
 
-        <div style="margin-top:20px; display:flex; gap:10px;">
+        <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+          <button class="btn btn-outline" id="formBackTabBtn" type="button">‹ Back</button>
+          <button class="btn btn-outline" id="formNextTabBtn" type="button">Next ›</button>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px;">
           <button class="btn" id="saveEmployeeBtn">${employeeId ? 'Save Changes' : 'Create Employee'}</button>
           <button class="btn btn-outline" id="cancelEmployeeBtn" type="button">Cancel</button>
         </div>
@@ -1923,13 +1928,31 @@
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
     // Sub-tab switching within the form
+    const EMP_FORM_TAB_ORDER = ['basic', 'personal', 'bank', 'family', 'education', 'work', 'nominee'];
+
+    function switchEmpFormTab(tabKey) {
+      document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b.dataset.etab === tabKey));
+      document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('etab-' + tabKey).style.display = 'block';
+      document.getElementById('formBackTabBtn').disabled = tabKey === EMP_FORM_TAB_ORDER[0];
+      document.getElementById('formNextTabBtn').disabled = tabKey === EMP_FORM_TAB_ORDER[EMP_FORM_TAB_ORDER.length - 1];
+    }
+
     document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
-        document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
-        document.getElementById('etab-' + btn.dataset.etab).style.display = 'block';
-      });
+      btn.addEventListener('click', () => switchEmpFormTab(btn.dataset.etab));
     });
+
+    document.getElementById('formBackTabBtn').addEventListener('click', () => {
+      const current = EMP_FORM_TAB_ORDER.find(k => document.getElementById('etab-' + k).style.display !== 'none');
+      const idx = EMP_FORM_TAB_ORDER.indexOf(current);
+      if (idx > 0) switchEmpFormTab(EMP_FORM_TAB_ORDER[idx - 1]);
+    });
+    document.getElementById('formNextTabBtn').addEventListener('click', () => {
+      const current = EMP_FORM_TAB_ORDER.find(k => document.getElementById('etab-' + k).style.display !== 'none');
+      const idx = EMP_FORM_TAB_ORDER.indexOf(current);
+      if (idx < EMP_FORM_TAB_ORDER.length - 1) switchEmpFormTab(EMP_FORM_TAB_ORDER[idx + 1]);
+    });
+    switchEmpFormTab('basic');
 
     // PF/ESI conditional fields
     document.getElementById('f_salary_payment_method').addEventListener('change', (ev) => {
@@ -2017,27 +2040,27 @@
       { key: 'age', label: 'Age', type: 'number' },
       { key: 'is_dependent', label: 'Dependent', type: 'checkbox' },
       { key: 'occupation', label: 'Occupation' },
-    ]);
+    ], 'Add Family Member');
     setupRepeatableSection('educationRows', detail?.education || [], [
       { key: 'qualification', label: 'Qualification' },
       { key: 'institute_name', label: 'Institute' },
       { key: 'board_university', label: 'Board/University' },
       { key: 'passing_year', label: 'Passing Year' },
       { key: 'percentage', label: 'Percentage' },
-    ]);
+    ], 'Add Qualification');
     setupRepeatableSection('workRows', detail?.workExperience || [], [
       { key: 'company_name', label: 'Company', required: true },
       { key: 'duration', label: 'Duration' },
       { key: 'position', label: 'Position' },
       { key: 'reason_for_leaving', label: 'Reason for Leaving' },
-    ]);
+    ], 'Add Work Experience');
     setupRepeatableSection('nomineeRows', detail?.nominees || [], [
       { key: 'name', label: 'Name' },
       { key: 'relation', label: 'Relation' },
       { key: 'dob_or_age', label: 'DOB/Age' },
       { key: 'address', label: 'Address' },
       { key: 'mobile', label: 'Mobile' },
-    ]);
+    ], 'Add Nominee');
 
     setupDocumentUploadTriggers(detail?.documents || []);
 
@@ -2094,10 +2117,11 @@
   }
 
   // Inline single-row "Add" form + ledger table with Edit/Delete, matching HR Dropdowns pattern
-  function setupRepeatableSection(containerId, initialRows, fields) {
+  function setupRepeatableSection(containerId, initialRows, fields, addLabel) {
     const container = document.getElementById(containerId);
     let rows = initialRows.length > 0 ? [...initialRows] : [];
     let editingIndex = null;
+    let formOpen = false;
 
     function fieldInputHtml(f, val) {
       if (f.type === 'select') {
@@ -2117,7 +2141,9 @@
 
     function render() {
       const editingRow = editingIndex !== null ? rows[editingIndex] : {};
-      const formRowHtml = `
+      const showForm = formOpen || editingIndex !== null;
+
+      const formRowHtml = showForm ? `
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
           ${fields.map(f => {
             const val = f.type === 'checkbox' ? editingRow[f.key] : (editingRow[f.key] ?? '');
@@ -2125,8 +2151,11 @@
             return `<div class="field" style="margin-bottom:0;">${f.type !== 'checkbox' ? `<label>${label}</label>` : ''}${fieldInputHtml(f, val)}</div>`;
           }).join('')}
           <button type="button" class="btn btn-sm" id="${containerId}-addBtn">${editingIndex !== null ? 'Update' : 'Add'}</button>
-          ${editingIndex !== null ? `<button type="button" class="btn btn-sm btn-outline" id="${containerId}-cancelEditBtn">Cancel</button>` : ''}
-        </div>
+          <button type="button" class="btn btn-sm btn-outline" id="${containerId}-cancelEditBtn">Cancel</button>
+        </div>` : `
+        <button type="button" class="btn btn-sm btn-outline" id="${containerId}-openBtn" style="margin-bottom:12px;">+ ${addLabel || 'Add'}</button>`;
+
+      const tableHtml = `
         <div class="table-scroll">
           <table class="ledger"><thead><tr>
             ${fields.map(f => `<th>${f.label}</th>`).join('')}<th>Action</th>
@@ -2144,9 +2173,14 @@
           </tbody></table>
         </div>`;
 
-      container.innerHTML = formRowHtml;
+      container.innerHTML = formRowHtml + tableHtml;
 
-      document.getElementById(`${containerId}-addBtn`).addEventListener('click', () => {
+      document.getElementById(`${containerId}-openBtn`)?.addEventListener('click', () => {
+        formOpen = true;
+        render();
+      });
+
+      document.getElementById(`${containerId}-addBtn`)?.addEventListener('click', () => {
         const newRow = {};
         fields.forEach(f => {
           const input = container.querySelector(`[data-key="${f.key}"]`);
@@ -2176,11 +2210,13 @@
         } else {
           rows.push(newRow);
         }
+        formOpen = false;
         render();
       });
 
       document.getElementById(`${containerId}-cancelEditBtn`)?.addEventListener('click', () => {
         editingIndex = null;
+        formOpen = false;
         render();
       });
 
