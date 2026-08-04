@@ -205,26 +205,26 @@
     box-shadow: 0 0 0 3px rgba(165,69,58,0.15);
   }
 
-  .emp-dept-group { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .emp-dept-group { margin-bottom: 22px; }
   .emp-dept-header {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 16px;
-    background: var(--surface-sunken);
+    padding: 0 0 8px;
+    background: none;
     border: none;
+    border-bottom: 1px solid var(--border);
     cursor: pointer;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 650;
     color: var(--ink);
     text-align: left;
   }
-  .emp-dept-header:hover { background: #e6e9ed; }
-  .emp-dept-chevron { width: 15px; height: 15px; transition: transform 0.15s ease; opacity: 0.6; flex-shrink: 0; }
-  .emp-dept-chevron.expanded { transform: rotate(90deg); }
-  .emp-dept-body { padding: 0; border-top: 1px solid var(--border); }
+  .emp-dept-header:hover .emp-dept-name { color: var(--steel); }
+  .emp-dept-name { transition: color 0.1s ease; }
+  .emp-dept-body { padding: 10px 0 0; }
 
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .view-toggle-btn {
@@ -1563,9 +1563,9 @@
 
         groupsHtml += `<div class="emp-dept-group">
           <button type="button" class="emp-dept-header" data-dept="${deptName}">
-            <svg class="emp-dept-chevron ${isCollapsed ? '' : 'expanded'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-            <span>${deptName}</span>
+            <span class="emp-dept-name">${deptName}</span>
             <span class="count-chip">${groupEmployees.length}</span>
+            <span style="margin-left:auto; font-size:11px; font-weight:500; color:var(--muted);">${isCollapsed ? 'Show' : 'Hide'}</span>
           </button>
           <div class="emp-dept-body" style="${isCollapsed ? 'display:none' : ''}">
             ${empListViewMode === 'card' ? groupBodyHtml : `<div class="table-scroll">${groupBodyHtml}</div>`}
