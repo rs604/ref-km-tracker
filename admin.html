@@ -2127,7 +2127,17 @@
       </div>
 
       <p class="footer-note">Generated ${new Date().toLocaleString()}</p>
-      <script>window.print();<\/script>
+      <script>
+        var __photoImg = document.querySelector('.photo-box img');
+        function __doPrint() { window.print(); }
+        if (__photoImg && !__photoImg.complete) {
+          __photoImg.onload = __doPrint;
+          __photoImg.onerror = __doPrint;
+          setTimeout(__doPrint, 3000); // fallback in case the image never fires an event
+        } else {
+          __doPrint();
+        }
+      <\/script>
     </body></html>`;
 
     const w = window.open('', '_blank');
