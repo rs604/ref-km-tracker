@@ -127,8 +127,9 @@
     height: 100vh;
     overflow-y: auto;
   }
-  .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 2px; margin-top: 8px; }
+  .sidebar-brand { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; line-height: 1.3; }
+  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; }
   .sidebar-nav { flex: 1; padding: 14px 10px; }
   .nav-item {
     display: flex;
@@ -530,8 +531,11 @@
 <div class="app-shell" id="appShell" style="display:none">
   <div class="sidebar">
     <div class="sidebar-brand">
-      <img src="logo.png" alt="REF logo" style="width:130px; height:auto; display:block;" />
-      <div class="tag">ERP</div>
+      <img src="logo.png" alt="REF logo" style="width:100px; height:100px; display:block; flex-shrink:0;" />
+      <div>
+        <div class="name">REF</div>
+        <div class="tag">ERP</div>
+      </div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
       <button class="nav-item active" data-view="km-tracker">
@@ -792,18 +796,29 @@
     'hr-dropdowns': ['HR Dropdowns', 'Supporting master data used across HR'],
     'admin-panel': ['Admin Panel', 'Role-based permissions and administration'],
   };
-  document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b === btn));
-      document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
-      document.getElementById('view-' + btn.dataset.view).style.display = 'block';
-      document.getElementById('pageTitle').textContent = viewTitles[btn.dataset.view][0];
-      document.getElementById('pageSub').textContent = viewTitles[btn.dataset.view][1];
 
-      if (['employee-master', 'hr-dropdowns', 'admin-panel'].includes(btn.dataset.view) && !controlPanelLoaded) {
-        loadControlPanel();
-      }
-    });
+  function switchMainView(viewKey) {
+    if (!viewTitles[viewKey]) viewKey = 'km-tracker';
+    document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === viewKey));
+    document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+    document.getElementById('view-' + viewKey).style.display = 'block';
+    document.getElementById('pageTitle').textContent = viewTitles[viewKey][0];
+    document.getElementById('pageSub').textContent = viewTitles[viewKey][1];
+    sessionStorage.setItem('admin_active_view', viewKey);
+
+    const isControlPanelView = ['employee-master', 'hr-dropdowns', 'admin-panel'].includes(viewKey);
+    if (isControlPanelView && !controlPanelLoaded) {
+      loadControlPanel();
+    }
+    if (isControlPanelView) {
+      const cpChildren = document.getElementById('tree-control-panel');
+      if (cpChildren) cpChildren.style.display = 'block';
+      document.querySelector('.nav-parent[data-toggle="tree-control-panel"]')?.classList.add('expanded');
+    }
+  }
+
+  document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => switchMainView(btn.dataset.view));
   });
 
   // --- Km Tracker's own subtabs (Approvals / Reports / Payments / Settings) ---
@@ -1486,7 +1501,7 @@
   let empListStatusFilter = 'active_suspended';
   let empListSearchQuery = '';
   let empListViewMode = 'list';
-  let empListGroupMode = 'grouped';
+  let empListGroupMode = 'flat';
   let empListPageSize = 25;
   let empListCurrentPage = 1;
   let empGroupCollapsed = {};
@@ -2870,6 +2885,8 @@
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
       loadDashboard();
+      const savedView = sessionStorage.getItem('admin_active_view');
+      if (savedView) switchMainView(savedView);
     } catch (e) {
       sessionStorage.removeItem('admin_session');
     }
