@@ -1441,21 +1441,39 @@
   }
 
   // ============ EMPLOYEE MASTER (list view) ============
+  let empListStatusFilter = 'active_suspended';
+
   function renderEmployeeMasterList() {
     if (!employeeListData) {
       document.getElementById('hrtab-employee-master').innerHTML = '<div class="empty-state">Loading...</div>';
       return;
     }
+
+    const filtered = employeeListData.filter(e => {
+      if (empListStatusFilter === 'all') return true;
+      if (empListStatusFilter === 'active_suspended') return e.status === 'active' || e.status === 'suspended';
+      return e.status === empListStatusFilter;
+    });
+
     let html = `<div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Employees<span class="count-chip">${employeeListData.length}</span></span>
-        <button class="btn btn-sm" id="newEmployeeBtn">+ Add New Employee</button>
+        <span class="panel-title">Employees<span class="count-chip">${filtered.length}</span></span>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select id="empListStatusFilterSelect" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken);">
+            <option value="active_suspended" ${empListStatusFilter === 'active_suspended' ? 'selected' : ''}>Active &amp; Suspended</option>
+            <option value="all" ${empListStatusFilter === 'all' ? 'selected' : ''}>All Employees</option>
+            <option value="active" ${empListStatusFilter === 'active' ? 'selected' : ''}>Active</option>
+            <option value="suspended" ${empListStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
+            <option value="left" ${empListStatusFilter === 'left' ? 'selected' : ''}>Left</option>
+          </select>
+          <button class="btn btn-sm" id="newEmployeeBtn">+ Add New Employee</button>
+        </div>
       </div>
       <div class="table-scroll">
         <table class="ledger"><thead><tr>
           <th>Code</th><th>Name</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
         </tr></thead><tbody>
-          ${employeeListData.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No employees yet.</td></tr>' : employeeListData.map(e => `
+          ${filtered.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No employees match this filter.</td></tr>' : filtered.map(e => `
             <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
               <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
               <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${e.name}</a><span class="role-tag">${e.role}</span></td>
@@ -1479,6 +1497,10 @@
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
+    document.getElementById('empListStatusFilterSelect').addEventListener('change', (ev) => {
+      empListStatusFilter = ev.target.value;
+      renderEmployeeMasterList();
+    });
     document.getElementById('newEmployeeBtn').addEventListener('click', () => openEmployeeForm(null));
     document.querySelectorAll('.emp-view-link').forEach(link => {
       link.addEventListener('click', (ev) => { ev.preventDefault(); openEmployeeView(link.dataset.id); });
@@ -1548,6 +1570,7 @@
           ${e.status === 'suspended' ? `<button class="btn btn-sm" id="viewResumeBtn">Resume</button>` : ''}
           ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline" id="viewMarkLeftBtn">Mark Left</button>` : `<button class="btn btn-sm" id="viewReinstateBtn">Reinstate</button>`}
           <button class="btn btn-sm btn-outline" id="viewResetPinBtn">Reset PIN</button>
+          <button class="btn btn-sm btn-outline" id="viewDownloadPdfBtn">Download PDF</button>
         </div>
       </div>
       <div class="subtabs form-subnav-sticky" id="viewFormSubtabs" style="padding-left:18px; background:var(--surface);">
@@ -1562,19 +1585,23 @@
       <div class="panel-body">
         <div id="etab-basic" class="etab-content">
           <h3 class="form-section-heading">Basic Details</h3>
-          ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); margin-bottom:14px;" />` : '<div class="empty-state" style="padding:8px 0;">No photo uploaded.</div>'}
-          <div class="form-grid">
-            ${viewField('Employee Code', e.employee_code)}
-            ${viewField('Full Name', e.name)}
-            ${viewField('Mobile Number', e.mobile_number)}
-            ${viewField('Role', e.role)}
-            ${viewField('Branch', findName(dd.branches, e.branch_id))}
-            ${viewField('Department', findName(dd.departments, e.department_id))}
-            ${viewField('Designation', findName(dd.designations, e.designation_id))}
-            ${viewField('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
-            ${viewField('Date of Joining', e.date_of_joining)}
-            ${viewField('Wage Type', e.wage_type)}
-            ${viewField('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
+          <div style="display:flex; gap:24px; align-items:flex-start;">
+            <div class="form-grid" style="flex:1;">
+              ${viewField('Employee Code', e.employee_code)}
+              ${viewField('Full Name', e.name)}
+              ${viewField('Mobile Number', e.mobile_number)}
+              ${viewField('Role', e.role)}
+              ${viewField('Branch', findName(dd.branches, e.branch_id))}
+              ${viewField('Department', findName(dd.departments, e.department_id))}
+              ${viewField('Designation', findName(dd.designations, e.designation_id))}
+              ${viewField('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
+              ${viewField('Date of Joining', e.date_of_joining)}
+              ${viewField('Wage Type', e.wage_type)}
+              ${viewField('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
+            </div>
+            <div style="flex-shrink:0;">
+              ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:110px; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:110px; height:110px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center;">No photo</div>`}
+            </div>
           </div>
           <p class="section-label">Vehicle KM Payable</p>
           <div class="form-grid">
@@ -1688,6 +1715,129 @@
       if (res.success) alert('PIN updated successfully.');
       else alert(res.error || 'Failed to reset PIN.');
     });
+
+    document.getElementById('viewDownloadPdfBtn').addEventListener('click', () => printEmployeeBioData(detail, dd));
+  }
+
+  function printEmployeeBioData(detail, dd) {
+    const e = detail.employee;
+    const findName = (list, id) => (list || []).find(i => i.id === id)?.name || '—';
+    const row = (label, value) => `<tr><td class="lbl">${label}</td><td class="val">${value || '—'}</td></tr>`;
+
+    const repeatTable = (rows, cols) => {
+      if (!rows || rows.length === 0) return '<p class="empty">None recorded.</p>';
+      return `<table class="datatable"><thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead><tbody>
+        ${rows.map(r => `<tr>${cols.map(c => {
+          const v = c[0].includes('.') ? r[c[0].split('.')[0]]?.[c[0].split('.')[1]] : r[c[0]];
+          return `<td>${v || '—'}</td>`;
+        }).join('')}</tr>`).join('')}
+      </tbody></table>`;
+    };
+
+    const html = `<!DOCTYPE html><html><head><title>${e.name} — Employee Bio Data</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 30px; color: #1a2229; font-size: 13px; }
+      h1 { font-size: 20px; margin-bottom: 2px; }
+      h2 { font-size: 14px; margin: 22px 0 8px; padding-top: 10px; border-top: 2px solid #ccc; }
+      .sub { color: #666; margin-top: 0; margin-bottom: 20px; }
+      table.info { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+      table.info td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
+      table.info td.lbl { width: 180px; background: #f4f6f8; font-weight: 600; color: #444; }
+      table.datatable { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+      table.datatable th, table.datatable td { padding: 6px 8px; border: 1px solid #ddd; text-align: left; }
+      table.datatable th { background: #eef1f4; font-size: 11px; text-transform: uppercase; }
+      .empty { color: #999; font-style: italic; margin: 4px 0; }
+      .photo-box { float: right; width: 100px; height: 100px; border: 1px solid #ccc; margin-left: 16px; }
+      .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+      .declaration { margin-top: 40px; padding-top: 16px; border-top: 2px solid #333; }
+      .sig-row { display: flex; justify-content: space-between; margin-top: 60px; }
+      .sig-line { border-top: 1px solid #333; width: 220px; padding-top: 6px; text-align: center; font-size: 12px; }
+      @media print { body { padding: 12px; } }
+    </style>
+    </head><body>
+      ${e.photo_signed_url ? `<div class="photo-box"><img src="${e.photo_signed_url}" /></div>` : ''}
+      <h1>Raghbir Erectors &amp; Fabricators</h1>
+      <p class="sub">Employee Bio Data — ${e.employee_code || ''}</p>
+
+      <h2>Basic Details</h2>
+      <table class="info">
+        ${row('Employee Code', e.employee_code)}
+        ${row('Full Name', e.name)}
+        ${row('Mobile Number', e.mobile_number)}
+        ${row('Role', e.role)}
+        ${row('Branch', findName(dd.branches, e.branch_id))}
+        ${row('Department', findName(dd.departments, e.department_id))}
+        ${row('Designation', findName(dd.designations, e.designation_id))}
+        ${row('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
+        ${row('Date of Joining', e.date_of_joining)}
+        ${row('Wage Type', e.wage_type)}
+      </table>
+
+      <h2>Personal Details</h2>
+      <table class="info">
+        ${row((e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)'), e.father_husband_name)}
+        ${row('Marital Status', e.marital_status)}
+        ${row('Gender', e.gender)}
+        ${row('Date of Birth', e.date_of_birth)}
+        ${row('Blood Group', e.blood_group)}
+        ${row('Aadhar No', e.aadhar_no)}
+        ${row('Present Address', [e.present_address, findName(dd.cities, e.present_city_id), findName(dd.states, e.present_state_id), e.present_pincode].filter(Boolean).join(', '))}
+        ${row('Permanent Address', [e.permanent_address, findName(dd.cities, e.permanent_city_id), findName(dd.states, e.permanent_state_id), e.permanent_pincode].filter(Boolean).join(', '))}
+        ${row('Driving License No', e.driving_license_number)}
+        ${row('License Validity', e.driving_license_validity)}
+      </table>
+
+      <h2>Emergency Contact</h2>
+      <table class="info">
+        ${row('Name', e.emergency_contact_name)}
+        ${row('Relation', e.emergency_contact_relation)}
+        ${row('Mobile', e.emergency_contact_mobile)}
+        ${row('Address', e.emergency_contact_address)}
+      </table>
+
+      <h2>Bank &amp; Statutory</h2>
+      <table class="info">
+        ${row('Salary Payment Method', e.salary_payment_method === 'bank' ? 'Bank' : 'Cash')}
+        ${row('Bank Name', e.bank_name)}
+        ${row('Account Number', e.bank_account_number)}
+        ${row('IFSC Code', e.bank_ifsc)}
+        ${row('PAN Number', e.pan_number)}
+        ${row('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
+        ${row('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
+        ${row('Salary Basic (Monthly)', e.salary_basic ? '₹' + e.salary_basic : null)}
+      </table>
+
+      <h2>Family Details</h2>
+      ${repeatTable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}
+
+      <h2>Education</h2>
+      ${repeatTable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}
+
+      <h2>Work Experience</h2>
+      ${repeatTable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']])}
+
+      <h2>Reference &amp; Nominee</h2>
+      <table class="info">
+        ${row('Reference', e.has_ref_employee ? (e.ref_employee_name || '—') + (e.ref_employee_contact ? ' (' + e.ref_employee_contact + ')' : '') : 'None')}
+      </table>
+      ${repeatTable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}
+
+      <div class="declaration">
+        <h2 style="border-top:none; padding-top:0;">Self Declaration</h2>
+        <p>I, <strong>${e.name}</strong>, hereby declare that all the information provided above is true and accurate to the best of my knowledge. I understand that this information will be used for official company records including payroll, statutory compliance, and identification purposes. I agree to inform the company immediately of any changes to the above information.</p>
+        <div class="sig-row">
+          <div class="sig-line">Employee Signature</div>
+          <div class="sig-line">Date</div>
+        </div>
+      </div>
+
+      <p style="color:#999; font-size:10px; margin-top:40px;">Generated ${new Date().toLocaleString()}</p>
+      <script>window.print();<\/script>
+    </body></html>`;
+
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
   }
 
   function renderViewRepeatable(rows, fieldPairs) {
