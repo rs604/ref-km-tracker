@@ -209,6 +209,37 @@
   .panel-body { padding: 18px; }
   .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
 
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--steel);
+    cursor: pointer;
+    padding: 0;
+  }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn:hover { background: var(--surface-sunken); }
+  .icon-btn-danger { color: var(--danger); border-color: #efd2cf; }
+  .icon-btn-danger:hover { background: var(--danger-bg); }
+  .icon-btn-warn { color: var(--amber); border-color: #ecd9ae; }
+  .icon-btn-warn:hover { background: var(--amber-bg); }
+  .icon-btn-success { color: var(--green); border-color: #cfe4d8; }
+  .icon-btn-success:hover { background: var(--green-bg); }
+
+  .view-value {
+    padding: 10px 11px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: var(--ink);
+    min-height: 20px;
+  }
+
   .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
 
   .table-scroll { max-height: 480px; overflow-y: auto; }
@@ -1343,9 +1374,9 @@
       return;
     }
     let html = `<div class="panel">
-      <div class="panel-header"><span class="panel-title">Employees<span class="count-chip">${employeeListData.length}</span></span></div>
-      <div class="panel-body" style="padding:14px 18px;">
-        <button class="btn" id="newEmployeeBtn">+ Add New Employee</button>
+      <div class="panel-header">
+        <span class="panel-title">Employees<span class="count-chip">${employeeListData.length}</span></span>
+        <button class="btn btn-sm" id="newEmployeeBtn">+ Add New Employee</button>
       </div>
       <div class="table-scroll">
         <table class="ledger"><thead><tr>
@@ -1354,29 +1385,31 @@
           ${employeeListData.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No employees yet.</td></tr>' : employeeListData.map(e => `
             <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
               <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
-              <td data-label="Name">${e.name}<span class="role-tag">${e.role}</span></td>
+              <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${e.name}</a><span class="role-tag">${e.role}</span></td>
               <td data-label="Mobile">${e.mobile_number}</td>
               <td data-label="Department">${e.departments?.name || '—'}</td>
               <td data-label="Designation">${e.designations?.name || '—'}</td>
               <td data-label="Category">${e.employee_categories?.name || '—'}</td>
               <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
               <td data-label="Action" class="action-cell">
-                <div style="display:flex; gap:6px;">
-                  <button class="btn btn-sm btn-outline emp-edit-btn" data-id="${e.id}">Edit</button>
-                  ${e.status === 'active' ? `<button class="btn btn-sm btn-danger emp-status-btn" data-id="${e.id}" data-status="suspended">Suspend</button>` : ''}
-                  ${e.status === 'suspended' ? `<button class="btn btn-sm emp-status-btn" data-id="${e.id}" data-status="active">Resume</button>` : ''}
-                  ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline emp-status-btn" data-id="${e.id}" data-status="left">Mark Left</button>` : `<button class="btn btn-sm emp-status-btn" data-id="${e.id}" data-status="active">Reinstate</button>`}
+                <div style="display:flex; gap:4px;">
+                  ${iconBtn('emp-edit-btn', e.id, 'edit', 'Edit', '')}
+                  ${e.status === 'active' ? iconBtn('emp-status-btn', e.id, 'suspend', 'Suspend', 'suspended') : ''}
+                  ${e.status === 'suspended' ? iconBtn('emp-status-btn', e.id, 'resume', 'Resume', 'active') : ''}
+                  ${e.status !== 'left' ? iconBtn('emp-status-btn', e.id, 'exit', 'Mark Left', 'left') : iconBtn('emp-status-btn', e.id, 'resume', 'Reinstate', 'active')}
                 </div>
               </td>
             </tr>`).join('')}
         </tbody></table>
       </div>
-    </div>
-    <div id="employeeFormArea"></div>`;
+    </div>`;
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
     document.getElementById('newEmployeeBtn').addEventListener('click', () => openEmployeeForm(null));
+    document.querySelectorAll('.emp-view-link').forEach(link => {
+      link.addEventListener('click', (ev) => { ev.preventDefault(); openEmployeeView(link.dataset.id); });
+    });
     document.querySelectorAll('.emp-edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEmployeeForm(btn.dataset.id));
     });
@@ -1384,7 +1417,7 @@
       btn.addEventListener('click', async () => {
         const statusLabel = { active: 'reactivate', suspended: 'suspend', left: 'mark as left (their login will be blocked)' }[btn.dataset.status];
         if (!confirm(`Are you sure you want to ${statusLabel} this employee?`)) return;
-        setButtonLoading(btn, true, 'Updating');
+        setButtonLoading(btn, true, '');
         const res = await apiHR({ action: 'update_employee_status', employee_id: btn.dataset.id, new_status: btn.dataset.status });
         if (res.success) {
           const idx = employeeListData.findIndex(e => e.id === btn.dataset.id);
@@ -1398,10 +1431,185 @@
     });
   }
 
+  // Icon library for compact action buttons with native tooltips
+  const ACTION_ICONS = {
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    suspend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+    resume: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="2"/><path d="M5 22l2-8 -2-2 3-3 2 2h3l2-2 3 3-3 3 1 7M7 14l2 2 3-2"/></svg>',
+  };
+  function iconBtn(cls, id, iconKey, tooltip, dataStatus) {
+    const colorClass = iconKey === 'exit' ? 'icon-btn-danger' : iconKey === 'resume' ? 'icon-btn-success' : iconKey === 'suspend' ? 'icon-btn-warn' : '';
+    return `<button class="icon-btn ${colorClass} ${cls}" data-id="${id}" ${dataStatus ? `data-status="${dataStatus}"` : ''} title="${tooltip}">${ACTION_ICONS[iconKey]}</button>`;
+  }
+
+  // ============ EMPLOYEE VIEW (read-only) ============
+  async function openEmployeeView(employeeId) {
+    document.getElementById('hrtab-employee-master').innerHTML = '<div class="panel"><div class="panel-body empty-state">Loading...</div></div>';
+    const res = await apiHR({ action: 'get_employee_detail', employee_id: employeeId });
+    if (!res.success) {
+      document.getElementById('hrtab-employee-master').innerHTML = `<div class="msg error" style="display:block">${res.error}</div>`;
+      return;
+    }
+    renderEmployeeView(res);
+  }
+
+  function viewField(label, value) {
+    return `<div class="field"><label>${label}</label><div class="view-value">${value || '—'}</div></div>`;
+  }
+
+  function renderEmployeeView(detail) {
+    const e = detail.employee;
+    const dd = dropdownsData || {};
+    const findName = (list, id) => (list || []).find(i => i.id === id)?.name || '—';
+
+    const html = `<div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">${e.name}<span class="role-tag">${e.role}</span> <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}" style="margin-left:8px;">${e.status}</span></span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-outline" id="backToListBtn">‹ Back to List</button>
+          <button class="btn btn-sm" id="viewEditBtn">Edit</button>
+          ${e.status === 'active' ? `<button class="btn btn-sm btn-danger" id="viewSuspendBtn">Suspend</button>` : ''}
+          ${e.status === 'suspended' ? `<button class="btn btn-sm" id="viewResumeBtn">Resume</button>` : ''}
+          ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline" id="viewMarkLeftBtn">Mark Left</button>` : `<button class="btn btn-sm" id="viewReinstateBtn">Reinstate</button>`}
+        </div>
+      </div>
+      <div class="subtabs" id="viewFormSubtabs" style="padding-left:18px;">
+        <button class="subtab-item active" data-etab="basic">Basic</button>
+        <button class="subtab-item" data-etab="personal">Personal</button>
+        <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
+        <button class="subtab-item" data-etab="vehicle">Vehicle KM</button>
+        <button class="subtab-item" data-etab="family">Family</button>
+        <button class="subtab-item" data-etab="education">Education</button>
+        <button class="subtab-item" data-etab="work">Work Experience</button>
+        <button class="subtab-item" data-etab="nominee">Reference &amp; Nominee</button>
+        <button class="subtab-item" data-etab="assets">Company Assets</button>
+      </div>
+      <div class="panel-body">
+        <div id="etab-basic" class="etab-content">
+          <div class="form-grid">
+            ${viewField('Employee Code', e.employee_code)}
+            ${viewField('Full Name', e.name)}
+            ${viewField('Mobile Number', e.mobile_number)}
+            ${viewField('Role', e.role)}
+            ${viewField('Branch', findName(dd.branches, e.branch_id))}
+            ${viewField('Department', findName(dd.departments, e.department_id))}
+            ${viewField('Designation', findName(dd.designations, e.designation_id))}
+            ${viewField('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
+            ${viewField('Date of Joining', e.date_of_joining)}
+            ${viewField('Wage Type', e.wage_type)}
+          </div>
+        </div>
+        <div id="etab-personal" class="etab-content" style="display:none">
+          <div class="form-grid">
+            ${viewField('Father/Husband Name', e.father_husband_name)}
+            ${viewField('Marital Status', e.marital_status)}
+            ${viewField('Religion', e.religion)}
+            ${viewField('Gender', e.gender)}
+            ${viewField('Date of Birth', e.date_of_birth)}
+            ${viewField('Blood Group', e.blood_group)}
+            ${viewField('Place of Birth', e.place_of_birth)}
+            ${viewField('Aadhar No', e.aadhar_no)}
+            ${viewField('Present Address', e.present_address)}
+            ${viewField('Present City', findName(dd.cities, e.present_city_id))}
+            ${viewField('Present State', findName(dd.states, e.present_state_id))}
+            ${viewField('Present Pincode', e.present_pincode)}
+            ${viewField('Permanent Address', e.permanent_address)}
+            ${viewField('Permanent City', findName(dd.cities, e.permanent_city_id))}
+            ${viewField('Permanent State', findName(dd.states, e.permanent_state_id))}
+            ${viewField('Permanent Pincode', e.permanent_pincode)}
+            ${viewField('Tel (Home)', e.tel_home)}
+            ${viewField('Driving License No', e.driving_license_number)}
+            ${viewField('License Category', e.driving_license_category)}
+            ${viewField('License Validity', e.driving_license_validity)}
+          </div>
+          <p class="section-label">Emergency Contact</p>
+          <div class="form-grid">
+            ${viewField('Name', e.emergency_contact_name)}
+            ${viewField('Relation', e.emergency_contact_relation)}
+            ${viewField('Mobile', e.emergency_contact_mobile)}
+            ${viewField('Address', e.emergency_contact_address)}
+          </div>
+        </div>
+        <div id="etab-bank" class="etab-content" style="display:none">
+          <div class="form-grid">
+            ${viewField('Bank Name', e.bank_name)}
+            ${viewField('Account Number', e.bank_account_number)}
+            ${viewField('IFSC Code', e.bank_ifsc)}
+            ${viewField('Branch', e.bank_branch)}
+            ${viewField('Account Holder Name', e.bank_account_holder_name)}
+            ${viewField('PAN Number', e.pan_number)}
+            ${viewField('UAN Number', e.uan_number)}
+            ${viewField('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
+            ${viewField('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
+          </div>
+        </div>
+        <div id="etab-vehicle" class="etab-content" style="display:none">
+          <div class="form-grid">
+            ${viewField('Vehicle KM Payable Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
+            ${e.vehicle_km_applicable ? viewField('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
+          </div>
+        </div>
+        <div id="etab-family" class="etab-content" style="display:none">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
+        <div id="etab-education" class="etab-content" style="display:none">${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
+        <div id="etab-work" class="etab-content" style="display:none">${renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']])}</div>
+        <div id="etab-nominee" class="etab-content" style="display:none">
+          <p class="section-label">Reference</p>
+          <div class="form-grid">
+            ${viewField('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
+            ${viewField('Reference Name', e.ref_employee_name)}
+            ${viewField('Reference Contact', e.ref_employee_contact)}
+          </div>
+          <p class="section-label">Nominees</p>
+          ${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}
+        </div>
+        <div id="etab-assets" class="etab-content" style="display:none">${renderViewRepeatable(detail.assets, [['asset_types.name','Type'],['asset_details','Details'],['given_date','Given'],['returned_date','Returned']])}</div>
+      </div>
+    </div>`;
+
+    document.getElementById('hrtab-employee-master').innerHTML = html;
+
+    document.querySelectorAll('#viewFormSubtabs .subtab-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#viewFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
+        document.getElementById('etab-' + btn.dataset.etab).style.display = 'block';
+      });
+    });
+
+    document.getElementById('backToListBtn').addEventListener('click', () => renderEmployeeMasterList());
+    document.getElementById('viewEditBtn').addEventListener('click', () => openEmployeeForm(e.id));
+    document.getElementById('viewSuspendBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'suspended', 'suspend'));
+    document.getElementById('viewResumeBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reactivate'));
+    document.getElementById('viewMarkLeftBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'left', 'mark as left'));
+    document.getElementById('viewReinstateBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reinstate'));
+  }
+
+  function renderViewRepeatable(rows, fieldPairs) {
+    if (!rows || rows.length === 0) return '<div class="empty-state">None recorded.</div>';
+    return rows.map(row => `
+      <div class="form-grid" style="border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:10px;">
+        ${fieldPairs.map(([key, label]) => {
+          const val = key.includes('.') ? row[key.split('.')[0]]?.[key.split('.')[1]] : row[key];
+          return viewField(label, val);
+        }).join('')}
+      </div>`).join('');
+  }
+
+  async function quickStatusChange(employeeId, newStatus, label) {
+    if (!confirm(`Are you sure you want to ${label} this employee?`)) return;
+    const res = await apiHR({ action: 'update_employee_status', employee_id: employeeId, new_status: newStatus });
+    if (res.success) {
+      const idx = employeeListData.findIndex(x => x.id === employeeId);
+      if (idx >= 0) employeeListData[idx].status = res.employee.status;
+      openEmployeeView(employeeId);
+    } else {
+      alert(res.error || 'Failed to update status.');
+    }
+  }
+
   async function openEmployeeForm(employeeId) {
-    const area = document.getElementById('employeeFormArea');
-    area.innerHTML = '<div class="panel"><div class="panel-body empty-state">Loading form...</div></div>';
-    area.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('hrtab-employee-master').innerHTML = '<div class="panel"><div class="panel-body empty-state">Loading form...</div></div>';
 
     let detail = null;
     if (employeeId) {
@@ -1423,7 +1631,7 @@
     const dd = dropdownsData || {};
 
     const html = `<div class="panel">
-      <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span></div>
+      <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span><button class="btn btn-sm btn-outline" id="formBackBtn">‹ Back to List</button></div>
       <div class="subtabs" style="padding-left:18px;" id="empFormSubtabs">
         <button class="subtab-item active" data-etab="basic">Basic</button>
         <button class="subtab-item" data-etab="personal">Personal</button>
@@ -1569,7 +1777,7 @@
       </div>
     </div>`;
 
-    document.getElementById('employeeFormArea').innerHTML = html;
+    document.getElementById('hrtab-employee-master').innerHTML = html;
 
     // Sub-tab switching within the form
     document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(btn => {
@@ -1634,8 +1842,10 @@
       { key: 'returned_date', label: 'Returned Date', type: 'date' },
     ]);
 
+    document.getElementById('formBackBtn').addEventListener('click', () => renderEmployeeMasterList());
+
     document.getElementById('cancelEmployeeBtn').addEventListener('click', () => {
-      document.getElementById('employeeFormArea').innerHTML = '';
+      renderEmployeeMasterList();
     });
 
     document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployeeForm(employeeId));
