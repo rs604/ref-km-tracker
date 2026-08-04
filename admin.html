@@ -122,6 +122,10 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
   }
   .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
   .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
@@ -194,6 +198,7 @@
     margin-bottom: 18px;
     overflow: hidden;
   }
+  .panel.panel-no-clip { overflow: visible; }
   .panel-header {
     padding: 14px 18px;
     border-bottom: 1px solid var(--border);
@@ -1519,7 +1524,7 @@
     const findDoc = (slot) => docs.find(d => d.slot === slot);
     const findName = (list, id) => (list || []).find(i => i.id === id)?.name || '—';
 
-    const html = `<div class="panel">
+    const html = `<div class="panel panel-no-clip">
       <div class="panel-header">
         <span class="panel-title">${e.name}<span class="role-tag">${e.role}</span> <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}" style="margin-left:8px;">${e.status}</span></span>
         <div style="display:flex; gap:8px;">
@@ -1728,7 +1733,7 @@
     const docs = detail?.documents || [];
     const findDoc = (slot) => docs.find(d => d.slot === slot);
 
-    const html = `<div class="panel">
+    const html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span><button class="btn btn-sm btn-outline" id="formBackBtn">‹ Back to List</button></div>
       <div class="subtabs form-subnav-sticky" style="padding-left:18px; background:var(--surface);" id="empFormSubtabs">
         <button class="subtab-item active" data-etab="basic">Basic</button>
@@ -1840,6 +1845,10 @@
           <p class="section-label">Other</p>
           <div class="form-grid">
             <div class="field"><label>Tel (Home)</label><input id="f_tel_home" value="${e.tel_home || ''}" /></div>
+          </div>
+
+          <div class="field" style="margin-top:6px;"><label><input type="checkbox" id="f_has_driving_license" ${(e.driving_license_number || e.vehicle_km_applicable) ? 'checked' : ''} style="width:auto; margin-right:6px;" />Driving License Available</label></div>
+          <div id="drivingLicenseFields" class="form-grid" style="${(e.driving_license_number || e.vehicle_km_applicable) ? '' : 'display:none'}; margin-top:10px;">
             <div class="field"><label>Driving License No <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(required if Vehicle KM applicable)</span></label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
             <div class="field"><label>License Category</label><input id="f_driving_license_category" value="${e.driving_license_category || ''}" /></div>
             <div class="field"><label>License Validity <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(required if License No filled)</span></label><input type="date" id="f_driving_license_validity" value="${e.driving_license_validity || ''}" /></div>
@@ -1969,6 +1978,14 @@
     // Vehicle KM conditional field
     document.getElementById('f_vehicle_km_applicable').addEventListener('change', (ev) => {
       document.getElementById('vehicleDetailsField').style.display = ev.target.checked ? 'grid' : 'none';
+      if (ev.target.checked) {
+        const dlBox = document.getElementById('f_has_driving_license');
+        dlBox.checked = true;
+        document.getElementById('drivingLicenseFields').style.display = 'grid';
+      }
+    });
+    document.getElementById('f_has_driving_license').addEventListener('change', (ev) => {
+      document.getElementById('drivingLicenseFields').style.display = ev.target.checked ? 'grid' : 'none';
     });
     document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
       navigator.clipboard.writeText('https://km.refconveyors.net');
@@ -2247,6 +2264,7 @@
     const hasDoc = (slot) => !!pendingUploads[slot] || existingDocs.some(d => d.slot === slot);
 
     const vehicleApplicable = checked('f_vehicle_km_applicable');
+    const hasDrivingLicense = checked('f_has_driving_license');
     const pfApplicable = checked('f_pf_applicable');
     const esiApplicable = checked('f_esi_applicable');
     const paymentMethod = val('f_salary_payment_method') || 'cash';
@@ -2281,9 +2299,9 @@
       permanent_state_id: val('f_permanent_state_id') || null,
       permanent_pincode: val('f_permanent_pincode'),
       tel_home: val('f_tel_home'),
-      driving_license_number: val('f_driving_license_number'),
-      driving_license_category: val('f_driving_license_category'),
-      driving_license_validity: val('f_driving_license_validity'),
+      driving_license_number: hasDrivingLicense ? val('f_driving_license_number') : null,
+      driving_license_category: hasDrivingLicense ? val('f_driving_license_category') : null,
+      driving_license_validity: hasDrivingLicense ? val('f_driving_license_validity') : null,
       emergency_contact_name: val('f_emergency_contact_name'),
       emergency_contact_relation: val('f_emergency_contact_relation'),
       emergency_contact_mobile: val('f_emergency_contact_mobile'),
