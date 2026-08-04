@@ -1504,6 +1504,8 @@
   function renderEmployeeView(detail) {
     const e = detail.employee;
     const dd = dropdownsData || {};
+    const docs = detail.documents || [];
+    const findDoc = (slot) => docs.find(d => d.slot === slot);
     const findName = (list, id) => (list || []).find(i => i.id === id)?.name || '—';
 
     const html = `<div class="panel">
@@ -1526,11 +1528,10 @@
         <button class="subtab-item" data-etab="education">Education</button>
         <button class="subtab-item" data-etab="work">Work Experience</button>
         <button class="subtab-item" data-etab="nominee">Reference &amp; Nominee</button>
-        <button class="subtab-item" data-etab="assets">Company Assets</button>
-        <button class="subtab-item" data-etab="documents">Documents</button>
       </div>
       <div class="panel-body">
         <div id="etab-basic" class="etab-content">
+          ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); margin-bottom:14px;" />` : '<div class="empty-state" style="padding:8px 0;">No photo uploaded.</div>'}
           <div class="form-grid">
             ${viewField('Employee Code', e.employee_code)}
             ${viewField('Full Name', e.name)}
@@ -1559,6 +1560,7 @@
             ${viewField('Blood Group', e.blood_group)}
             ${viewField('Place of Birth', e.place_of_birth)}
             ${viewField('Aadhar No', e.aadhar_no)}
+            ${viewField('Aadhar Card', findDoc('aadhar') ? `<a href="${findDoc('aadhar').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : null)}
           </div>
           <p class="section-label">Present Address</p>
           <div class="form-grid">
@@ -1580,6 +1582,7 @@
             ${viewField('Driving License No', e.driving_license_number)}
             ${viewField('License Category', e.driving_license_category)}
             ${viewField('License Validity', e.driving_license_validity)}
+            ${viewField('Driving License File', findDoc('driving_license') ? `<a href="${findDoc('driving_license').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : null)}
           </div>
           <p class="section-label">Emergency Contact</p>
           <div class="form-grid">
@@ -1591,6 +1594,7 @@
         </div>
         <div id="etab-bank" class="etab-content" style="display:none">
           <div class="form-grid">
+            ${viewField('Salary Payment Method', e.salary_payment_method === 'bank' ? 'Bank' : 'Cash')}
             ${viewField('Bank Name', e.bank_name)}
             ${viewField('Account Number', e.bank_account_number)}
             ${viewField('IFSC Code', e.bank_ifsc)}
@@ -1599,7 +1603,9 @@
             ${viewField('PAN Number', e.pan_number)}
             ${viewField('UAN Number', e.uan_number)}
             ${viewField('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
+            ${e.pf_applicable ? viewField('PF Certificate', findDoc('pf_certificate') ? `<a href="${findDoc('pf_certificate').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : 'Not uploaded') : ''}
             ${viewField('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
+            ${e.esi_applicable ? viewField('ESI Certificate', findDoc('esi_certificate') ? `<a href="${findDoc('esi_certificate').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : 'Not uploaded') : ''}
           </div>
           <p class="section-label">Salary Break-up (Monthly, ₹)</p>
           <div class="form-grid">
@@ -1623,8 +1629,6 @@
           <p class="section-label">Nominees</p>
           ${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}
         </div>
-        <div id="etab-assets" class="etab-content" style="display:none">${renderViewRepeatable(detail.assets, [['asset_types.name','Type'],['asset_details','Details'],['given_date','Given'],['returned_date','Returned']])}</div>
-        <div id="etab-documents" class="etab-content" style="display:none">${renderDocumentsView(e, detail.documents)}</div>
       </div>
     </div>`;
 
@@ -1664,35 +1668,6 @@
       </div>`).join('');
   }
 
-  const DOCUMENT_SLOTS = [
-    { slot: 'aadhar', label: 'Aadhar Card' },
-    { slot: 'driving_license', label: 'Driving License' },
-    { slot: 'esi_certificate', label: 'ESI Certificate' },
-    { slot: 'pf_certificate', label: 'PF Certificate' },
-  ];
-
-  function renderDocumentsView(e, documents) {
-    let html = `<p class="section-label" style="margin-top:0;">Photo</p>`;
-    html += e.photo_signed_url
-      ? `<img src="${e.photo_signed_url}" style="width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />`
-      : '<div class="empty-state">No photo uploaded.</div>';
-
-    html += `<p class="section-label">Standard Documents</p><div class="form-grid">`;
-    DOCUMENT_SLOTS.forEach(cfg => {
-      const doc = (documents || []).find(d => d.slot === cfg.slot);
-      html += `<div class="field"><label>${cfg.label}</label><div class="view-value">${doc ? `<a href="${doc.signed_url}" target="_blank" style="color:var(--steel);">View / Download</a>` : '—'}</div></div>`;
-    });
-    html += `</div>`;
-
-    const others = (documents || []).filter(d => d.slot === 'other');
-    html += `<p class="section-label">Other Documents</p>`;
-    html += others.length === 0
-      ? '<div class="empty-state">None uploaded.</div>'
-      : others.map(d => `<div class="field"><label>${d.document_name}</label><div class="view-value"><a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View / Download</a></div></div>`).join('');
-
-    return html;
-  }
-
   async function quickStatusChange(employeeId, newStatus, label) {
     if (!confirm(`Are you sure you want to ${label} this employee?`)) return;
     const res = await apiHR({ action: 'update_employee_status', employee_id: employeeId, new_status: newStatus });
@@ -1723,9 +1698,21 @@
     ).join('');
   }
 
+  // Reusable inline "upload next to this field" widget — used for Aadhar/License/PF/ESI docs
+  function docUploadField(slot, label, existingDoc) {
+    return `<div class="field">
+      <label>${label}</label>
+      <input type="file" id="upload_${slot}" accept="image/*,application/pdf" style="display:none" />
+      <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_${slot}">${existingDoc ? 'Replace File' : 'Choose File'}</button>
+      <div style="font-size:11px; color:var(--muted); margin-top:4px;" id="uploadStatus_${slot}">${existingDoc ? `<a href="${existingDoc.signed_url}" target="_blank" style="color:var(--steel);">Current file</a>` : 'No file selected'}</div>
+    </div>`;
+  }
+
   function renderEmployeeForm(employeeId, detail) {
     const e = detail?.employee || {};
     const dd = dropdownsData || {};
+    const docs = detail?.documents || [];
+    const findDoc = (slot) => docs.find(d => d.slot === slot);
 
     const html = `<div class="panel">
       <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span><button class="btn btn-sm btn-outline" id="formBackBtn">‹ Back to List</button></div>
@@ -1737,12 +1724,20 @@
         <button class="subtab-item" data-etab="education">Education</button>
         <button class="subtab-item" data-etab="work">Work Experience</button>
         <button class="subtab-item" data-etab="nominee">Reference &amp; Nominee</button>
-        <button class="subtab-item" data-etab="assets">Company Assets</button>
-        <button class="subtab-item" data-etab="documents">Documents</button>
       </div>
       <div class="panel-body">
 
         <div id="etab-basic" class="etab-content">
+          <p class="section-label" style="margin-top:0;">Photo *</p>
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+            <div id="photoPreviewBox">${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:70px; height:70px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center;">No photo</div>`}</div>
+            <div>
+              <input type="file" id="upload_photo" accept="image/*" style="display:none" />
+              <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_photo">Choose Photo</button>
+              <div style="font-size:11.5px; color:var(--muted); margin-top:4px;" id="uploadStatus_photo">${e.photo_signed_url ? 'Uploaded' : 'No file selected'}</div>
+            </div>
+          </div>
+
           <div class="form-grid">
             <div class="field"><label>Employee Code *</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
             <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
@@ -1753,12 +1748,12 @@
               <option value="director" ${e.role === 'director' ? 'selected' : ''}>Director</option>
               <option value="manager" ${e.role === 'manager' ? 'selected' : ''}>Manager</option>
             </select></div>
-            <div class="field"><label>Branch</label><select id="f_branch_id">${opt(dd.branches, e.branch_id)}</select></div>
-            <div class="field"><label>Department</label><select id="f_department_id">${opt(dd.departments, e.department_id)}</select></div>
-            <div class="field"><label>Designation</label><select id="f_designation_id">${opt(dd.designations, e.designation_id)}</select></div>
-            <div class="field"><label>Employee Category</label><select id="f_employee_category_id">${opt(dd.employee_categories, e.employee_category_id)}</select></div>
-            <div class="field"><label>Date of Joining</label><input type="date" id="f_date_of_joining" value="${e.date_of_joining || ''}" /></div>
-            <div class="field"><label>Wage Type</label><select id="f_wage_type">
+            <div class="field"><label>Branch *</label><select id="f_branch_id">${opt(dd.branches, e.branch_id)}</select></div>
+            <div class="field"><label>Department *</label><select id="f_department_id">${opt(dd.departments, e.department_id)}</select></div>
+            <div class="field"><label>Designation *</label><select id="f_designation_id">${opt(dd.designations, e.designation_id)}</select></div>
+            <div class="field"><label>Employee Category *</label><select id="f_employee_category_id">${opt(dd.employee_categories, e.employee_category_id)}</select></div>
+            <div class="field"><label>Date of Joining *</label><input type="date" id="f_date_of_joining" value="${e.date_of_joining || ''}" /></div>
+            <div class="field"><label>Wage Type *</label><select id="f_wage_type">
               <option ${e.wage_type === 'Monthly' ? 'selected' : ''}>Monthly</option>
               <option ${e.wage_type === 'Daily' ? 'selected' : ''}>Daily</option>
             </select></div>
@@ -1767,8 +1762,8 @@
           <p class="section-label">Vehicle KM Payable</p>
           <div class="field"><label><input type="checkbox" id="f_vehicle_km_applicable" ${e.vehicle_km_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />Vehicle KM Payable Applicable</label></div>
           <div id="vehicleDetailsField" class="form-grid" style="${e.vehicle_km_applicable ? '' : 'display:none'}; margin-top:10px;">
-            <div class="field"><label>Vehicle Number</label><input id="f_vehicle_number" placeholder="e.g. PB10AB1234" /></div>
-            <div class="field"><label>Rate per KM (₹)</label><input type="number" id="f_rate_per_km" value="${e.rate_per_km || ''}" /></div>
+            <div class="field"><label>Vehicle Number *</label><input id="f_vehicle_number" placeholder="e.g. PB10AB1234" /></div>
+            <div class="field"><label>Rate per KM (₹) *</label><input type="number" id="f_rate_per_km" value="${e.rate_per_km || ''}" /></div>
             <div class="field full">
               <label>Login Link (share with employee)</label>
               <div style="display:flex; gap:8px;">
@@ -1797,7 +1792,8 @@
             <div class="field"><label>Date of Birth</label><input type="date" id="f_date_of_birth" value="${e.date_of_birth || ''}" /></div>
             <div class="field"><label>Blood Group</label><input id="f_blood_group" value="${e.blood_group || ''}" /></div>
             <div class="field"><label>Place of Birth</label><input id="f_place_of_birth" value="${e.place_of_birth || ''}" /></div>
-            <div class="field"><label>Aadhar No</label><input id="f_aadhar_no" value="${e.aadhar_no || ''}" /></div>
+            <div class="field"><label>Aadhar No *</label><input id="f_aadhar_no" value="${e.aadhar_no || ''}" /></div>
+            ${docUploadField('aadhar', 'Aadhar Card Upload *', findDoc('aadhar'))}
           </div>
 
           <p class="section-label">Present Address</p>
@@ -1824,6 +1820,7 @@
             <div class="field"><label>Driving License No</label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
             <div class="field"><label>License Category</label><input id="f_driving_license_category" value="${e.driving_license_category || ''}" /></div>
             <div class="field"><label>License Validity</label><input type="date" id="f_driving_license_validity" value="${e.driving_license_validity || ''}" /></div>
+            ${docUploadField('driving_license', 'Driving License Upload', findDoc('driving_license'))}
           </div>
           <p class="section-label">Emergency Contact</p>
           <div class="form-grid">
@@ -1835,10 +1832,17 @@
         </div>
 
         <div id="etab-bank" class="etab-content" style="display:none">
-          <div class="form-grid">
-            <div class="field"><label>Bank Name</label><input id="f_bank_name" value="${e.bank_name || ''}" /></div>
-            <div class="field"><label>Account Number</label><input id="f_bank_account_number" value="${e.bank_account_number || ''}" /></div>
-            <div class="field"><label>IFSC Code</label><input id="f_bank_ifsc" value="${e.bank_ifsc || ''}" /></div>
+          <div class="field" style="max-width:280px; margin-bottom:14px;">
+            <label>Salary Payment Method</label>
+            <select id="f_salary_payment_method">
+              <option value="cash" ${(!e.salary_payment_method || e.salary_payment_method === 'cash') ? 'selected' : ''}>Cash</option>
+              <option value="bank" ${e.salary_payment_method === 'bank' ? 'selected' : ''}>Bank</option>
+            </select>
+          </div>
+          <div class="form-grid" id="bankDetailFields">
+            <div class="field"><label id="bankNameLabel">Bank Name</label><input id="f_bank_name" value="${e.bank_name || ''}" /></div>
+            <div class="field"><label id="bankAccountLabel">Account Number</label><input id="f_bank_account_number" value="${e.bank_account_number || ''}" /></div>
+            <div class="field"><label id="bankIfscLabel">IFSC Code</label><input id="f_bank_ifsc" value="${e.bank_ifsc || ''}" /></div>
             <div class="field"><label>Branch</label><input id="f_bank_branch" value="${e.bank_branch || ''}" /></div>
             <div class="field"><label>Account Holder Name</label><input id="f_bank_account_holder_name" value="${e.bank_account_holder_name || ''}" /></div>
             <div class="field"><label>PAN Number</label><input id="f_pan_number" value="${e.pan_number || ''}" /></div>
@@ -1846,9 +1850,11 @@
           </div>
           <div class="form-grid" style="margin-top:8px;">
             <div class="field"><label><input type="checkbox" id="f_pf_applicable" ${e.pf_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />PF Applicable</label></div>
-            <div class="field" id="pfNumberField" style="${e.pf_applicable ? '' : 'display:none'}"><label>PF Number</label><input id="f_pf_number" value="${e.pf_number || ''}" /></div>
+            <div class="field" id="pfNumberField" style="${e.pf_applicable ? '' : 'display:none'}"><label>PF Number *</label><input id="f_pf_number" value="${e.pf_number || ''}" /></div>
+            <div class="field" id="pfDocField" style="${e.pf_applicable ? '' : 'display:none'}">${docUploadField('pf_certificate', 'PF Certificate Upload *', findDoc('pf_certificate'))}</div>
             <div class="field"><label><input type="checkbox" id="f_esi_applicable" ${e.esi_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />ESI Applicable</label></div>
-            <div class="field" id="esiNumberField" style="${e.esi_applicable ? '' : 'display:none'}"><label>ESI Number</label><input id="f_esi_number" value="${e.esi_number || ''}" /></div>
+            <div class="field" id="esiNumberField" style="${e.esi_applicable ? '' : 'display:none'}"><label>ESI Number *</label><input id="f_esi_number" value="${e.esi_number || ''}" /></div>
+            <div class="field" id="esiDocField" style="${e.esi_applicable ? '' : 'display:none'}">${docUploadField('esi_certificate', 'ESI Certificate Upload *', findDoc('esi_certificate'))}</div>
           </div>
 
           <p class="section-label">Salary Break-up (Monthly, ₹)</p>
@@ -1893,36 +1899,6 @@
           <div id="nomineeRows"></div>
         </div>
 
-        <div id="etab-assets" class="etab-content" style="display:none">
-          <div id="assetRows"></div>
-        </div>
-
-        <div id="etab-documents" class="etab-content" style="display:none">
-          ${!employeeId ? '<div class="empty-state">Save the employee first, then come back here to upload documents.</div>' : `
-          <p class="section-label" style="margin-top:0;">Photo</p>
-          <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
-            <div id="photoPreviewBox">${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:70px; height:70px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px;">No photo</div>`}</div>
-            <div>
-              <input type="file" id="uploadInput_photo" accept="image/*" style="display:none" />
-              <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_photo">Upload Photo</button>
-              <div class="msg" id="uploadMsg_photo"></div>
-            </div>
-          </div>
-
-          <p class="section-label">Standard Documents</p>
-          <div id="standardDocsArea"></div>
-
-          <p class="section-label">Other Documents</p>
-          <div id="otherDocsArea"></div>
-          <div style="display:flex; gap:8px; align-items:end; margin-top:8px;">
-            <div><label style="display:block; font-size:10.5px; color:var(--muted); margin-bottom:3px;">Document Name</label><input type="text" id="otherDocName" placeholder="e.g. Offer Letter" /></div>
-            <input type="file" id="uploadInput_other" accept="image/*,application/pdf" style="display:none" />
-            <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_other">+ Upload Document</button>
-          </div>
-          <div class="msg" id="uploadMsg_other"></div>
-          `}
-        </div>
-
         <div style="margin-top:20px; display:flex; gap:10px;">
           <button class="btn" id="saveEmployeeBtn">${employeeId ? 'Save Changes' : 'Create Employee'}</button>
           <button class="btn btn-outline" id="cancelEmployeeBtn" type="button">Cancel</button>
@@ -1943,11 +1919,20 @@
     });
 
     // PF/ESI conditional fields
+    document.getElementById('f_salary_payment_method').addEventListener('change', (ev) => {
+      const isBank = ev.target.value === 'bank';
+      document.getElementById('bankNameLabel').textContent = isBank ? 'Bank Name *' : 'Bank Name';
+      document.getElementById('bankAccountLabel').textContent = isBank ? 'Account Number *' : 'Account Number';
+      document.getElementById('bankIfscLabel').textContent = isBank ? 'IFSC Code *' : 'IFSC Code';
+    });
+
     document.getElementById('f_pf_applicable').addEventListener('change', (ev) => {
       document.getElementById('pfNumberField').style.display = ev.target.checked ? 'block' : 'none';
+      document.getElementById('pfDocField').style.display = ev.target.checked ? 'block' : 'none';
     });
     document.getElementById('f_esi_applicable').addEventListener('change', (ev) => {
       document.getElementById('esiNumberField').style.display = ev.target.checked ? 'block' : 'none';
+      document.getElementById('esiDocField').style.display = ev.target.checked ? 'block' : 'none';
     });
 
     // Vehicle KM conditional field
@@ -2025,16 +2010,8 @@
       { key: 'address', label: 'Address' },
       { key: 'mobile', label: 'Mobile' },
     ]);
-    setupRepeatableSection('assetRows', detail?.assets || [], [
-      { key: 'asset_type_id', label: 'Asset Type', type: 'select', options: dd.asset_types },
-      { key: 'asset_details', label: 'Details' },
-      { key: 'given_date', label: 'Given Date', type: 'date' },
-      { key: 'returned_date', label: 'Returned Date', type: 'date' },
-    ]);
 
-    if (employeeId) {
-      setupDocumentUploads(employeeId, detail?.documents || []);
-    }
+    setupDocumentUploadTriggers(detail?.documents || []);
 
     document.getElementById('formBackBtn').addEventListener('click', () => renderEmployeeMasterList());
 
@@ -2042,7 +2019,7 @@
       renderEmployeeMasterList();
     });
 
-    document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployeeForm(employeeId));
+    document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployeeForm(employeeId, docs));
   }
 
   function fileToBase64(file) {
@@ -2054,113 +2031,36 @@
     });
   }
 
-  function setupDocumentUploads(employeeId, documents) {
-    // --- Photo upload ---
-    document.getElementById('uploadBtn_photo').addEventListener('click', () => document.getElementById('uploadInput_photo').click());
-    document.getElementById('uploadInput_photo').addEventListener('change', async (ev) => {
+  // Files selected are held here until the employee is saved (create or update),
+  // since a brand-new employee doesn't have an ID yet to attach files to.
+  let pendingUploads = {};
+
+  function wireDocUploadTrigger(slot, options = {}) {
+    const btn = document.getElementById(`uploadBtn_${slot}`);
+    const input = document.getElementById(`upload_${slot}`);
+    if (!btn || !input) return;
+    btn.addEventListener('click', () => input.click());
+    input.addEventListener('change', async (ev) => {
       const file = ev.target.files[0];
       if (!file) return;
-      const msg = document.getElementById('uploadMsg_photo');
-      msg.className = 'msg';
       const base64 = await fileToBase64(file);
       const ext = file.name.split('.').pop().toLowerCase();
-      const res = await apiHR({ action: 'upload_document', employee_id: employeeId, slot: 'photo', file_base64: base64, file_ext: ext });
-      if (res.success) {
-        msg.className = 'msg success';
-        msg.textContent = 'Photo uploaded.';
+      pendingUploads[slot] = { base64, ext, document_name: options.documentName || slot };
+      const status = document.getElementById(`uploadStatus_${slot}`);
+      if (status) status.textContent = `Selected: ${file.name} (will save with the form)`;
+      if (options.isPhoto) {
         document.getElementById('photoPreviewBox').innerHTML = `<img src="${base64}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />`;
-      } else {
-        msg.className = 'msg error';
-        msg.textContent = res.error || 'Upload failed.';
       }
     });
+  }
 
-    // --- Standard fixed-slot documents ---
-    function renderStandardDocs() {
-      const area = document.getElementById('standardDocsArea');
-      area.innerHTML = DOCUMENT_SLOTS.map(cfg => {
-        const doc = documents.find(d => d.slot === cfg.slot);
-        return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
-          <div>
-            <div style="font-size:13px; font-weight:600;">${cfg.label}</div>
-            <div style="font-size:11.5px; color:var(--muted);">${doc ? `<a href="${doc.signed_url}" target="_blank" style="color:var(--steel);">View current file</a>` : 'Not uploaded yet'}</div>
-          </div>
-          <div>
-            <input type="file" class="std-doc-input" data-slot="${cfg.slot}" accept="image/*,application/pdf" style="display:none" />
-            <button type="button" class="btn btn-sm btn-outline std-doc-btn" data-slot="${cfg.slot}">${doc ? 'Replace' : 'Upload'}</button>
-          </div>
-        </div>`;
-      }).join('');
-
-      area.querySelectorAll('.std-doc-btn').forEach(btn => {
-        btn.addEventListener('click', () => area.querySelector(`.std-doc-input[data-slot="${btn.dataset.slot}"]`).click());
-      });
-      area.querySelectorAll('.std-doc-input').forEach(input => {
-        input.addEventListener('change', async (ev) => {
-          const file = ev.target.files[0];
-          if (!file) return;
-          const base64 = await fileToBase64(file);
-          const ext = file.name.split('.').pop().toLowerCase();
-          const res = await apiHR({ action: 'upload_document', employee_id: employeeId, slot: input.dataset.slot, file_base64: base64, file_ext: ext });
-          if (res.success) {
-            const idx = documents.findIndex(d => d.slot === input.dataset.slot);
-            const newDoc = { ...res.document, signed_url: base64 };
-            if (idx >= 0) documents[idx] = newDoc; else documents.push(newDoc);
-            renderStandardDocs();
-          } else {
-            alert(res.error || 'Upload failed.');
-          }
-        });
-      });
-    }
-    renderStandardDocs();
-
-    // --- Other documents (free-form, multiple allowed) ---
-    function renderOtherDocs() {
-      const area = document.getElementById('otherDocsArea');
-      const others = documents.filter(d => d.slot === 'other');
-      area.innerHTML = others.length === 0
-        ? '<div class="empty-state">None uploaded.</div>'
-        : others.map(d => `<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
-            <a href="${d.signed_url}" target="_blank" style="color:var(--steel); font-size:13px;">${d.document_name}</a>
-            <button type="button" class="icon-btn icon-btn-danger other-doc-delete-btn" data-id="${d.id}" title="Delete">${ACTION_ICONS.exit}</button>
-          </div>`).join('');
-
-      area.querySelectorAll('.other-doc-delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('Delete this document?')) return;
-          const res = await apiHR({ action: 'delete_document', document_id: btn.dataset.id });
-          if (res.success) {
-            const idx = documents.findIndex(d => d.id === btn.dataset.id);
-            if (idx >= 0) documents.splice(idx, 1);
-            renderOtherDocs();
-          } else {
-            alert(res.error || 'Failed to delete.');
-          }
-        });
-      });
-    }
-    renderOtherDocs();
-
-    document.getElementById('uploadBtn_other').addEventListener('click', () => document.getElementById('uploadInput_other').click());
-    document.getElementById('uploadInput_other').addEventListener('change', async (ev) => {
-      const file = ev.target.files[0];
-      if (!file) return;
-      const msg = document.getElementById('uploadMsg_other');
-      const docName = document.getElementById('otherDocName').value.trim() || file.name;
-      msg.className = 'msg';
-      const base64 = await fileToBase64(file);
-      const ext = file.name.split('.').pop().toLowerCase();
-      const res = await apiHR({ action: 'upload_document', employee_id: employeeId, slot: 'other', file_base64: base64, file_ext: ext, document_name: docName });
-      if (res.success) {
-        documents.push({ ...res.document, signed_url: base64 });
-        document.getElementById('otherDocName').value = '';
-        renderOtherDocs();
-      } else {
-        msg.className = 'msg error';
-        msg.textContent = res.error || 'Upload failed.';
-      }
-    });
+  function setupDocumentUploadTriggers(documents) {
+    pendingUploads = {};
+    wireDocUploadTrigger('photo', { isPhoto: true });
+    wireDocUploadTrigger('aadhar');
+    wireDocUploadTrigger('driving_license');
+    wireDocUploadTrigger('pf_certificate');
+    wireDocUploadTrigger('esi_certificate');
   }
 
   // Inline single-row "Add" form + ledger table with Edit/Delete, matching HR Dropdowns pattern
@@ -2257,13 +2157,20 @@
   }
 
 
-  async function saveEmployeeForm(employeeId) {
+  async function saveEmployeeForm(employeeId, existingDocs) {
     const btn = document.getElementById('saveEmployeeBtn');
     const msg = document.getElementById('employeeFormMsg');
     msg.className = 'msg';
+    existingDocs = existingDocs || [];
 
     const val = (id) => document.getElementById(id)?.value || null;
     const checked = (id) => document.getElementById(id)?.checked || false;
+    const hasDoc = (slot) => !!pendingUploads[slot] || existingDocs.some(d => d.slot === slot);
+
+    const vehicleApplicable = checked('f_vehicle_km_applicable');
+    const pfApplicable = checked('f_pf_applicable');
+    const esiApplicable = checked('f_esi_applicable');
+    const paymentMethod = val('f_salary_payment_method') || 'cash';
 
     const core = {
       employee_code: val('f_employee_code'),
@@ -2301,6 +2208,7 @@
       emergency_contact_relation: val('f_emergency_contact_relation'),
       emergency_contact_mobile: val('f_emergency_contact_mobile'),
       emergency_contact_address: val('f_emergency_contact_address'),
+      salary_payment_method: paymentMethod,
       bank_name: val('f_bank_name'),
       bank_account_number: val('f_bank_account_number'),
       bank_ifsc: val('f_bank_ifsc'),
@@ -2313,26 +2221,79 @@
       salary_da: val('f_salary_da'),
       salary_ta: val('f_salary_ta'),
       salary_esi: val('f_salary_esi') === 'true',
-      pf_applicable: checked('f_pf_applicable'),
-      pf_number: checked('f_pf_applicable') ? val('f_pf_number') : null,
-      esi_applicable: checked('f_esi_applicable'),
-      esi_number: checked('f_esi_applicable') ? val('f_esi_number') : null,
-      vehicle_km_applicable: checked('f_vehicle_km_applicable'),
-      vehicle_number: checked('f_vehicle_km_applicable') ? val('f_vehicle_number') : null,
-      rate_per_km: checked('f_vehicle_km_applicable') ? val('f_rate_per_km') : null,
+      pf_applicable: pfApplicable,
+      pf_number: pfApplicable ? val('f_pf_number') : null,
+      esi_applicable: esiApplicable,
+      esi_number: esiApplicable ? val('f_esi_number') : null,
+      vehicle_km_applicable: vehicleApplicable,
+      vehicle_number: vehicleApplicable ? val('f_vehicle_number') : null,
+      rate_per_km: vehicleApplicable ? val('f_rate_per_km') : null,
       has_ref_employee: checked('f_has_ref_employee'),
       ref_employee_name: val('f_ref_employee_name'),
       ref_employee_contact: val('f_ref_employee_contact'),
     };
 
-    if (!core.employee_code) {
-      msg.className = 'msg error';
-      msg.textContent = 'Employee Code is required.';
-      return;
+    // ---------- Mandatory field validation ----------
+    const errors = [];
+    if (!core.employee_code) errors.push('Employee Code');
+    if (!core.name) errors.push('Full Name');
+    if (!core.mobile_number) errors.push('Mobile Number');
+    if (!core.branch_id) errors.push('Branch');
+    if (!core.department_id) errors.push('Department');
+    if (!core.designation_id) errors.push('Designation');
+    if (!core.employee_category_id) errors.push('Employee Category');
+    if (!core.date_of_joining) errors.push('Date of Joining');
+    if (!core.wage_type) errors.push('Wage Type');
+    if (vehicleApplicable) {
+      if (!core.vehicle_number) errors.push('Vehicle Number');
+      if (!core.rate_per_km) errors.push('Rate per KM');
+      if (!core.driving_license_number) errors.push('Driving License No (required since Vehicle KM is applicable)');
+      if (!hasDoc('driving_license')) errors.push('Driving License Upload (required since Vehicle KM is applicable)');
     }
-    if (!core.name || !core.mobile_number) {
+    if (!core.father_husband_name) errors.push('Father/Husband Name');
+    if (!core.marital_status) errors.push('Marital Status');
+    if (!core.gender) errors.push('Gender');
+    if (!core.date_of_birth) errors.push('Date of Birth');
+    if (!core.aadhar_no) errors.push('Aadhar No');
+    if (!hasDoc('aadhar')) errors.push('Aadhar Card Upload');
+    if (!core.present_address) errors.push('Present Address');
+    if (!core.present_state_id) errors.push('Present State');
+    if (!core.present_city_id) errors.push('Present City');
+    if (!checked('f_same_as_present')) {
+      if (!core.permanent_address) errors.push('Permanent Address');
+      if (!core.permanent_state_id) errors.push('Permanent State');
+      if (!core.permanent_city_id) errors.push('Permanent City');
+    }
+    if (core.driving_license_number && !core.driving_license_validity) errors.push('License Validity (since License No is filled)');
+    if (!core.emergency_contact_name) errors.push('Emergency Contact Name');
+    if (!core.emergency_contact_relation) errors.push('Emergency Contact Relation');
+    if (!core.emergency_contact_mobile) errors.push('Emergency Contact Mobile');
+    if (paymentMethod === 'bank') {
+      if (!core.bank_name) errors.push('Bank Name (Payment Method = Bank)');
+      if (!core.bank_account_number) errors.push('Account Number (Payment Method = Bank)');
+      if (!core.bank_ifsc) errors.push('IFSC Code (Payment Method = Bank)');
+    }
+    if (pfApplicable) {
+      if (!core.pf_number) errors.push('PF Number');
+      if (!core.uan_number) errors.push('UAN Number');
+      if (!hasDoc('pf_certificate')) errors.push('PF Certificate Upload');
+    }
+    if (esiApplicable) {
+      if (!core.esi_number) errors.push('ESI Number');
+      if (!hasDoc('esi_certificate')) errors.push('ESI Certificate Upload');
+    }
+    if (!core.salary_basic) errors.push('Salary Basic');
+    if (!hasDoc('photo')) errors.push('Photo Upload');
+    const educationRows = document.getElementById('educationRows').getRows();
+    if (educationRows.length === 0) errors.push('At least one Education / Qualification entry');
+    const familyRows = document.getElementById('familyRows').getRows();
+    familyRows.forEach((r, i) => { if (!r.member_name) errors.push(`Family row ${i + 1}: Name`); });
+    const workRows = document.getElementById('workRows').getRows();
+    workRows.forEach((r, i) => { if (!r.company_name) errors.push(`Work Experience row ${i + 1}: Company Name`); });
+
+    if (errors.length > 0) {
       msg.className = 'msg error';
-      msg.textContent = 'Name and mobile number are required.';
+      msg.innerHTML = 'Please complete the following before saving:<br>• ' + errors.join('<br>• ');
       return;
     }
 
@@ -2356,13 +2317,19 @@
 
     // Save all child record sections
     const childSaves = [
-      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_family_members', records: document.getElementById('familyRows').getRows() }),
-      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_education', records: document.getElementById('educationRows').getRows() }),
-      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_work_experience', records: document.getElementById('workRows').getRows() }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_family_members', records: familyRows }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_education', records: educationRows }),
+      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_work_experience', records: workRows }),
       apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_nominees', records: document.getElementById('nomineeRows').getRows() }),
-      apiHR({ action: 'save_child_records', employee_id: finalEmployeeId, table: 'employee_assets', records: document.getElementById('assetRows').getRows() }),
     ];
-    await Promise.all(childSaves);
+
+    // Upload any pending documents now that we have a real employee_id
+    const uploadSaves = Object.entries(pendingUploads).map(([slot, data]) =>
+      apiHR({ action: 'upload_document', employee_id: finalEmployeeId, slot, file_base64: data.base64, file_ext: data.ext, document_name: data.document_name })
+    );
+
+    await Promise.all([...childSaves, ...uploadSaves]);
+    pendingUploads = {};
 
     msg.className = 'msg success';
     msg.textContent = empResult.generatedPin
