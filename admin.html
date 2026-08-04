@@ -149,13 +149,23 @@
   .nav-item.active { background: rgba(255,255,255,0.09); color: #fff; border-left-color: var(--amber); font-weight: 600; }
   .nav-item svg { flex-shrink: 0; width: 17px; height: 17px; }
   .nav-item .nav-label { flex: 1; }
-  .nav-chevron { width: 14px !important; height: 14px !important; transition: transform 0.15s ease; opacity: 0.6; }
-  .nav-parent.expanded .nav-chevron { transform: rotate(90deg); }
-  .nav-children { padding-left: 8px; }
-  .nav-item.level-2 { font-size: 13px; padding-left: 30px; }
-  .nav-item.level-3 { font-size: 12.5px; padding-left: 42px; }
-  .nav-item.level-4 { font-size: 12px; padding-left: 54px; color: rgba(255,255,255,0.6); }
-  .nav-item.level-4.active { color: #fff; }
+  .nav-arrow { width: 12px !important; height: 12px !important; opacity: 0.45; }
+  .nav-children { padding-left: 0; }
+  .nav-item.level-2 { font-size: 12.5px; padding-left: 34px; }
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.32);
+    padding: 12px 20px 4px 34px;
+  }
+  /* Distinct accent colors per icon, matching the reference's colorful style */
+  .ic-blue { color: #5b9bd5; }
+  .ic-slate { color: #9aa7b5; }
+  .ic-teal { color: #4fb8a6; }
+  .ic-purple { color: #b28ce0; }
+  .ic-amber { color: var(--amber); }
   .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11.5px; color: rgba(255,255,255,0.5); }
 
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -428,35 +438,32 @@
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
       <button class="nav-item active" data-view="km-tracker">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
-        Km Tracker
+        <svg class="ic-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
+        <span class="nav-label">Km Tracker</span>
       </button>
 
       <button class="nav-item nav-parent" data-toggle="tree-control-panel">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg class="ic-slate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="nav-label">Control Panel</span>
-        <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
       </button>
       <div class="nav-children" id="tree-control-panel" style="display:none">
 
-        <button class="nav-item nav-parent level-2" data-toggle="tree-masters">
-          <span class="nav-label">Masters</span>
-          <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <div class="nav-section-label">Masters</div>
+        <button class="nav-item level-2" data-view="employee-master">
+          <svg class="ic-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+          <span class="nav-label">Employee Master</span>
         </button>
-        <div class="nav-children" id="tree-masters" style="display:none">
+        <button class="nav-item level-2" data-view="hr-dropdowns">
+          <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
+          <span class="nav-label">HR Dropdowns</span>
+        </button>
 
-          <button class="nav-item nav-parent level-3" data-toggle="tree-hr">
-            <span class="nav-label">HR</span>
-            <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-          <div class="nav-children" id="tree-hr" style="display:none">
-            <button class="nav-item level-4" data-view="employee-master">Employee Master</button>
-            <button class="nav-item level-4" data-view="hr-dropdowns">HR Dropdowns</button>
-          </div>
-
-        </div>
-
-        <button class="nav-item level-2" data-view="admin-panel">Admin Panel</button>
+        <div class="nav-section-label">System</div>
+        <button class="nav-item level-2" data-view="admin-panel">
+          <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg>
+          <span class="nav-label">Admin Panel</span>
+        </button>
       </div>
 
       <div class="nav-future-note">More ERP modules will appear here as they're added</div>
