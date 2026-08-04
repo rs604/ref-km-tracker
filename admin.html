@@ -1264,56 +1264,68 @@
     { table: 'departments', label: 'Department' },
     { table: 'designations', label: 'Designation' },
     { table: 'employee_categories', label: 'Employee Category' },
-    { table: 'states', label: 'State' },
-    { table: 'cities', label: 'City', needsState: true },
     { table: 'relationships', label: 'Relationship' },
     { table: 'asset_types', label: 'Asset Type' },
     { table: 'salary_components', label: 'Salary Component', isSalary: true },
   ];
+  let activeDropdownTab = DROPDOWN_CONFIG[0].table;
 
   function renderHRDropdowns() {
     if (!dropdownsData) {
       document.getElementById('hrtab-hr-dropdowns').innerHTML = '<div class="empty-state">Loading...</div>';
       return;
     }
-    let html = '';
+
+    let tabsHtml = `<div class="subtabs" id="ddTabsNav" style="padding-left:18px;">`;
+    DROPDOWN_CONFIG.forEach(cfg => {
+      tabsHtml += `<button class="subtab-item ${cfg.table === activeDropdownTab ? 'active' : ''}" data-ddtab="${cfg.table}">${cfg.label}</button>`;
+    });
+    tabsHtml += `</div>`;
+
+    let panelsHtml = '';
     DROPDOWN_CONFIG.forEach(cfg => {
       const items = dropdownsData[cfg.table] || [];
-      html += `<div class="panel">
-        <div class="panel-header"><span class="panel-title">${cfg.label} Master<span class="count-chip">${items.length}</span></span></div>
-        <div class="panel-body">
-          <div class="form-grid" style="align-items:end; margin-bottom:14px;">
-            <div class="field"><label>${cfg.label} Name</label><input type="text" class="dd-name-input" data-table="${cfg.table}" /></div>
-            ${cfg.needsState ? `<div class="field"><label>State</label><select class="dd-state-select" data-table="${cfg.table}">
-              <option value="">Select state</option>
-              ${(dropdownsData.states || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-            </select></div>` : ''}
-            ${cfg.isSalary ? `<div class="field"><label>Type</label><select class="dd-calc-type" data-table="${cfg.table}">
-              <option value="fixed">Fixed Amount</option><option value="percentage">Percentage of Basic</option>
-            </select></div>
-            <div class="field"><label>Value</label><input type="number" class="dd-value-input" data-table="${cfg.table}" /></div>` : ''}
-            <div class="field"><button class="btn dd-add-btn" data-table="${cfg.table}">Add</button></div>
-          </div>
-          <div class="msg" id="dd-msg-${cfg.table}"></div>
-          <div class="table-scroll" style="max-height:280px;">
-            <table class="ledger"><thead><tr>
-              <th>Name</th>${cfg.needsState ? '<th>State</th>' : ''}${cfg.isSalary ? '<th>Type</th><th>Value</th>' : ''}<th>Status</th><th>Action</th>
-            </tr></thead><tbody>
-              ${items.length === 0 ? `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:16px;">No ${cfg.label.toLowerCase()}s yet.</td></tr>` : items.map(item => `
-                <tr class="${item.is_active ? 'row-approved' : 'row-open'}">
-                  <td data-label="Name">${item.name}</td>
-                  ${cfg.needsState ? `<td data-label="State">${(dropdownsData.states || []).find(s => s.id === item.state_id)?.name || '—'}</td>` : ''}
-                  ${cfg.isSalary ? `<td data-label="Type">${item.calculation_type}</td><td data-label="Value" class="num-cell">${item.calculation_type === 'percentage' ? item.value + '%' : '₹' + item.value}</td>` : ''}
-                  <td data-label="Status"><span class="status-tag ${item.is_active ? 'approved' : 'pending_evening'}">${item.is_active ? 'Active' : 'Inactive'}</span></td>
-                  <td data-label="Action" class="action-cell"><button class="btn btn-sm btn-outline dd-toggle-btn" data-table="${cfg.table}" data-id="${item.id}" data-active="${item.is_active}">${item.is_active ? 'Deactivate' : 'Activate'}</button></td>
-                </tr>`).join('')}
-            </tbody></table>
+      panelsHtml += `<div class="ddtab-content" id="ddtab-${cfg.table}" style="${cfg.table === activeDropdownTab ? '' : 'display:none'}">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">${cfg.label} Master<span class="count-chip">${items.length}</span></span></div>
+          <div class="panel-body">
+            <div class="form-grid" style="align-items:end; margin-bottom:14px;">
+              <div class="field"><label>${cfg.label} Name</label><input type="text" class="dd-name-input" data-table="${cfg.table}" /></div>
+              ${cfg.isSalary ? `<div class="field"><label>Type</label><select class="dd-calc-type" data-table="${cfg.table}">
+                <option value="fixed">Fixed Amount</option><option value="percentage">Percentage of Basic</option>
+              </select></div>
+              <div class="field"><label>Value</label><input type="number" class="dd-value-input" data-table="${cfg.table}" /></div>` : ''}
+              <div class="field"><button class="btn dd-add-btn" data-table="${cfg.table}">Add</button></div>
+            </div>
+            <div class="msg" id="dd-msg-${cfg.table}"></div>
+            <div class="table-scroll">
+              <table class="ledger"><thead><tr>
+                <th>Name</th>${cfg.isSalary ? '<th>Type</th><th>Value</th>' : ''}<th>Status</th><th>Action</th>
+              </tr></thead><tbody>
+                ${items.length === 0 ? `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No ${cfg.label.toLowerCase()}s yet.</td></tr>` : items.map(item => `
+                  <tr class="${item.is_active ? 'row-approved' : 'row-open'}">
+                    <td data-label="Name">${item.name}</td>
+                    ${cfg.isSalary ? `<td data-label="Type">${item.calculation_type}</td><td data-label="Value" class="num-cell">${item.calculation_type === 'percentage' ? item.value + '%' : '₹' + item.value}</td>` : ''}
+                    <td data-label="Status"><span class="status-tag ${item.is_active ? 'approved' : 'pending_evening'}">${item.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td data-label="Action" class="action-cell"><button class="btn btn-sm btn-outline dd-toggle-btn" data-table="${cfg.table}" data-id="${item.id}" data-active="${item.is_active}">${item.is_active ? 'Deactivate' : 'Activate'}</button></td>
+                  </tr>`).join('')}
+              </tbody></table>
+            </div>
           </div>
         </div>
       </div>`;
     });
 
-    document.getElementById('hrtab-hr-dropdowns').innerHTML = html;
+    document.getElementById('hrtab-hr-dropdowns').innerHTML = tabsHtml + panelsHtml;
+
+    document.querySelectorAll('#ddTabsNav .subtab-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeDropdownTab = btn.dataset.ddtab;
+        document.querySelectorAll('#ddTabsNav .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.ddtab-content').forEach(c => c.style.display = 'none');
+        document.getElementById('ddtab-' + btn.dataset.ddtab).style.display = 'block';
+      });
+    });
 
     document.querySelectorAll('.dd-add-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -1323,9 +1335,6 @@
         msg.className = 'msg';
         const fields = { name: nameInput.value.trim() };
         if (!fields.name) { msg.className = 'msg error'; msg.textContent = 'Name is required.'; return; }
-
-        const stateSelect = document.querySelector(`.dd-state-select[data-table="${table}"]`);
-        if (stateSelect) fields.state_id = stateSelect.value;
 
         const calcType = document.querySelector(`.dd-calc-type[data-table="${table}"]`);
         const valueInput = document.querySelector(`.dd-value-input[data-table="${table}"]`);
@@ -1472,13 +1481,13 @@
           ${e.status === 'active' ? `<button class="btn btn-sm btn-danger" id="viewSuspendBtn">Suspend</button>` : ''}
           ${e.status === 'suspended' ? `<button class="btn btn-sm" id="viewResumeBtn">Resume</button>` : ''}
           ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline" id="viewMarkLeftBtn">Mark Left</button>` : `<button class="btn btn-sm" id="viewReinstateBtn">Reinstate</button>`}
+          <button class="btn btn-sm btn-outline" id="viewResetPinBtn">Reset PIN</button>
         </div>
       </div>
       <div class="subtabs" id="viewFormSubtabs" style="padding-left:18px;">
         <button class="subtab-item active" data-etab="basic">Basic</button>
         <button class="subtab-item" data-etab="personal">Personal</button>
         <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
-        <button class="subtab-item" data-etab="vehicle">Vehicle KM</button>
         <button class="subtab-item" data-etab="family">Family</button>
         <button class="subtab-item" data-etab="education">Education</button>
         <button class="subtab-item" data-etab="work">Work Experience</button>
@@ -1499,10 +1508,15 @@
             ${viewField('Date of Joining', e.date_of_joining)}
             ${viewField('Wage Type', e.wage_type)}
           </div>
+          <p class="section-label">Vehicle KM Payable</p>
+          <div class="form-grid">
+            ${viewField('Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
+            ${e.vehicle_km_applicable ? viewField('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
+          </div>
         </div>
         <div id="etab-personal" class="etab-content" style="display:none">
           <div class="form-grid">
-            ${viewField('Father/Husband Name', e.father_husband_name)}
+            ${viewField(e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)', e.father_husband_name)}
             ${viewField('Marital Status', e.marital_status)}
             ${viewField('Religion', e.religion)}
             ${viewField('Gender', e.gender)}
@@ -1510,14 +1524,23 @@
             ${viewField('Blood Group', e.blood_group)}
             ${viewField('Place of Birth', e.place_of_birth)}
             ${viewField('Aadhar No', e.aadhar_no)}
-            ${viewField('Present Address', e.present_address)}
-            ${viewField('Present City', findName(dd.cities, e.present_city_id))}
-            ${viewField('Present State', findName(dd.states, e.present_state_id))}
-            ${viewField('Present Pincode', e.present_pincode)}
-            ${viewField('Permanent Address', e.permanent_address)}
-            ${viewField('Permanent City', findName(dd.cities, e.permanent_city_id))}
-            ${viewField('Permanent State', findName(dd.states, e.permanent_state_id))}
-            ${viewField('Permanent Pincode', e.permanent_pincode)}
+          </div>
+          <p class="section-label">Present Address</p>
+          <div class="form-grid">
+            ${viewField('Address', e.present_address)}
+            ${viewField('State', findName(dd.states, e.present_state_id))}
+            ${viewField('City', findName(dd.cities, e.present_city_id))}
+            ${viewField('Pincode', e.present_pincode)}
+          </div>
+          <p class="section-label">Permanent Address</p>
+          <div class="form-grid">
+            ${viewField('Address', e.permanent_address)}
+            ${viewField('State', findName(dd.states, e.permanent_state_id))}
+            ${viewField('City', findName(dd.cities, e.permanent_city_id))}
+            ${viewField('Pincode', e.permanent_pincode)}
+          </div>
+          <p class="section-label">Other</p>
+          <div class="form-grid">
             ${viewField('Tel (Home)', e.tel_home)}
             ${viewField('Driving License No', e.driving_license_number)}
             ${viewField('License Category', e.driving_license_category)}
@@ -1542,12 +1565,6 @@
             ${viewField('UAN Number', e.uan_number)}
             ${viewField('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
             ${viewField('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
-          </div>
-        </div>
-        <div id="etab-vehicle" class="etab-content" style="display:none">
-          <div class="form-grid">
-            ${viewField('Vehicle KM Payable Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
-            ${e.vehicle_km_applicable ? viewField('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
           </div>
         </div>
         <div id="etab-family" class="etab-content" style="display:none">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
@@ -1583,6 +1600,13 @@
     document.getElementById('viewResumeBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reactivate'));
     document.getElementById('viewMarkLeftBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'left', 'mark as left'));
     document.getElementById('viewReinstateBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reinstate'));
+    document.getElementById('viewResetPinBtn').addEventListener('click', async () => {
+      const newPin = prompt('Enter new PIN (4-6 digits) for ' + e.name + ':');
+      if (!newPin) return;
+      const res = await apiHR({ action: 'reset_pin', employee_id: e.id, new_pin: newPin });
+      if (res.success) alert('PIN updated successfully.');
+      else alert(res.error || 'Failed to reset PIN.');
+    });
   }
 
   function renderViewRepeatable(rows, fieldPairs) {
@@ -1636,7 +1660,6 @@
         <button class="subtab-item active" data-etab="basic">Basic</button>
         <button class="subtab-item" data-etab="personal">Personal</button>
         <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
-        <button class="subtab-item" data-etab="vehicle">Vehicle KM</button>
         <button class="subtab-item" data-etab="family">Family</button>
         <button class="subtab-item" data-etab="education">Education</button>
         <button class="subtab-item" data-etab="work">Work Experience</button>
@@ -1647,13 +1670,14 @@
 
         <div id="etab-basic" class="etab-content">
           <div class="form-grid">
-            <div class="field"><label>Employee Code</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
+            <div class="field"><label>Employee Code *</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
             <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
             <div class="field"><label>Mobile Number *</label><input id="f_mobile_number" value="${e.mobile_number || ''}" /></div>
-            ${!employeeId ? `<div class="field"><label>PIN (4-6 digits) *</label><input id="f_pin" type="password" /></div>` : ''}
             <div class="field"><label>Role</label><select id="f_role">
               <option value="employee" ${e.role === 'employee' ? 'selected' : ''}>Employee</option>
               <option value="admin" ${e.role === 'admin' ? 'selected' : ''}>Admin</option>
+              <option value="director" ${e.role === 'director' ? 'selected' : ''}>Director</option>
+              <option value="manager" ${e.role === 'manager' ? 'selected' : ''}>Manager</option>
             </select></div>
             <div class="field"><label>Branch</label><select id="f_branch_id">${opt(dd.branches, e.branch_id)}</select></div>
             <div class="field"><label>Department</label><select id="f_department_id">${opt(dd.departments, e.department_id)}</select></div>
@@ -1665,11 +1689,30 @@
               <option ${e.wage_type === 'Daily' ? 'selected' : ''}>Daily</option>
             </select></div>
           </div>
+
+          <p class="section-label">Vehicle KM Payable</p>
+          <div class="field"><label><input type="checkbox" id="f_vehicle_km_applicable" ${e.vehicle_km_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />Vehicle KM Payable Applicable</label></div>
+          <div id="vehicleDetailsField" class="form-grid" style="${e.vehicle_km_applicable ? '' : 'display:none'}; margin-top:10px;">
+            <div class="field"><label>Vehicle Number</label><input id="f_vehicle_number" placeholder="e.g. PB10AB1234" /></div>
+            <div class="field"><label>Rate per KM (₹)</label><input type="number" id="f_rate_per_km" value="${e.rate_per_km || ''}" /></div>
+            <div class="field full">
+              <label>Login Link (share with employee)</label>
+              <div style="display:flex; gap:8px;">
+                <input id="kmTrackerLink" value="https://km.refconveyors.net" readonly style="flex:1;" />
+                <button class="btn btn-outline" type="button" id="copyLinkBtn">Copy</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="etab-personal" class="etab-content" style="display:none">
           <div class="form-grid">
-            <div class="field"><label>Father/Husband Name</label><input id="f_father_husband_name" value="${e.father_husband_name || ''}" /></div>
+            <div class="field"><label>Relation</label><select id="f_father_husband_relation">
+              <option value="S/o" ${e.father_husband_relation === 'S/o' ? 'selected' : ''}>S/o</option>
+              <option value="D/o" ${e.father_husband_relation === 'D/o' ? 'selected' : ''}>D/o</option>
+              <option value="W/o" ${e.father_husband_relation === 'W/o' ? 'selected' : ''}>W/o</option>
+            </select></div>
+            <div class="field"><label id="fatherHusbandLabel">Father Name</label><input id="f_father_husband_name" value="${e.father_husband_name || ''}" /></div>
             <div class="field"><label>Marital Status</label><select id="f_marital_status">
               <option value="">—</option><option ${e.marital_status === 'Single' ? 'selected' : ''}>Single</option><option ${e.marital_status === 'Married' ? 'selected' : ''}>Married</option>
             </select></div>
@@ -1681,14 +1724,28 @@
             <div class="field"><label>Blood Group</label><input id="f_blood_group" value="${e.blood_group || ''}" /></div>
             <div class="field"><label>Place of Birth</label><input id="f_place_of_birth" value="${e.place_of_birth || ''}" /></div>
             <div class="field"><label>Aadhar No</label><input id="f_aadhar_no" value="${e.aadhar_no || ''}" /></div>
-            <div class="field full"><label>Present Address</label><input id="f_present_address" value="${e.present_address || ''}" /></div>
-            <div class="field"><label>Present City</label><select id="f_present_city_id">${opt(dd.cities, e.present_city_id)}</select></div>
-            <div class="field"><label>Present State</label><select id="f_present_state_id">${opt(dd.states, e.present_state_id)}</select></div>
-            <div class="field"><label>Present Pincode</label><input id="f_present_pincode" value="${e.present_pincode || ''}" /></div>
-            <div class="field full"><label>Permanent Address</label><input id="f_permanent_address" value="${e.permanent_address || ''}" /></div>
-            <div class="field"><label>Permanent City</label><select id="f_permanent_city_id">${opt(dd.cities, e.permanent_city_id)}</select></div>
-            <div class="field"><label>Permanent State</label><select id="f_permanent_state_id">${opt(dd.states, e.permanent_state_id)}</select></div>
-            <div class="field"><label>Permanent Pincode</label><input id="f_permanent_pincode" value="${e.permanent_pincode || ''}" /></div>
+          </div>
+
+          <p class="section-label">Present Address</p>
+          <div class="form-grid">
+            <div class="field full"><label>Address</label><input id="f_present_address" value="${e.present_address || ''}" /></div>
+            <div class="field"><label>State</label><select id="f_present_state_id">${opt(dd.states, e.present_state_id)}</select></div>
+            <div class="field"><label>City</label><select id="f_present_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.present_state_id), e.present_city_id)}</select></div>
+            <div class="field"><label>Pincode</label><input id="f_present_pincode" value="${e.present_pincode || ''}" /></div>
+          </div>
+
+          <div class="field" style="margin-top:6px;"><label><input type="checkbox" id="f_same_as_present" style="width:auto; margin-right:6px;" />Permanent address same as present address</label></div>
+
+          <p class="section-label">Permanent Address</p>
+          <div class="form-grid" id="permanentAddressFields">
+            <div class="field full"><label>Address</label><input id="f_permanent_address" value="${e.permanent_address || ''}" /></div>
+            <div class="field"><label>State</label><select id="f_permanent_state_id">${opt(dd.states, e.permanent_state_id)}</select></div>
+            <div class="field"><label>City</label><select id="f_permanent_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.permanent_state_id), e.permanent_city_id)}</select></div>
+            <div class="field"><label>Pincode</label><input id="f_permanent_pincode" value="${e.permanent_pincode || ''}" /></div>
+          </div>
+
+          <p class="section-label">Other</p>
+          <div class="form-grid">
             <div class="field"><label>Tel (Home)</label><input id="f_tel_home" value="${e.tel_home || ''}" /></div>
             <div class="field"><label>Driving License No</label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
             <div class="field"><label>License Category</label><input id="f_driving_license_category" value="${e.driving_license_category || ''}" /></div>
@@ -1718,21 +1775,6 @@
             <div class="field" id="pfNumberField" style="${e.pf_applicable ? '' : 'display:none'}"><label>PF Number</label><input id="f_pf_number" value="${e.pf_number || ''}" /></div>
             <div class="field"><label><input type="checkbox" id="f_esi_applicable" ${e.esi_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />ESI Applicable</label></div>
             <div class="field" id="esiNumberField" style="${e.esi_applicable ? '' : 'display:none'}"><label>ESI Number</label><input id="f_esi_number" value="${e.esi_number || ''}" /></div>
-          </div>
-        </div>
-
-        <div id="etab-vehicle" class="etab-content" style="display:none">
-          <div class="field"><label><input type="checkbox" id="f_vehicle_km_applicable" ${e.vehicle_km_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />Vehicle KM Payable Applicable</label></div>
-          <div id="vehicleDetailsField" class="form-grid" style="${e.vehicle_km_applicable ? '' : 'display:none'}; margin-top:10px;">
-            <div class="field"><label>Vehicle Number</label><input id="f_vehicle_number" placeholder="e.g. PB10AB1234" /></div>
-            <div class="field"><label>Rate per KM (₹)</label><input type="number" id="f_rate_per_km" value="${e.rate_per_km || ''}" /></div>
-            <div class="field full">
-              <label>Login Link (share with employee)</label>
-              <div style="display:flex; gap:8px;">
-                <input id="kmTrackerLink" value="https://km.refconveyors.net" readonly style="flex:1;" />
-                <button class="btn btn-outline" type="button" id="copyLinkBtn">Copy</button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1805,6 +1847,38 @@
       const b = document.getElementById('copyLinkBtn');
       b.textContent = 'Copied!';
       setTimeout(() => b.textContent = 'Copy', 1500);
+    });
+
+    // Father/Husband relation prefix changes the field label dynamically
+    function updateRelationLabel() {
+      const rel = document.getElementById('f_father_husband_relation').value;
+      document.getElementById('fatherHusbandLabel').textContent = rel === 'W/o' ? 'Husband Name' : 'Father Name';
+    }
+    document.getElementById('f_father_husband_relation').addEventListener('change', updateRelationLabel);
+    updateRelationLabel();
+
+    // State -> City dependent dropdowns
+    function populateCitiesForState(stateSelectId, citySelectId, selectedCityId) {
+      const stateId = document.getElementById(stateSelectId).value;
+      const citySelect = document.getElementById(citySelectId);
+      const filtered = (dd.cities || []).filter(c => c.state_id === stateId);
+      citySelect.innerHTML = opt(filtered, selectedCityId);
+    }
+    document.getElementById('f_present_state_id').addEventListener('change', () => populateCitiesForState('f_present_state_id', 'f_present_city_id', null));
+    document.getElementById('f_permanent_state_id').addEventListener('change', () => populateCitiesForState('f_permanent_state_id', 'f_permanent_city_id', null));
+
+    // Same-as-present-address checkbox
+    document.getElementById('f_same_as_present').addEventListener('change', (ev) => {
+      const fieldsWrap = document.getElementById('permanentAddressFields');
+      if (ev.target.checked) {
+        document.getElementById('f_permanent_address').value = document.getElementById('f_present_address').value;
+        document.getElementById('f_permanent_state_id').value = document.getElementById('f_present_state_id').value;
+        populateCitiesForState('f_permanent_state_id', 'f_permanent_city_id', document.getElementById('f_present_city_id').value);
+        document.getElementById('f_permanent_pincode').value = document.getElementById('f_present_pincode').value;
+        fieldsWrap.querySelectorAll('input, select').forEach(el => el.disabled = true);
+      } else {
+        fieldsWrap.querySelectorAll('input, select').forEach(el => el.disabled = false);
+      }
     });
 
     // Repeatable child-record sections
@@ -1928,6 +2002,7 @@
       blood_group: val('f_blood_group'),
       place_of_birth: val('f_place_of_birth'),
       aadhar_no: val('f_aadhar_no'),
+      father_husband_relation: val('f_father_husband_relation'),
       present_address: val('f_present_address'),
       present_city_id: val('f_present_city_id') || null,
       present_state_id: val('f_present_state_id') || null,
@@ -1963,6 +2038,11 @@
       ref_employee_contact: val('f_ref_employee_contact'),
     };
 
+    if (!core.employee_code) {
+      msg.className = 'msg error';
+      msg.textContent = 'Employee Code is required.';
+      return;
+    }
     if (!core.name || !core.mobile_number) {
       msg.className = 'msg error';
       msg.textContent = 'Name and mobile number are required.';
@@ -1975,9 +2055,7 @@
     if (employeeId) {
       empResult = await apiHR({ action: 'update_employee', employee_id: employeeId, core });
     } else {
-      const pin = val('f_pin');
-      if (!pin) { msg.className = 'msg error'; msg.textContent = 'PIN is required for a new employee.'; setButtonLoading(btn, false); return; }
-      empResult = await apiHR({ action: 'create_employee', core, pin });
+      empResult = await apiHR({ action: 'create_employee', core, pin: null });
     }
 
     if (!empResult.success) {
@@ -2000,10 +2078,12 @@
     await Promise.all(childSaves);
 
     msg.className = 'msg success';
-    msg.textContent = 'Employee saved successfully.';
+    msg.textContent = empResult.generatedPin
+      ? `Employee saved successfully. Their login PIN is: ${empResult.generatedPin} (last 4 digits of mobile number). Share this with them.`
+      : 'Employee saved successfully.';
     const listRes = await apiHR({ action: 'get_employee_list' });
     if (listRes.success) employeeListData = listRes.employees;
-    setTimeout(() => renderEmployeeMasterList(), 800);
+    setTimeout(() => renderEmployeeMasterList(), empResult.generatedPin ? 3500 : 800);
   }
 </script>
 </body>
