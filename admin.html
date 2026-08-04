@@ -127,8 +127,9 @@
     height: 100vh;
     overflow-y: auto;
   }
-  .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 2px; margin-top: 8px; }
+  .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
+  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; margin-top: 2px; }
   .sidebar-nav { flex: 1; padding: 14px 10px; }
   .nav-item {
     display: flex;
@@ -529,7 +530,7 @@
 <div class="app-shell" id="appShell" style="display:none">
   <div class="sidebar">
     <div class="sidebar-brand">
-      <img src="logo.png" alt="REF logo" style="width:130px; height:auto; display:block;" />
+      <div class="name">REF</div>
       <div class="tag">ERP</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
