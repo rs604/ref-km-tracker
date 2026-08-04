@@ -1984,7 +1984,7 @@
 
     // Repeatable child-record sections
     setupRepeatableSection('familyRows', detail?.family || [], [
-      { key: 'member_name', label: 'Name' },
+      { key: 'member_name', label: 'Name', required: true },
       { key: 'relationship_id', label: 'Relationship', type: 'select', options: dd.relationships },
       { key: 'age', label: 'Age', type: 'number' },
       { key: 'is_dependent', label: 'Dependent', type: 'checkbox' },
@@ -1998,7 +1998,7 @@
       { key: 'percentage', label: 'Percentage' },
     ]);
     setupRepeatableSection('workRows', detail?.workExperience || [], [
-      { key: 'company_name', label: 'Company' },
+      { key: 'company_name', label: 'Company', required: true },
       { key: 'duration', label: 'Duration' },
       { key: 'position', label: 'Position' },
       { key: 'reason_for_leaving', label: 'Reason for Leaving' },
@@ -2071,12 +2071,12 @@
 
     function fieldInputHtml(f, val) {
       if (f.type === 'select') {
-        return `<select data-key="${f.key}" style="min-width:130px;">${opt(f.options, val)}</select>`;
+        return `<select data-key="${f.key}" style="min-width:140px;">${opt(f.options, val)}</select>`;
       }
       if (f.type === 'checkbox') {
-        return `<label style="display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--muted); white-space:nowrap;"><input type="checkbox" data-key="${f.key}" ${val ? 'checked' : ''} style="width:auto;" />${f.label}</label>`;
+        return `<label style="display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--muted); white-space:nowrap; padding-bottom:10px;"><input type="checkbox" data-key="${f.key}" ${val ? 'checked' : ''} style="width:auto;" />${f.label}</label>`;
       }
-      return `<input type="${f.type || 'text'}" data-key="${f.key}" value="${val ?? ''}" placeholder="${f.label}" style="min-width:120px;" />`;
+      return `<input type="${f.type || 'text'}" data-key="${f.key}" value="${val ?? ''}" placeholder="${f.label}" style="min-width:130px;" />`;
     }
 
     function displayVal(f, row) {
@@ -2088,10 +2088,11 @@
     function render() {
       const editingRow = editingIndex !== null ? rows[editingIndex] : {};
       const formRowHtml = `
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; padding:12px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; padding:14px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
           ${fields.map(f => {
             const val = f.type === 'checkbox' ? editingRow[f.key] : (editingRow[f.key] ?? '');
-            return `<div>${f.type !== 'checkbox' ? `<label style="display:block; font-size:10.5px; color:var(--muted); margin-bottom:3px;">${f.label}</label>` : ''}${fieldInputHtml(f, val)}</div>`;
+            const label = (f.required ? f.label + ' *' : f.label);
+            return `<div class="field" style="margin-bottom:0;">${f.type !== 'checkbox' ? `<label>${label}</label>` : ''}${fieldInputHtml(f, val)}</div>`;
           }).join('')}
           <button type="button" class="btn btn-sm" id="${containerId}-addBtn">${editingIndex !== null ? 'Update' : 'Add'}</button>
           ${editingIndex !== null ? `<button type="button" class="btn btn-sm btn-outline" id="${containerId}-cancelEditBtn">Cancel</button>` : ''}
