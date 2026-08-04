@@ -518,7 +518,10 @@
         <div class="topbar-title" id="pageTitle">Km Tracker</div>
         <div class="topbar-sub" id="pageSub">Daily odometer tracking, approvals, and payments</div>
       </div>
-      <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
+        <button class="btn btn-sm btn-outline" id="logoutBtn" type="button">Log out</button>
+      </div>
     </div>
 
     <!-- Km Tracker view -->
@@ -663,9 +666,11 @@
 
   async function loadControlPanel() {
     controlPanelLoaded = true;
-    const dd = await apiHR({ action: 'get_dropdowns' });
+    const [dd, el] = await Promise.all([
+      apiHR({ action: 'get_dropdowns' }),
+      apiHR({ action: 'get_employee_list' }),
+    ]);
     if (dd.success) dropdownsData = dd.dropdowns;
-    const el = await apiHR({ action: 'get_employee_list' });
     if (el.success) employeeListData = el.employees;
     renderHRDropdowns();
     renderEmployeeMasterList();
@@ -686,6 +691,7 @@
         return;
       }
       currentUser = data.employee;
+      sessionStorage.setItem('admin_session', JSON.stringify(currentUser));
       authGate.style.display = 'none';
       appShell.style.display = 'flex';
       document.getElementById('userName').textContent = currentUser.name;
@@ -1600,7 +1606,7 @@
             ${viewField('HRA', e.salary_hra)}
             ${viewField('DA', e.salary_da)}
             ${viewField('TA', e.salary_ta)}
-            ${viewField('ESI Deduction', e.salary_esi)}
+            ${viewField('ESI Deduction', e.salary_esi ? 'Yes' : 'No')}
           </div>
         </div>
         <div id="etab-family" class="etab-content" style="display:none">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
@@ -1819,23 +1825,23 @@
             <div class="field"><label>HRA</label><input type="number" id="f_salary_hra" value="${e.salary_hra || ''}" /></div>
             <div class="field"><label>DA</label><input type="number" id="f_salary_da" value="${e.salary_da || ''}" /></div>
             <div class="field"><label>TA</label><input type="number" id="f_salary_ta" value="${e.salary_ta || ''}" /></div>
-            <div class="field"><label>ESI Deduction</label><input type="number" id="f_salary_esi" value="${e.salary_esi || ''}" /></div>
+            <div class="field"><label>ESI Deduction</label><select id="f_salary_esi">
+              <option value="false" ${e.salary_esi === false || e.salary_esi === null || e.salary_esi === undefined ? 'selected' : ''}>No</option>
+              <option value="true" ${e.salary_esi === true ? 'selected' : ''}>Yes</option>
+            </select></div>
           </div>
         </div>
 
         <div id="etab-family" class="etab-content" style="display:none">
           <div id="familyRows"></div>
-          <button class="btn btn-outline btn-sm" id="addFamilyRowBtn" type="button">+ Add Family Member</button>
         </div>
 
         <div id="etab-education" class="etab-content" style="display:none">
           <div id="educationRows"></div>
-          <button class="btn btn-outline btn-sm" id="addEducationRowBtn" type="button">+ Add Qualification</button>
         </div>
 
         <div id="etab-work" class="etab-content" style="display:none">
           <div id="workRows"></div>
-          <button class="btn btn-outline btn-sm" id="addWorkRowBtn" type="button">+ Add Work Experience</button>
         </div>
 
         <div id="etab-nominee" class="etab-content" style="display:none">
@@ -1843,17 +1849,20 @@
           <div class="form-grid">
             <div class="field"><label><input type="checkbox" id="f_has_ref_employee" ${e.has_ref_employee ? 'checked' : ''} style="width:auto; margin-right:6px;" />Has reference of a REF employee</label></div>
             <div class="field"></div>
-            <div class="field"><label>Reference Employee Name</label><input id="f_ref_employee_name" value="${e.ref_employee_name || ''}" /></div>
+          </div>
+          <div class="form-grid" id="refEmployeeFields" style="${e.has_ref_employee ? '' : 'display:none'}">
+            <div class="field"><label>Reference Employee</label><select id="f_ref_employee_name">
+              <option value="">Select employee</option>
+              ${(employeeListData || []).filter(emp => emp.status === 'active' || emp.status === 'left').map(emp => `<option value="${emp.name}" ${e.ref_employee_name === emp.name ? 'selected' : ''}>${emp.name} (${emp.employee_code || emp.mobile_number})</option>`).join('')}
+            </select></div>
             <div class="field"><label>Reference Contact</label><input id="f_ref_employee_contact" value="${e.ref_employee_contact || ''}" /></div>
           </div>
           <p class="section-label">Nominee</p>
           <div id="nomineeRows"></div>
-          <button class="btn btn-outline btn-sm" id="addNomineeRowBtn" type="button">+ Add Nominee</button>
         </div>
 
         <div id="etab-assets" class="etab-content" style="display:none">
           <div id="assetRows"></div>
-          <button class="btn btn-outline btn-sm" id="addAssetRowBtn" type="button">+ Add Asset</button>
         </div>
 
         <div style="margin-top:20px; display:flex; gap:10px;">
@@ -1926,35 +1935,39 @@
       }
     });
 
+    document.getElementById('f_has_ref_employee').addEventListener('change', (ev) => {
+      document.getElementById('refEmployeeFields').style.display = ev.target.checked ? 'grid' : 'none';
+    });
+
     // Repeatable child-record sections
-    setupRepeatableSection('familyRows', 'addFamilyRowBtn', detail?.family || [], [
+    setupRepeatableSection('familyRows', detail?.family || [], [
       { key: 'member_name', label: 'Name' },
       { key: 'relationship_id', label: 'Relationship', type: 'select', options: dd.relationships },
       { key: 'age', label: 'Age', type: 'number' },
       { key: 'is_dependent', label: 'Dependent', type: 'checkbox' },
       { key: 'occupation', label: 'Occupation' },
     ]);
-    setupRepeatableSection('educationRows', 'addEducationRowBtn', detail?.education || [], [
+    setupRepeatableSection('educationRows', detail?.education || [], [
       { key: 'qualification', label: 'Qualification' },
       { key: 'institute_name', label: 'Institute' },
       { key: 'board_university', label: 'Board/University' },
       { key: 'passing_year', label: 'Passing Year' },
       { key: 'percentage', label: 'Percentage' },
     ]);
-    setupRepeatableSection('workRows', 'addWorkRowBtn', detail?.workExperience || [], [
+    setupRepeatableSection('workRows', detail?.workExperience || [], [
       { key: 'company_name', label: 'Company' },
       { key: 'duration', label: 'Duration' },
       { key: 'position', label: 'Position' },
       { key: 'reason_for_leaving', label: 'Reason for Leaving' },
     ]);
-    setupRepeatableSection('nomineeRows', 'addNomineeRowBtn', detail?.nominees || [], [
+    setupRepeatableSection('nomineeRows', detail?.nominees || [], [
       { key: 'name', label: 'Name' },
       { key: 'relation', label: 'Relation' },
       { key: 'dob_or_age', label: 'DOB/Age' },
       { key: 'address', label: 'Address' },
       { key: 'mobile', label: 'Mobile' },
     ]);
-    setupRepeatableSection('assetRows', 'addAssetRowBtn', detail?.assets || [], [
+    setupRepeatableSection('assetRows', detail?.assets || [], [
       { key: 'asset_type_id', label: 'Asset Type', type: 'select', options: dd.asset_types },
       { key: 'asset_details', label: 'Details' },
       { key: 'given_date', label: 'Given Date', type: 'date' },
@@ -1970,55 +1983,99 @@
     document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployeeForm(employeeId));
   }
 
-  function setupRepeatableSection(containerId, addBtnId, initialRows, fields) {
+  // Inline single-row "Add" form + ledger table with Edit/Delete, matching HR Dropdowns pattern
+  function setupRepeatableSection(containerId, initialRows, fields) {
     const container = document.getElementById(containerId);
     let rows = initialRows.length > 0 ? [...initialRows] : [];
+    let editingIndex = null;
+
+    function fieldInputHtml(f, val) {
+      if (f.type === 'select') {
+        return `<select data-key="${f.key}" style="min-width:130px;">${opt(f.options, val)}</select>`;
+      }
+      if (f.type === 'checkbox') {
+        return `<label style="display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--muted); white-space:nowrap;"><input type="checkbox" data-key="${f.key}" ${val ? 'checked' : ''} style="width:auto;" />${f.label}</label>`;
+      }
+      return `<input type="${f.type || 'text'}" data-key="${f.key}" value="${val ?? ''}" placeholder="${f.label}" style="min-width:120px;" />`;
+    }
+
+    function displayVal(f, row) {
+      if (f.type === 'select') return (f.options || []).find(o => o.id === row[f.key])?.name || '—';
+      if (f.type === 'checkbox') return row[f.key] ? 'Yes' : 'No';
+      return row[f.key] || '—';
+    }
 
     function render() {
-      container.innerHTML = rows.map((row, idx) => `
-        <div class="form-grid repeat-row" data-idx="${idx}" style="border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:10px; position:relative;">
+      const editingRow = editingIndex !== null ? rows[editingIndex] : {};
+      const formRowHtml = `
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; padding:12px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
           ${fields.map(f => {
-            const val = row[f.key] ?? '';
-            if (f.type === 'select') {
-              return `<div class="field"><label>${f.label}</label><select data-key="${f.key}">${opt(f.options, val)}</select></div>`;
-            }
-            if (f.type === 'checkbox') {
-              return `<div class="field"><label><input type="checkbox" data-key="${f.key}" ${val ? 'checked' : ''} style="width:auto; margin-right:6px;" />${f.label}</label></div>`;
-            }
-            return `<div class="field"><label>${f.label}</label><input type="${f.type || 'text'}" data-key="${f.key}" value="${val}" /></div>`;
+            const val = f.type === 'checkbox' ? editingRow[f.key] : (editingRow[f.key] ?? '');
+            return `<div>${f.type !== 'checkbox' ? `<label style="display:block; font-size:10.5px; color:var(--muted); margin-bottom:3px;">${f.label}</label>` : ''}${fieldInputHtml(f, val)}</div>`;
           }).join('')}
-          <button type="button" class="btn btn-sm btn-danger remove-row-btn" style="align-self:end;">Remove</button>
-        </div>`).join('');
+          <button type="button" class="btn btn-sm" id="${containerId}-addBtn">${editingIndex !== null ? 'Update' : 'Add'}</button>
+          ${editingIndex !== null ? `<button type="button" class="btn btn-sm btn-outline" id="${containerId}-cancelEditBtn">Cancel</button>` : ''}
+        </div>
+        <div class="table-scroll">
+          <table class="ledger"><thead><tr>
+            ${fields.map(f => `<th>${f.label}</th>`).join('')}<th>Action</th>
+          </tr></thead><tbody>
+            ${rows.length === 0 ? `<tr><td colspan="${fields.length + 1}" style="text-align:center; color:var(--muted); padding:16px;">None added yet.</td></tr>` : rows.map((row, idx) => `
+              <tr>
+                ${fields.map(f => `<td data-label="${f.label}">${displayVal(f, row)}</td>`).join('')}
+                <td data-label="Action" class="action-cell">
+                  <div style="display:flex; gap:4px;">
+                    <button type="button" class="icon-btn ${containerId}-editBtn" data-idx="${idx}" title="Edit">${ACTION_ICONS.edit}</button>
+                    <button type="button" class="icon-btn icon-btn-danger ${containerId}-deleteBtn" data-idx="${idx}" title="Delete">${ACTION_ICONS.exit}</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+          </tbody></table>
+        </div>`;
 
-      container.querySelectorAll('.remove-row-btn').forEach(btn => {
+      container.innerHTML = formRowHtml;
+
+      document.getElementById(`${containerId}-addBtn`).addEventListener('click', () => {
+        const newRow = {};
+        fields.forEach(f => {
+          const input = container.querySelector(`[data-key="${f.key}"]`);
+          if (!input) return;
+          newRow[f.key] = f.type === 'checkbox' ? input.checked : input.value;
+        });
+        if (editingIndex !== null) {
+          rows[editingIndex] = newRow;
+          editingIndex = null;
+        } else {
+          rows.push(newRow);
+        }
+        render();
+      });
+
+      document.getElementById(`${containerId}-cancelEditBtn`)?.addEventListener('click', () => {
+        editingIndex = null;
+        render();
+      });
+
+      container.querySelectorAll(`.${containerId}-editBtn`).forEach(btn => {
         btn.addEventListener('click', () => {
-          const idx = Number(btn.closest('.repeat-row').dataset.idx);
-          syncRowsFromDOM();
-          rows.splice(idx, 1);
+          editingIndex = Number(btn.dataset.idx);
+          render();
+        });
+      });
+      container.querySelectorAll(`.${containerId}-deleteBtn`).forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!confirm('Remove this entry?')) return;
+          rows.splice(Number(btn.dataset.idx), 1);
+          if (editingIndex === Number(btn.dataset.idx)) editingIndex = null;
           render();
         });
       });
     }
 
-    function syncRowsFromDOM() {
-      container.querySelectorAll('.repeat-row').forEach((rowEl, idx) => {
-        fields.forEach(f => {
-          const input = rowEl.querySelector(`[data-key="${f.key}"]`);
-          if (!input) return;
-          rows[idx][f.key] = f.type === 'checkbox' ? input.checked : input.value;
-        });
-      });
-    }
-
-    document.getElementById(addBtnId).addEventListener('click', () => {
-      syncRowsFromDOM();
-      rows.push({});
-      render();
-    });
-
-    container.getRows = () => { syncRowsFromDOM(); return rows; };
+    container.getRows = () => rows;
     render();
   }
+
 
   async function saveEmployeeForm(employeeId) {
     const btn = document.getElementById('saveEmployeeBtn');
@@ -2075,7 +2132,7 @@
       salary_hra: val('f_salary_hra'),
       salary_da: val('f_salary_da'),
       salary_ta: val('f_salary_ta'),
-      salary_esi: val('f_salary_esi'),
+      salary_esi: val('f_salary_esi') === 'true',
       pf_applicable: checked('f_pf_applicable'),
       pf_number: checked('f_pf_applicable') ? val('f_pf_number') : null,
       esi_applicable: checked('f_esi_applicable'),
@@ -2135,6 +2192,29 @@
     if (listRes.success) employeeListData = listRes.employees;
     setTimeout(() => renderEmployeeMasterList(), empResult.generatedPin ? 3500 : 800);
   }
+
+  // --- Restore session on page refresh instead of forcing re-login ---
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    sessionStorage.removeItem('admin_session');
+    currentUser = null;
+    appShell.style.display = 'none';
+    authGate.style.display = 'flex';
+  });
+
+  (function restoreSession() {
+    const saved = sessionStorage.getItem('admin_session');
+    if (!saved) return;
+    try {
+      currentUser = JSON.parse(saved);
+      authGate.style.display = 'none';
+      appShell.style.display = 'flex';
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
+      loadDashboard();
+    } catch (e) {
+      sessionStorage.removeItem('admin_session');
+    }
+  })();
 </script>
 </body>
 </html>
