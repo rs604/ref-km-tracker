@@ -205,6 +205,17 @@
   .panel-header.header-recent { background: var(--slate-bg); border-bottom-color: #d2d9df; }
   .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'IBM Plex Sans', sans-serif; }
   .section-label { font-size: 12.5px; font-weight: 700; color: var(--steel); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .form-section-heading {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 16px;
+    padding-top: 26px;
+    border-top: 2px solid var(--border);
+    scroll-margin-top: 64px;
+  }
+  .etab-content:first-of-type .form-section-heading { border-top: none; padding-top: 0; }
+  .form-subnav-sticky { position: sticky; top: 0; z-index: 5; }
   .category-content, .cptab-content, .etab-content, .hrtab-content { }
   .panel-body { padding: 18px; }
   .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
@@ -1520,7 +1531,7 @@
           <button class="btn btn-sm btn-outline" id="viewResetPinBtn">Reset PIN</button>
         </div>
       </div>
-      <div class="subtabs" id="viewFormSubtabs" style="padding-left:18px;">
+      <div class="subtabs form-subnav-sticky" id="viewFormSubtabs" style="padding-left:18px; background:var(--surface);">
         <button class="subtab-item active" data-etab="basic">Basic</button>
         <button class="subtab-item" data-etab="personal">Personal</button>
         <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
@@ -1531,6 +1542,7 @@
       </div>
       <div class="panel-body">
         <div id="etab-basic" class="etab-content">
+          <h3 class="form-section-heading">Basic Details</h3>
           ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); margin-bottom:14px;" />` : '<div class="empty-state" style="padding:8px 0;">No photo uploaded.</div>'}
           <div class="form-grid">
             ${viewField('Employee Code', e.employee_code)}
@@ -1551,7 +1563,8 @@
             ${e.vehicle_km_applicable ? viewField('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
           </div>
         </div>
-        <div id="etab-personal" class="etab-content" style="display:none">
+        <div id="etab-personal" class="etab-content">
+          <h3 class="form-section-heading">Personal Details</h3>
           <div class="form-grid">
             ${viewField(e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)', e.father_husband_name)}
             ${viewField('Marital Status', e.marital_status)}
@@ -1593,7 +1606,8 @@
             ${viewField('Address', e.emergency_contact_address)}
           </div>
         </div>
-        <div id="etab-bank" class="etab-content" style="display:none">
+        <div id="etab-bank" class="etab-content">
+          <h3 class="form-section-heading">Bank &amp; Statutory</h3>
           <div class="form-grid">
             ${viewField('Salary Payment Method', e.salary_payment_method === 'bank' ? 'Bank' : 'Cash')}
             ${viewField('Bank Name', e.bank_name)}
@@ -1617,10 +1631,11 @@
             ${viewField('ESI Deduction', e.salary_esi ? 'Yes' : 'No')}
           </div>
         </div>
-        <div id="etab-family" class="etab-content" style="display:none">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
-        <div id="etab-education" class="etab-content" style="display:none">${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
-        <div id="etab-work" class="etab-content" style="display:none">${renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']])}</div>
-        <div id="etab-nominee" class="etab-content" style="display:none">
+        <div id="etab-family" class="etab-content"><h3 class="form-section-heading">Family</h3>${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
+        <div id="etab-education" class="etab-content"><h3 class="form-section-heading">Education</h3>${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
+        <div id="etab-work" class="etab-content"><h3 class="form-section-heading">Work Experience</h3>${renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']])}</div>
+        <div id="etab-nominee" class="etab-content">
+          <h3 class="form-section-heading">Reference &amp; Nominee</h3>
           <p class="section-label">Reference</p>
           <div class="form-grid">
             ${viewField('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
@@ -1637,9 +1652,7 @@
 
     document.querySelectorAll('#viewFormSubtabs .subtab-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('#viewFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b === btn));
-        document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
-        document.getElementById('etab-' + btn.dataset.etab).style.display = 'block';
+        document.getElementById('etab-' + btn.dataset.etab).scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
 
@@ -1717,7 +1730,7 @@
 
     const html = `<div class="panel">
       <div class="panel-header"><span class="panel-title">${employeeId ? 'Edit Employee: ' + e.name : 'Add New Employee'}</span><button class="btn btn-sm btn-outline" id="formBackBtn">‹ Back to List</button></div>
-      <div class="subtabs" style="padding-left:18px;" id="empFormSubtabs">
+      <div class="subtabs form-subnav-sticky" style="padding-left:18px; background:var(--surface);" id="empFormSubtabs">
         <button class="subtab-item active" data-etab="basic">Basic</button>
         <button class="subtab-item" data-etab="personal">Personal</button>
         <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
@@ -1729,6 +1742,7 @@
       <div class="panel-body">
 
         <div id="etab-basic" class="etab-content">
+          <h3 class="form-section-heading">Basic Details</h3>
           <div class="form-grid">
             <div class="field"><label>Employee Code *</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
             <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
@@ -1782,7 +1796,8 @@
           </div>
         </div>
 
-        <div id="etab-personal" class="etab-content" style="display:none">
+        <div id="etab-personal" class="etab-content">
+          <h3 class="form-section-heading">Personal Details</h3>
           <div class="form-grid">
             <div class="field"><label>Relation</label><select id="f_father_husband_relation">
               <option value="S/o" ${e.father_husband_relation === 'S/o' ? 'selected' : ''}>S/o</option>
@@ -1839,7 +1854,8 @@
           </div>
         </div>
 
-        <div id="etab-bank" class="etab-content" style="display:none">
+        <div id="etab-bank" class="etab-content">
+          <h3 class="form-section-heading">Bank &amp; Statutory</h3>
           <div class="field" style="max-width:280px; margin-bottom:14px;">
             <label>Salary Payment Method</label>
             <select id="f_salary_payment_method">
@@ -1878,19 +1894,23 @@
           </div>
         </div>
 
-        <div id="etab-family" class="etab-content" style="display:none">
+        <div id="etab-family" class="etab-content">
+          <h3 class="form-section-heading">Family</h3>
           <div id="familyRows"></div>
         </div>
 
-        <div id="etab-education" class="etab-content" style="display:none">
+        <div id="etab-education" class="etab-content">
+          <h3 class="form-section-heading">Education</h3>
           <div id="educationRows"></div>
         </div>
 
-        <div id="etab-work" class="etab-content" style="display:none">
+        <div id="etab-work" class="etab-content">
+          <h3 class="form-section-heading">Work Experience</h3>
           <div id="workRows"></div>
         </div>
 
-        <div id="etab-nominee" class="etab-content" style="display:none">
+        <div id="etab-nominee" class="etab-content">
+          <h3 class="form-section-heading">Reference &amp; Nominee</h3>
           <p class="section-label">Reference</p>
           <div class="form-grid">
             <div class="field"><label><input type="checkbox" id="f_has_ref_employee" ${e.has_ref_employee ? 'checked' : ''} style="width:auto; margin-right:6px;" />Has reference of a REF employee</label></div>
@@ -1913,11 +1933,6 @@
         </div>
 
         <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
-          <button class="btn btn-outline" id="formBackTabBtn" type="button">‹ Back</button>
-          <button class="btn btn-outline" id="formNextTabBtn" type="button">Next ›</button>
-        </div>
-
-        <div style="margin-top:14px; display:flex; gap:10px;">
           <button class="btn" id="saveEmployeeBtn">${employeeId ? 'Save Changes' : 'Create Employee'}</button>
           <button class="btn btn-outline" id="cancelEmployeeBtn" type="button">Cancel</button>
         </div>
@@ -1927,32 +1942,12 @@
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
-    // Sub-tab switching within the form
-    const EMP_FORM_TAB_ORDER = ['basic', 'personal', 'bank', 'family', 'education', 'work', 'nominee'];
-
-    function switchEmpFormTab(tabKey) {
-      document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(b => b.classList.toggle('active', b.dataset.etab === tabKey));
-      document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
-      document.getElementById('etab-' + tabKey).style.display = 'block';
-      document.getElementById('formBackTabBtn').disabled = tabKey === EMP_FORM_TAB_ORDER[0];
-      document.getElementById('formNextTabBtn').disabled = tabKey === EMP_FORM_TAB_ORDER[EMP_FORM_TAB_ORDER.length - 1];
-    }
-
+    // Sticky nav: clicking a section jumps to it via smooth scroll (single continuous page)
     document.querySelectorAll('#empFormSubtabs .subtab-item').forEach(btn => {
-      btn.addEventListener('click', () => switchEmpFormTab(btn.dataset.etab));
+      btn.addEventListener('click', () => {
+        document.getElementById('etab-' + btn.dataset.etab).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
-
-    document.getElementById('formBackTabBtn').addEventListener('click', () => {
-      const current = EMP_FORM_TAB_ORDER.find(k => document.getElementById('etab-' + k).style.display !== 'none');
-      const idx = EMP_FORM_TAB_ORDER.indexOf(current);
-      if (idx > 0) switchEmpFormTab(EMP_FORM_TAB_ORDER[idx - 1]);
-    });
-    document.getElementById('formNextTabBtn').addEventListener('click', () => {
-      const current = EMP_FORM_TAB_ORDER.find(k => document.getElementById('etab-' + k).style.display !== 'none');
-      const idx = EMP_FORM_TAB_ORDER.indexOf(current);
-      if (idx < EMP_FORM_TAB_ORDER.length - 1) switchEmpFormTab(EMP_FORM_TAB_ORDER[idx + 1]);
-    });
-    switchEmpFormTab('basic');
 
     // PF/ESI conditional fields
     document.getElementById('f_salary_payment_method').addEventListener('change', (ev) => {
