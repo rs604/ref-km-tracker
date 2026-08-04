@@ -240,6 +240,9 @@
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--border); }
   .view-toggle-btn.active { background: var(--steel); color: #fff; }
 
+  .emp-list-sticky-header { position: sticky; top: 0; z-index: 20; background: var(--surface); }
+  .emp-dept-table thead th { position: sticky; background: #eef1f4; z-index: 15; }
+
   .emp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
   .emp-pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px 4px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; gap: 10px; }
   .emp-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: #fff; }
@@ -1665,7 +1668,7 @@
     }
 
     let html = `<div class="panel panel-no-clip">
-      <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+      <div class="panel-header emp-list-sticky-header" style="flex-wrap:wrap; gap:10px;">
         <span class="panel-title">Employees<span class="count-chip">${filtered.length}</span></span>
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
           <input type="text" id="empListSearchInput" placeholder="Search by name or department..." value="${empListSearchQuery}" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken); width:200px;" />
@@ -1707,6 +1710,15 @@
     </div>`;
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
+
+    // Position the table's column headers to stick directly below the sticky toolbar row
+    const stickyHeader = document.querySelector('.emp-list-sticky-header');
+    if (stickyHeader) {
+      const headerHeight = stickyHeader.offsetHeight;
+      document.querySelectorAll('.emp-dept-table thead th').forEach(th => {
+        th.style.top = headerHeight + 'px';
+      });
+    }
 
     document.getElementById('empListSearchInput').addEventListener('input', (ev) => {
       empListSearchQuery = ev.target.value;
