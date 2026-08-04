@@ -1679,6 +1679,12 @@
             <option value="suspended" ${empListStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
             <option value="left" ${empListStatusFilter === 'left' ? 'selected' : ''}>Left</option>
           </select>
+          ${empListGroupMode === 'flat' ? `
+          <select id="empPageSizeSelect" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken);">
+            <option value="10" ${empListPageSize === 10 ? 'selected' : ''}>10 / Page</option>
+            <option value="25" ${empListPageSize === 25 ? 'selected' : ''}>25 / Page</option>
+            <option value="50" ${empListPageSize === 50 ? 'selected' : ''}>50 / Page</option>
+          </select>` : ''}
           <div class="view-toggle">
             <button type="button" class="view-toggle-btn ${empListGroupMode === 'grouped' ? 'active' : ''}" id="empGroupedModeBtn" title="Group by Department">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -1687,12 +1693,6 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M3 6v12M21 6v12"/></svg>
             </button>
           </div>
-          ${empListGroupMode === 'flat' ? `
-          <select id="empPageSizeSelect" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken);">
-            <option value="10" ${empListPageSize === 10 ? 'selected' : ''}>10 / Page</option>
-            <option value="25" ${empListPageSize === 25 ? 'selected' : ''}>25 / Page</option>
-            <option value="50" ${empListPageSize === 50 ? 'selected' : ''}>50 / Page</option>
-          </select>` : ''}
           <div class="view-toggle">
             <button type="button" class="view-toggle-btn ${empListViewMode === 'list' ? 'active' : ''}" id="empListViewBtn" title="List View">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
