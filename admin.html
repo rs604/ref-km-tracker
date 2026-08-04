@@ -1992,28 +1992,67 @@
 
     const html = `<!DOCTYPE html><html><head><title>${e.name} — Employee Bio Data</title>
     <style>
-      body { font-family: Arial, sans-serif; padding: 30px; color: #1a2229; font-size: 13px; }
-      h1 { font-size: 20px; margin-bottom: 2px; }
-      h2 { font-size: 14px; margin: 22px 0 8px; padding-top: 10px; border-top: 2px solid #ccc; }
-      .sub { color: #666; margin-top: 0; margin-bottom: 20px; }
-      table.info { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-      table.info td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
-      table.info td.lbl { width: 180px; background: #f4f6f8; font-weight: 600; color: #444; }
-      table.datatable { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-      table.datatable th, table.datatable td { padding: 6px 8px; border: 1px solid #ddd; text-align: left; }
-      table.datatable th { background: #eef1f4; font-size: 11px; text-transform: uppercase; }
-      .empty { color: #999; font-style: italic; margin: 4px 0; }
-      .photo-box { float: right; width: 100px; height: 100px; border: 1px solid #ccc; margin-left: 16px; }
-      .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-      .declaration { margin-top: 40px; padding-top: 16px; border-top: 2px solid #333; }
-      .sig-row { display: flex; justify-content: space-between; margin-top: 60px; }
-      .sig-line { border-top: 1px solid #333; width: 220px; padding-top: 6px; text-align: center; font-size: 12px; }
-      @media print { body { padding: 12px; } }
+      @page { margin: 18mm 16mm; }
+      * { box-sizing: border-box; }
+      body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e2530; font-size: 12.5px; line-height: 1.5; margin: 0; padding: 24px 30px; }
+
+      .letterhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding-bottom: 14px;
+        border-bottom: 3px solid #b3261e;
+        margin-bottom: 22px;
+      }
+      .letterhead h1 { font-size: 21px; margin: 0; color: #1e2530; letter-spacing: 0.3px; }
+      .letterhead .sub { color: #b3261e; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; margin-top: 3px; text-transform: uppercase; }
+      .letterhead .code { color: #666; font-size: 11px; margin-top: 2px; }
+      .photo-box { width: 92px; height: 92px; border: 1px solid #ddd; border-radius: 4px; flex-shrink: 0; overflow: hidden; background: #f4f6f8; }
+      .photo-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+      h2 {
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #b3261e;
+        margin: 24px 0 10px;
+        padding-bottom: 5px;
+        border-bottom: 1.5px solid #e8e2df;
+      }
+      h2:first-of-type { margin-top: 0; }
+
+      table.info { width: 100%; border-collapse: collapse; margin-bottom: 2px; }
+      table.info td { padding: 7px 10px; border: 1px solid #e3e6ea; vertical-align: top; }
+      table.info td.lbl { width: 190px; background: #f7f8fa; font-weight: 600; color: #444; }
+      table.info tr:nth-child(even) td.val { background: #fbfbfc; }
+
+      table.datatable { width: 100%; border-collapse: collapse; margin-bottom: 2px; }
+      table.datatable th, table.datatable td { padding: 7px 10px; border: 1px solid #e3e6ea; text-align: left; }
+      table.datatable th { background: #2d3b4a; color: #fff; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+      table.datatable tr:nth-child(even) td { background: #fbfbfc; }
+
+      .empty { color: #999; font-style: italic; margin: 4px 0 12px; font-size: 12px; }
+
+      .declaration { margin-top: 34px; padding: 16px 18px; background: #fbfbfc; border: 1px solid #e3e6ea; border-left: 4px solid #b3261e; border-radius: 3px; }
+      .declaration h2 { margin-top: 0; border-bottom: none; padding-bottom: 0; }
+      .declaration p { margin: 0; }
+      .sig-row { display: flex; justify-content: space-between; margin-top: 55px; padding: 0 6px; }
+      .sig-line { border-top: 1px solid #333; width: 220px; padding-top: 6px; text-align: center; font-size: 11.5px; color: #555; }
+
+      .footer-note { color: #999; font-size: 9.5px; margin-top: 28px; text-align: right; }
+      @media print { body { padding: 0; } }
     </style>
     </head><body>
-      ${e.photo_signed_url ? `<div class="photo-box"><img src="${e.photo_signed_url}" /></div>` : ''}
-      <h1>Raghbir Erectors &amp; Fabricators</h1>
-      <p class="sub">Employee Bio Data — ${e.employee_code || ''}</p>
+
+      <div class="letterhead">
+        <div>
+          <h1>Raghbir Erectors &amp; Fabricators</h1>
+          <div class="sub">Employee Bio Data</div>
+          <div class="code">${e.employee_code || ''}</div>
+        </div>
+        ${e.photo_signed_url ? `<div class="photo-box"><img src="${e.photo_signed_url}" /></div>` : ''}
+      </div>
 
       <h2>Basic Details</h2>
       <table class="info">
@@ -2079,7 +2118,7 @@
       ${repeatTable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}
 
       <div class="declaration">
-        <h2 style="border-top:none; padding-top:0;">Self Declaration</h2>
+        <h2>Self Declaration</h2>
         <p>I, <strong>${e.name}</strong>, hereby declare that all the information provided above is true and accurate to the best of my knowledge. I understand that this information will be used for official company records including payroll, statutory compliance, and identification purposes. I agree to inform the company immediately of any changes to the above information.</p>
         <div class="sig-row">
           <div class="sig-line">Employee Signature</div>
@@ -2087,7 +2126,7 @@
         </div>
       </div>
 
-      <p style="color:#999; font-size:10px; margin-top:40px;">Generated ${new Date().toLocaleString()}</p>
+      <p class="footer-note">Generated ${new Date().toLocaleString()}</p>
       <script>window.print();<\/script>
     </body></html>`;
 
