@@ -1543,6 +1543,7 @@
             ${viewField('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
             ${viewField('Date of Joining', e.date_of_joining)}
             ${viewField('Wage Type', e.wage_type)}
+            ${viewField('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
           </div>
           <p class="section-label">Vehicle KM Payable</p>
           <div class="form-grid">
@@ -1728,16 +1729,6 @@
       <div class="panel-body">
 
         <div id="etab-basic" class="etab-content">
-          <p class="section-label" style="margin-top:0;">Photo *</p>
-          <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
-            <div id="photoPreviewBox">${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:70px; height:70px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center;">No photo</div>`}</div>
-            <div>
-              <input type="file" id="upload_photo" accept="image/*" style="display:none" />
-              <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_photo">Choose Photo</button>
-              <div style="font-size:11.5px; color:var(--muted); margin-top:4px;" id="uploadStatus_photo">${e.photo_signed_url ? 'Uploaded' : 'No file selected'}</div>
-            </div>
-          </div>
-
           <div class="form-grid">
             <div class="field"><label>Employee Code *</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
             <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
@@ -1757,6 +1748,23 @@
               <option ${e.wage_type === 'Monthly' ? 'selected' : ''}>Monthly</option>
               <option ${e.wage_type === 'Daily' ? 'selected' : ''}>Daily</option>
             </select></div>
+            <div class="field"><label>Source of Employee</label><select id="f_source_of_employee">
+              <option value="">—</option>
+              <option value="ref_employee" ${e.source_of_employee === 'ref_employee' ? 'selected' : ''}>REF Employee</option>
+              <option value="placement_agency" ${e.source_of_employee === 'placement_agency' ? 'selected' : ''}>Placement Agency</option>
+              <option value="friends" ${e.source_of_employee === 'friends' ? 'selected' : ''}>Friends</option>
+              <option value="walk_in" ${e.source_of_employee === 'walk_in' ? 'selected' : ''}>Walk In</option>
+              <option value="others" ${e.source_of_employee === 'others' ? 'selected' : ''}>Others</option>
+            </select></div>
+            <div class="field full">
+              <label>Photo *</label>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <input type="file" id="upload_photo" accept="image/*" style="display:none" />
+                <input type="text" id="photoStatusInput" readonly value="${e.photo_signed_url ? 'Uploaded' : 'No file selected'}" style="flex:1;" />
+                <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_photo" style="white-space:nowrap;">Choose Photo</button>
+                <div id="photoPreviewBox">${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:38px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />` : ''}</div>
+              </div>
+            </div>
           </div>
 
           <p class="section-label">Vehicle KM Payable</p>
@@ -1889,9 +1897,14 @@
             <div class="field"></div>
           </div>
           <div class="form-grid" id="refEmployeeFields" style="${e.has_ref_employee ? '' : 'display:none'}">
+            <div class="field"><label>Show</label><select id="f_ref_employee_filter">
+              <option value="all">All Employees</option>
+              <option value="active">Active Employees</option>
+              <option value="left">Left Employees</option>
+            </select></div>
             <div class="field"><label>Reference Employee</label><select id="f_ref_employee_name">
               <option value="">Select employee</option>
-              ${(employeeListData || []).filter(emp => emp.status === 'active' || emp.status === 'left').map(emp => `<option value="${emp.name}" ${e.ref_employee_name === emp.name ? 'selected' : ''}>${emp.name} (${emp.employee_code || emp.mobile_number})</option>`).join('')}
+              ${(employeeListData || []).filter(emp => emp.status === 'active' || emp.status === 'left').map(emp => `<option value="${emp.name}" data-status="${emp.status}" ${e.ref_employee_name === emp.name ? 'selected' : ''}>${emp.name} (${emp.employee_code || emp.mobile_number}) — ${emp.status}</option>`).join('')}
             </select></div>
             <div class="field"><label>Reference Contact</label><input id="f_ref_employee_contact" value="${e.ref_employee_contact || ''}" /></div>
           </div>
@@ -1982,6 +1995,21 @@
       document.getElementById('refEmployeeFields').style.display = ev.target.checked ? 'grid' : 'none';
     });
 
+    document.getElementById('f_source_of_employee').addEventListener('change', (ev) => {
+      if (ev.target.value === 'ref_employee') {
+        const cb = document.getElementById('f_has_ref_employee');
+        cb.checked = true;
+        document.getElementById('refEmployeeFields').style.display = 'grid';
+      }
+    });
+
+    document.getElementById('f_ref_employee_filter').addEventListener('change', (ev) => {
+      const filterVal = ev.target.value;
+      document.querySelectorAll('#f_ref_employee_name option[data-status]').forEach(opt => {
+        opt.style.display = (filterVal === 'all' || opt.dataset.status === filterVal) ? '' : 'none';
+      });
+    });
+
     // Repeatable child-record sections
     setupRepeatableSection('familyRows', detail?.family || [], [
       { key: 'member_name', label: 'Name', required: true },
@@ -2046,10 +2074,12 @@
       const base64 = await fileToBase64(file);
       const ext = file.name.split('.').pop().toLowerCase();
       pendingUploads[slot] = { base64, ext, document_name: options.documentName || slot };
-      const status = document.getElementById(`uploadStatus_${slot}`);
-      if (status) status.textContent = `Selected: ${file.name} (will save with the form)`;
       if (options.isPhoto) {
-        document.getElementById('photoPreviewBox').innerHTML = `<img src="${base64}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />`;
+        document.getElementById('photoStatusInput').value = `Selected: ${file.name} (will save with the form)`;
+        document.getElementById('photoPreviewBox').innerHTML = `<img src="${base64}" style="width:38px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />`;
+      } else {
+        const status = document.getElementById(`uploadStatus_${slot}`);
+        if (status) status.textContent = `Selected: ${file.name} (will save with the form)`;
       }
     });
   }
@@ -2184,6 +2214,7 @@
       employee_category_id: val('f_employee_category_id') || null,
       date_of_joining: val('f_date_of_joining'),
       wage_type: val('f_wage_type'),
+      source_of_employee: val('f_source_of_employee') || null,
       father_husband_name: val('f_father_husband_name'),
       marital_status: val('f_marital_status'),
       religion: val('f_religion'),
