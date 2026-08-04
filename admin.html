@@ -199,6 +199,11 @@
     overflow: hidden;
   }
   .panel.panel-no-clip { overflow: visible; }
+  .field-error-highlight {
+    border-color: var(--danger) !important;
+    background: var(--danger-bg) !important;
+    box-shadow: 0 0 0 3px rgba(165,69,58,0.15);
+  }
   .panel-header {
     padding: 14px 18px;
     border-bottom: 1px solid var(--border);
@@ -622,6 +627,15 @@
 
   let currentUser = null;
   let dashboardData = null;
+
+  // Clear a field's red error highlight as soon as the user starts fixing it
+  ['input', 'change', 'click'].forEach(evt => {
+    document.addEventListener(evt, (e) => {
+      if (e.target.classList && e.target.classList.contains('field-error-highlight')) {
+        e.target.classList.remove('field-error-highlight');
+      }
+    }, true);
+  });
 
   function setButtonLoading(btn, isLoading, loadingText, originalText) {
     if (isLoading) {
@@ -2333,66 +2347,83 @@
 
     // ---------- Mandatory field validation ----------
     const errors = [];
-    if (!core.employee_code) errors.push('Employee Code');
-    if (!core.name) errors.push('Full Name');
-    if (!core.mobile_number) errors.push('Mobile Number');
-    if (!core.branch_id) errors.push('Branch');
-    if (!core.department_id) errors.push('Department');
-    if (!core.designation_id) errors.push('Designation');
-    if (!core.employee_category_id) errors.push('Employee Category');
-    if (!core.date_of_joining) errors.push('Date of Joining');
-    if (!core.wage_type) errors.push('Wage Type');
+    const err = (label, targetId) => errors.push({ label, targetId });
+    if (!core.employee_code) err('Employee Code', 'f_employee_code');
+    if (!core.name) err('Full Name', 'f_name');
+    if (!core.mobile_number) err('Mobile Number', 'f_mobile_number');
+    if (!core.branch_id) err('Branch', 'f_branch_id');
+    if (!core.department_id) err('Department', 'f_department_id');
+    if (!core.designation_id) err('Designation', 'f_designation_id');
+    if (!core.employee_category_id) err('Employee Category', 'f_employee_category_id');
+    if (!core.date_of_joining) err('Date of Joining', 'f_date_of_joining');
+    if (!core.wage_type) err('Wage Type', 'f_wage_type');
     if (vehicleApplicable) {
-      if (!core.vehicle_number) errors.push('Vehicle Number');
-      if (!core.rate_per_km) errors.push('Rate per KM');
-      if (!core.driving_license_number) errors.push('Driving License No (required since Vehicle KM is applicable)');
-      if (!hasDoc('driving_license')) errors.push('Driving License Upload (required since Vehicle KM is applicable)');
+      if (!core.vehicle_number) err('Vehicle Number', 'f_vehicle_number');
+      if (!core.rate_per_km) err('Rate per KM', 'f_rate_per_km');
+      if (!core.driving_license_number) err('Driving License No (required since Vehicle KM is applicable)', 'f_driving_license_number');
+      if (!hasDoc('driving_license')) err('Driving License Upload (required since Vehicle KM is applicable)', 'uploadBtn_driving_license');
     }
-    if (!core.father_husband_name) errors.push('Father/Husband Name');
-    if (!core.marital_status) errors.push('Marital Status');
-    if (!core.gender) errors.push('Gender');
-    if (!core.date_of_birth) errors.push('Date of Birth');
-    if (!core.aadhar_no) errors.push('Aadhar No');
-    if (!hasDoc('aadhar')) errors.push('Aadhar Card Upload');
-    if (!core.present_address) errors.push('Present Address');
-    if (!core.present_state_id) errors.push('Present State');
-    if (!core.present_city_id) errors.push('Present City');
+    if (!core.father_husband_name) err('Father/Husband Name', 'f_father_husband_name');
+    if (!core.marital_status) err('Marital Status', 'f_marital_status');
+    if (!core.gender) err('Gender', 'f_gender');
+    if (!core.date_of_birth) err('Date of Birth', 'f_date_of_birth');
+    if (!core.aadhar_no) err('Aadhar No', 'f_aadhar_no');
+    if (!hasDoc('aadhar')) err('Aadhar Card Upload', 'uploadBtn_aadhar');
+    if (!core.present_address) err('Present Address', 'f_present_address');
+    if (!core.present_state_id) err('Present State', 'f_present_state_id');
+    if (!core.present_city_id) err('Present City', 'f_present_city_id');
     if (!checked('f_same_as_present')) {
-      if (!core.permanent_address) errors.push('Permanent Address');
-      if (!core.permanent_state_id) errors.push('Permanent State');
-      if (!core.permanent_city_id) errors.push('Permanent City');
+      if (!core.permanent_address) err('Permanent Address', 'f_permanent_address');
+      if (!core.permanent_state_id) err('Permanent State', 'f_permanent_state_id');
+      if (!core.permanent_city_id) err('Permanent City', 'f_permanent_city_id');
     }
-    if (core.driving_license_number && !core.driving_license_validity) errors.push('License Validity (since License No is filled)');
-    if (!core.emergency_contact_name) errors.push('Emergency Contact Name');
-    if (!core.emergency_contact_relation) errors.push('Emergency Contact Relation');
-    if (!core.emergency_contact_mobile) errors.push('Emergency Contact Mobile');
+    if (core.driving_license_number && !core.driving_license_validity) err('License Validity (since License No is filled)', 'f_driving_license_validity');
+    if (!core.emergency_contact_name) err('Emergency Contact Name', 'f_emergency_contact_name');
+    if (!core.emergency_contact_relation) err('Emergency Contact Relation', 'f_emergency_contact_relation');
+    if (!core.emergency_contact_mobile) err('Emergency Contact Mobile', 'f_emergency_contact_mobile');
     if (paymentMethod === 'bank') {
-      if (!core.bank_name) errors.push('Bank Name (Payment Method = Bank)');
-      if (!core.bank_account_number) errors.push('Account Number (Payment Method = Bank)');
-      if (!core.bank_ifsc) errors.push('IFSC Code (Payment Method = Bank)');
+      if (!core.bank_name) err('Bank Name (Payment Method = Bank)', 'f_bank_name');
+      if (!core.bank_account_number) err('Account Number (Payment Method = Bank)', 'f_bank_account_number');
+      if (!core.bank_ifsc) err('IFSC Code (Payment Method = Bank)', 'f_bank_ifsc');
     }
     if (pfApplicable) {
-      if (!core.pf_number) errors.push('PF Number');
-      if (!core.uan_number) errors.push('UAN Number');
-      if (!hasDoc('pf_certificate')) errors.push('PF Certificate Upload');
+      if (!core.pf_number) err('PF Number', 'f_pf_number');
+      if (!core.uan_number) err('UAN Number', 'f_uan_number');
+      if (!hasDoc('pf_certificate')) err('PF Certificate Upload', 'uploadBtn_pf_certificate');
     }
     if (esiApplicable) {
-      if (!core.esi_number) errors.push('ESI Number');
-      if (!hasDoc('esi_certificate')) errors.push('ESI Certificate Upload');
+      if (!core.esi_number) err('ESI Number', 'f_esi_number');
+      if (!hasDoc('esi_certificate')) err('ESI Certificate Upload', 'uploadBtn_esi_certificate');
     }
-    if (!core.salary_basic) errors.push('Salary Basic');
-    if (!hasDoc('photo')) errors.push('Photo Upload');
-    if (checked('f_has_ref_employee') && !core.ref_employee_name) errors.push('REF Employee Reference (since "Has reference of a REF employee" is checked)');
+    if (!core.salary_basic) err('Salary Basic', 'f_salary_basic');
+    if (!hasDoc('photo')) err('Photo Upload', 'uploadBtn_photo');
+    if (checked('f_has_ref_employee') && !core.ref_employee_name) err('REF Employee Reference (since "Has reference of a REF employee" is checked)', 'f_ref_employee_name');
     const educationRows = document.getElementById('educationRows').getRows();
-    if (educationRows.length === 0) errors.push('At least one Education / Qualification entry');
+    if (educationRows.length === 0) err('At least one Education / Qualification entry', 'educationRows');
     const familyRows = document.getElementById('familyRows').getRows();
-    familyRows.forEach((r, i) => { if (!r.member_name) errors.push(`Family row ${i + 1}: Name`); });
+    familyRows.forEach((r, i) => { if (!r.member_name) err(`Family row ${i + 1}: Name`, 'familyRows'); });
     const workRows = document.getElementById('workRows').getRows();
-    workRows.forEach((r, i) => { if (!r.company_name) errors.push(`Work Experience row ${i + 1}: Company Name`); });
+    workRows.forEach((r, i) => { if (!r.company_name) err(`Work Experience row ${i + 1}: Company Name`, 'workRows'); });
+
+    // Clear any previous error highlighting
+    document.querySelectorAll('.field-error-highlight').forEach(el => el.classList.remove('field-error-highlight'));
 
     if (errors.length > 0) {
+      // Highlight every field that has an error
+      errors.forEach(e => {
+        const el = document.getElementById(e.targetId);
+        if (el) el.classList.add('field-error-highlight');
+      });
+
       msg.className = 'msg error';
-      msg.innerHTML = 'Please complete the following before saving:<br>• ' + errors.join('<br>• ');
+      msg.innerHTML = 'Please complete the following before saving:<br>• ' + errors.map(e => e.label).join('<br>• ');
+
+      // Jump to and focus the first error field
+      const firstEl = document.getElementById(errors[0].targetId);
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => firstEl.focus?.(), 350);
+      }
       return;
     }
 
