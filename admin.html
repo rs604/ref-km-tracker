@@ -204,6 +204,47 @@
     background: var(--danger-bg) !important;
     box-shadow: 0 0 0 3px rgba(165,69,58,0.15);
   }
+
+  .emp-dept-group { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .emp-dept-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface-sunken);
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--ink);
+    text-align: left;
+  }
+  .emp-dept-header:hover { background: #e6e9ed; }
+  .emp-dept-chevron { width: 15px; height: 15px; transition: transform 0.15s ease; opacity: 0.6; flex-shrink: 0; }
+  .emp-dept-chevron.expanded { transform: rotate(90deg); }
+  .emp-dept-body { padding: 0; border-top: 1px solid var(--border); }
+
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .view-toggle-btn {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .view-toggle-btn svg { width: 16px; height: 16px; }
+  .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--border); }
+  .view-toggle-btn.active { background: var(--steel); color: #fff; }
+
+  .emp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
+  .emp-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: #fff; }
+  .emp-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .emp-card-name a { color: var(--steel); font-weight: 650; font-size: 14px; text-decoration: none; }
+  .emp-card-code { font-size: 11.5px; color: var(--muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+  .emp-card-meta { font-size: 12.5px; color: var(--ink); line-height: 1.7; margin-bottom: 10px; }
   .panel-header {
     padding: 14px 18px;
     border-bottom: 1px solid var(--border);
@@ -1442,6 +1483,17 @@
 
   // ============ EMPLOYEE MASTER (list view) ============
   let empListStatusFilter = 'active_suspended';
+  let empListViewMode = 'list';
+  let empGroupCollapsed = {};
+
+  function empActionIcons(e) {
+    return `<div style="display:flex; gap:4px;">
+      ${iconBtn('emp-edit-btn', e.id, 'edit', 'Edit', '')}
+      ${e.status === 'active' ? iconBtn('emp-status-btn', e.id, 'suspend', 'Suspend', 'suspended') : ''}
+      ${e.status === 'suspended' ? iconBtn('emp-status-btn', e.id, 'resume', 'Resume', 'active') : ''}
+      ${e.status !== 'left' ? iconBtn('emp-status-btn', e.id, 'exit', 'Mark Left', 'left') : iconBtn('emp-status-btn', e.id, 'resume', 'Reinstate', 'active')}
+    </div>`;
+  }
 
   function renderEmployeeMasterList() {
     if (!employeeListData) {
@@ -1455,6 +1507,73 @@
       return e.status === empListStatusFilter;
     });
 
+    // Group by department
+    const groups = {};
+    filtered.forEach(e => {
+      const deptName = e.departments?.name || 'Unassigned';
+      if (!groups[deptName]) groups[deptName] = [];
+      groups[deptName].push(e);
+    });
+    const deptNames = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+
+    let groupsHtml = '';
+    if (deptNames.length === 0) {
+      groupsHtml = '<div class="empty-state" style="padding:16px;">No employees match this filter.</div>';
+    } else {
+      deptNames.forEach(deptName => {
+        const groupEmployees = groups[deptName];
+        const isCollapsed = !!empGroupCollapsed[deptName];
+
+        let groupBodyHtml;
+        if (empListViewMode === 'card') {
+          groupBodyHtml = `<div class="emp-card-grid">
+            ${groupEmployees.map(e => `
+              <div class="emp-card">
+                <div class="emp-card-top">
+                  <div>
+                    <div class="emp-card-name"><a href="#" class="emp-view-link" data-id="${e.id}">${e.name}</a></div>
+                    <div class="emp-card-code">${e.employee_code || '—'} <span class="role-tag">${e.role}</span></div>
+                  </div>
+                  <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span>
+                </div>
+                <div class="emp-card-meta">
+                  <div>${e.designations?.name || '—'}</div>
+                  <div>${e.employee_categories?.name || '—'}</div>
+                  <div>${e.mobile_number}</div>
+                </div>
+                ${empActionIcons(e)}
+              </div>`).join('')}
+          </div>`;
+        } else {
+          groupBodyHtml = `<table class="ledger"><thead><tr>
+            <th>Code</th><th>Name</th><th>Mobile</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
+          </tr></thead><tbody>
+            ${groupEmployees.map(e => `
+              <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
+                <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
+                <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${e.name}</a><span class="role-tag">${e.role}</span></td>
+                <td data-label="Mobile">${e.mobile_number}</td>
+                <td data-label="Designation">${e.designations?.name || '—'}</td>
+                <td data-label="Category">${e.employee_categories?.name || '—'}</td>
+                <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
+                <td data-label="Action" class="action-cell">${empActionIcons(e)}</td>
+              </tr>`).join('')}
+          </tbody></table>`;
+        }
+
+        groupsHtml += `<div class="emp-dept-group">
+          <button type="button" class="emp-dept-header" data-dept="${deptName}">
+            <svg class="emp-dept-chevron ${isCollapsed ? '' : 'expanded'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+            <span>${deptName}</span>
+            <span class="count-chip">${groupEmployees.length}</span>
+          </button>
+          <div class="emp-dept-body" style="${isCollapsed ? 'display:none' : ''}">
+            ${empListViewMode === 'card' ? groupBodyHtml : `<div class="table-scroll">${groupBodyHtml}</div>`}
+          </div>
+        </div>`;
+      });
+    }
+
     let html = `<div class="panel">
       <div class="panel-header">
         <span class="panel-title">Employees<span class="count-chip">${filtered.length}</span></span>
@@ -1466,32 +1585,19 @@
             <option value="suspended" ${empListStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
             <option value="left" ${empListStatusFilter === 'left' ? 'selected' : ''}>Left</option>
           </select>
+          <div class="view-toggle">
+            <button type="button" class="view-toggle-btn ${empListViewMode === 'list' ? 'active' : ''}" id="empListViewBtn" title="List View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+            <button type="button" class="view-toggle-btn ${empListViewMode === 'card' ? 'active' : ''}" id="empCardViewBtn" title="Card View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+          </div>
           <button class="btn btn-sm" id="newEmployeeBtn">+ Add New Employee</button>
         </div>
       </div>
-      <div class="table-scroll">
-        <table class="ledger"><thead><tr>
-          <th>Code</th><th>Name</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
-        </tr></thead><tbody>
-          ${filtered.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No employees match this filter.</td></tr>' : filtered.map(e => `
-            <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
-              <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
-              <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${e.name}</a><span class="role-tag">${e.role}</span></td>
-              <td data-label="Mobile">${e.mobile_number}</td>
-              <td data-label="Department">${e.departments?.name || '—'}</td>
-              <td data-label="Designation">${e.designations?.name || '—'}</td>
-              <td data-label="Category">${e.employee_categories?.name || '—'}</td>
-              <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
-              <td data-label="Action" class="action-cell">
-                <div style="display:flex; gap:4px;">
-                  ${iconBtn('emp-edit-btn', e.id, 'edit', 'Edit', '')}
-                  ${e.status === 'active' ? iconBtn('emp-status-btn', e.id, 'suspend', 'Suspend', 'suspended') : ''}
-                  ${e.status === 'suspended' ? iconBtn('emp-status-btn', e.id, 'resume', 'Resume', 'active') : ''}
-                  ${e.status !== 'left' ? iconBtn('emp-status-btn', e.id, 'exit', 'Mark Left', 'left') : iconBtn('emp-status-btn', e.id, 'resume', 'Reinstate', 'active')}
-                </div>
-              </td>
-            </tr>`).join('')}
-        </tbody></table>
+      <div class="panel-body" style="padding:12px 18px;">
+        ${groupsHtml}
       </div>
     </div>`;
 
@@ -1500,6 +1606,15 @@
     document.getElementById('empListStatusFilterSelect').addEventListener('change', (ev) => {
       empListStatusFilter = ev.target.value;
       renderEmployeeMasterList();
+    });
+    document.getElementById('empListViewBtn').addEventListener('click', () => { empListViewMode = 'list'; renderEmployeeMasterList(); });
+    document.getElementById('empCardViewBtn').addEventListener('click', () => { empListViewMode = 'card'; renderEmployeeMasterList(); });
+    document.querySelectorAll('.emp-dept-header').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dept = btn.dataset.dept;
+        empGroupCollapsed[dept] = !empGroupCollapsed[dept];
+        renderEmployeeMasterList();
+      });
     });
     document.getElementById('newEmployeeBtn').addEventListener('click', () => openEmployeeForm(null));
     document.querySelectorAll('.emp-view-link').forEach(link => {
