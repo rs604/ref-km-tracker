@@ -240,6 +240,7 @@
   .view-toggle-btn.active { background: var(--steel); color: #fff; }
 
   .emp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
+  .emp-pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px 4px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; gap: 10px; }
   .emp-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: #fff; }
   .emp-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .emp-card-name a { color: var(--steel); font-weight: 650; font-size: 14px; text-decoration: none; }
@@ -1486,6 +1487,8 @@
   let empListSearchQuery = '';
   let empListViewMode = 'list';
   let empListGroupMode = 'grouped';
+  let empListPageSize = 25;
+  let empListCurrentPage = 1;
   let empGroupCollapsed = {};
 
   function escapeRegex(str) {
@@ -1540,10 +1543,16 @@
     if (deptNames.length === 0) {
       groupsHtml = '<div class="empty-state" style="padding:16px;">No employees match this filter.</div>';
     } else if (empListGroupMode === 'flat') {
-      // Flat tabular view: no department grouping, single continuous list with a Department column
-      const flatEmployees = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+      // Flat tabular view: no department grouping, single continuous list with a Department column, paginated
+      const flatEmployeesAll = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+      const totalPages = Math.max(1, Math.ceil(flatEmployeesAll.length / empListPageSize));
+      if (empListCurrentPage > totalPages) empListCurrentPage = totalPages;
+      const pageStart = (empListCurrentPage - 1) * empListPageSize;
+      const flatEmployees = flatEmployeesAll.slice(pageStart, pageStart + empListPageSize);
+
+      let bodyHtml;
       if (empListViewMode === 'card') {
-        groupsHtml = `<div class="emp-card-grid">
+        bodyHtml = `<div class="emp-card-grid">
           ${flatEmployees.map(e => `
             <div class="emp-card">
               <div class="emp-card-top">
@@ -1562,7 +1571,7 @@
             </div>`).join('')}
         </div>`;
       } else {
-        groupsHtml = `<div class="table-scroll"><table class="ledger emp-dept-table"><thead><tr>
+        bodyHtml = `<table class="ledger emp-dept-table"><thead><tr>
           <th>Code</th><th>Name</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
         </tr></thead><tbody>
           ${flatEmployees.map(e => `
@@ -1576,8 +1585,17 @@
               <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
               <td data-label="Action" class="action-cell">${empActionIcons(e)}</td>
             </tr>`).join('')}
-        </tbody></table></div>`;
+        </tbody></table>`;
       }
+
+      groupsHtml = bodyHtml + `<div class="emp-pagination">
+        <span>Showing ${flatEmployeesAll.length === 0 ? 0 : pageStart + 1}–${Math.min(pageStart + empListPageSize, flatEmployeesAll.length)} of ${flatEmployeesAll.length}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-sm btn-outline" id="empPagePrevBtn" ${empListCurrentPage <= 1 ? 'disabled' : ''}>‹ Prev</button>
+          <span style="font-size:12.5px; color:var(--muted);">Page ${empListCurrentPage} of ${totalPages}</span>
+          <button type="button" class="btn btn-sm btn-outline" id="empPageNextBtn" ${empListCurrentPage >= totalPages ? 'disabled' : ''}>Next ›</button>
+        </div>
+      </div>`;
     } else {
       deptNames.forEach((deptName, deptIdx) => {
         const groupEmployees = groups[deptName];
@@ -1654,6 +1672,12 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M3 6v12M21 6v12"/></svg>
             </button>
           </div>
+          ${empListGroupMode === 'flat' ? `
+          <select id="empPageSizeSelect" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken);">
+            <option value="10" ${empListPageSize === 10 ? 'selected' : ''}>10 per page</option>
+            <option value="25" ${empListPageSize === 25 ? 'selected' : ''}>25 per page</option>
+            <option value="50" ${empListPageSize === 50 ? 'selected' : ''}>50 per page</option>
+          </select>` : ''}
           <div class="view-toggle">
             <button type="button" class="view-toggle-btn ${empListViewMode === 'list' ? 'active' : ''}" id="empListViewBtn" title="List View">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -1674,6 +1698,7 @@
 
     document.getElementById('empListSearchInput').addEventListener('input', (ev) => {
       empListSearchQuery = ev.target.value;
+      empListCurrentPage = 1;
       renderEmployeeMasterList();
       const newInput = document.getElementById('empListSearchInput');
       newInput.focus();
@@ -1681,10 +1706,24 @@
     });
     document.getElementById('empListStatusFilterSelect').addEventListener('change', (ev) => {
       empListStatusFilter = ev.target.value;
+      empListCurrentPage = 1;
       renderEmployeeMasterList();
     });
     document.getElementById('empGroupedModeBtn').addEventListener('click', () => { empListGroupMode = 'grouped'; renderEmployeeMasterList(); });
-    document.getElementById('empFlatModeBtn').addEventListener('click', () => { empListGroupMode = 'flat'; renderEmployeeMasterList(); });
+    document.getElementById('empFlatModeBtn').addEventListener('click', () => { empListGroupMode = 'flat'; empListCurrentPage = 1; renderEmployeeMasterList(); });
+    document.getElementById('empPageSizeSelect')?.addEventListener('change', (ev) => {
+      empListPageSize = Number(ev.target.value);
+      empListCurrentPage = 1;
+      renderEmployeeMasterList();
+    });
+    document.getElementById('empPagePrevBtn')?.addEventListener('click', () => {
+      empListCurrentPage = Math.max(1, empListCurrentPage - 1);
+      renderEmployeeMasterList();
+    });
+    document.getElementById('empPageNextBtn')?.addEventListener('click', () => {
+      empListCurrentPage += 1;
+      renderEmployeeMasterList();
+    });
     document.getElementById('empListViewBtn').addEventListener('click', () => { empListViewMode = 'list'; renderEmployeeMasterList(); });
     document.getElementById('empCardViewBtn').addEventListener('click', () => { empListViewMode = 'card'; renderEmployeeMasterList(); });
     document.querySelectorAll('.emp-dept-header').forEach(btn => {
