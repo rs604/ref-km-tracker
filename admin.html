@@ -1485,6 +1485,7 @@
 
   // ============ EMPLOYEE MASTER (list view) ============
   let empListStatusFilter = 'active_suspended';
+  let empListSearchQuery = '';
   let empListViewMode = 'list';
   let empGroupCollapsed = {};
 
@@ -1503,10 +1504,15 @@
       return;
     }
 
+    const searchQ = empListSearchQuery.trim().toLowerCase();
     const filtered = employeeListData.filter(e => {
-      if (empListStatusFilter === 'all') return true;
-      if (empListStatusFilter === 'active_suspended') return e.status === 'active' || e.status === 'suspended';
-      return e.status === empListStatusFilter;
+      const statusMatch = empListStatusFilter === 'all' ? true
+        : empListStatusFilter === 'active_suspended' ? (e.status === 'active' || e.status === 'suspended')
+        : e.status === empListStatusFilter;
+      if (!statusMatch) return false;
+      if (!searchQ) return true;
+      const haystack = [e.name, e.departments?.name, e.employee_code, e.mobile_number, e.designations?.name].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(searchQ);
     });
 
     // Group by department
@@ -1581,7 +1587,8 @@
     let html = `<div class="panel">
       <div class="panel-header">
         <span class="panel-title">Employees<span class="count-chip">${filtered.length}</span></span>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input type="text" id="empListSearchInput" placeholder="Search by name or department..." value="${empListSearchQuery}" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken); width:200px;" />
           <select id="empListStatusFilterSelect" style="padding:7px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunken);">
             <option value="active_suspended" ${empListStatusFilter === 'active_suspended' ? 'selected' : ''}>Active &amp; Suspended</option>
             <option value="all" ${empListStatusFilter === 'all' ? 'selected' : ''}>All Employees</option>
@@ -1607,6 +1614,13 @@
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
+    document.getElementById('empListSearchInput').addEventListener('input', (ev) => {
+      empListSearchQuery = ev.target.value;
+      renderEmployeeMasterList();
+      const newInput = document.getElementById('empListSearchInput');
+      newInput.focus();
+      newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+    });
     document.getElementById('empListStatusFilterSelect').addEventListener('change', (ev) => {
       empListStatusFilter = ev.target.value;
       renderEmployeeMasterList();
