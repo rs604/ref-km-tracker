@@ -1733,7 +1733,7 @@
             <div class="field"><label>Employee Code *</label><input id="f_employee_code" value="${e.employee_code || ''}" /></div>
             <div class="field"><label>Full Name *</label><input id="f_name" value="${e.name || ''}" /></div>
             <div class="field"><label>Mobile Number *</label><input id="f_mobile_number" value="${e.mobile_number || ''}" /></div>
-            <div class="field"><label>Role</label><select id="f_role">
+            <div class="field"><label>Role *</label><select id="f_role">
               <option value="employee" ${e.role === 'employee' ? 'selected' : ''}>Employee</option>
               <option value="admin" ${e.role === 'admin' ? 'selected' : ''}>Admin</option>
               <option value="director" ${e.role === 'director' ? 'selected' : ''}>Director</option>
@@ -1789,15 +1789,15 @@
               <option value="D/o" ${e.father_husband_relation === 'D/o' ? 'selected' : ''}>D/o</option>
               <option value="W/o" ${e.father_husband_relation === 'W/o' ? 'selected' : ''}>W/o</option>
             </select></div>
-            <div class="field"><label id="fatherHusbandLabel">Father Name</label><input id="f_father_husband_name" value="${e.father_husband_name || ''}" /></div>
-            <div class="field"><label>Marital Status</label><select id="f_marital_status">
+            <div class="field"><label id="fatherHusbandLabel">Father Name *</label><input id="f_father_husband_name" value="${e.father_husband_name || ''}" /></div>
+            <div class="field"><label>Marital Status *</label><select id="f_marital_status">
               <option value="">—</option><option ${e.marital_status === 'Single' ? 'selected' : ''}>Single</option><option ${e.marital_status === 'Married' ? 'selected' : ''}>Married</option>
             </select></div>
             <div class="field"><label>Religion</label><input id="f_religion" value="${e.religion || ''}" /></div>
-            <div class="field"><label>Gender</label><select id="f_gender">
+            <div class="field"><label>Gender *</label><select id="f_gender">
               <option value="">—</option><option ${e.gender === 'Male' ? 'selected' : ''}>Male</option><option ${e.gender === 'Female' ? 'selected' : ''}>Female</option><option ${e.gender === 'Other' ? 'selected' : ''}>Other</option>
             </select></div>
-            <div class="field"><label>Date of Birth</label><input type="date" id="f_date_of_birth" value="${e.date_of_birth || ''}" /></div>
+            <div class="field"><label>Date of Birth *</label><input type="date" id="f_date_of_birth" value="${e.date_of_birth || ''}" /></div>
             <div class="field"><label>Blood Group</label><input id="f_blood_group" value="${e.blood_group || ''}" /></div>
             <div class="field"><label>Place of Birth</label><input id="f_place_of_birth" value="${e.place_of_birth || ''}" /></div>
             <div class="field"><label>Aadhar No *</label><input id="f_aadhar_no" value="${e.aadhar_no || ''}" /></div>
@@ -1806,9 +1806,9 @@
 
           <p class="section-label">Present Address</p>
           <div class="form-grid">
-            <div class="field full"><label>Address</label><input id="f_present_address" value="${e.present_address || ''}" /></div>
-            <div class="field"><label>State</label><select id="f_present_state_id">${opt(dd.states, e.present_state_id)}</select></div>
-            <div class="field"><label>City</label><select id="f_present_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.present_state_id), e.present_city_id)}</select></div>
+            <div class="field full"><label>Address *</label><input id="f_present_address" value="${e.present_address || ''}" /></div>
+            <div class="field"><label>State *</label><select id="f_present_state_id">${opt(dd.states, e.present_state_id)}</select></div>
+            <div class="field"><label>City *</label><select id="f_present_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.present_state_id), e.present_city_id)}</select></div>
             <div class="field"><label>Pincode</label><input id="f_present_pincode" value="${e.present_pincode || ''}" /></div>
           </div>
 
@@ -1816,25 +1816,25 @@
 
           <p class="section-label">Permanent Address</p>
           <div class="form-grid" id="permanentAddressFields">
-            <div class="field full"><label>Address</label><input id="f_permanent_address" value="${e.permanent_address || ''}" /></div>
-            <div class="field"><label>State</label><select id="f_permanent_state_id">${opt(dd.states, e.permanent_state_id)}</select></div>
-            <div class="field"><label>City</label><select id="f_permanent_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.permanent_state_id), e.permanent_city_id)}</select></div>
+            <div class="field full"><label>Address *</label><input id="f_permanent_address" value="${e.permanent_address || ''}" /></div>
+            <div class="field"><label>State *</label><select id="f_permanent_state_id">${opt(dd.states, e.permanent_state_id)}</select></div>
+            <div class="field"><label>City *</label><select id="f_permanent_city_id">${opt((dd.cities || []).filter(c => c.state_id === e.permanent_state_id), e.permanent_city_id)}</select></div>
             <div class="field"><label>Pincode</label><input id="f_permanent_pincode" value="${e.permanent_pincode || ''}" /></div>
           </div>
 
           <p class="section-label">Other</p>
           <div class="form-grid">
             <div class="field"><label>Tel (Home)</label><input id="f_tel_home" value="${e.tel_home || ''}" /></div>
-            <div class="field"><label>Driving License No</label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
+            <div class="field"><label>Driving License No <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(required if Vehicle KM applicable)</span></label><input id="f_driving_license_number" value="${e.driving_license_number || ''}" /></div>
             <div class="field"><label>License Category</label><input id="f_driving_license_category" value="${e.driving_license_category || ''}" /></div>
-            <div class="field"><label>License Validity</label><input type="date" id="f_driving_license_validity" value="${e.driving_license_validity || ''}" /></div>
-            ${docUploadField('driving_license', 'Driving License Upload', findDoc('driving_license'))}
+            <div class="field"><label>License Validity <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(required if License No filled)</span></label><input type="date" id="f_driving_license_validity" value="${e.driving_license_validity || ''}" /></div>
+            ${docUploadField('driving_license', 'Driving License Upload (required if Vehicle KM applicable)', findDoc('driving_license'))}
           </div>
           <p class="section-label">Emergency Contact</p>
           <div class="form-grid">
-            <div class="field"><label>Name</label><input id="f_emergency_contact_name" value="${e.emergency_contact_name || ''}" /></div>
-            <div class="field"><label>Relation</label><input id="f_emergency_contact_relation" value="${e.emergency_contact_relation || ''}" /></div>
-            <div class="field"><label>Mobile</label><input id="f_emergency_contact_mobile" value="${e.emergency_contact_mobile || ''}" /></div>
+            <div class="field"><label>Name *</label><input id="f_emergency_contact_name" value="${e.emergency_contact_name || ''}" /></div>
+            <div class="field"><label>Relation *</label><input id="f_emergency_contact_relation" value="${e.emergency_contact_relation || ''}" /></div>
+            <div class="field"><label>Mobile *</label><input id="f_emergency_contact_mobile" value="${e.emergency_contact_mobile || ''}" /></div>
             <div class="field full"><label>Address</label><input id="f_emergency_contact_address" value="${e.emergency_contact_address || ''}" /></div>
           </div>
         </div>
@@ -1867,7 +1867,7 @@
 
           <p class="section-label">Salary Break-up (Monthly, ₹)</p>
           <div class="form-grid">
-            <div class="field"><label>Basic</label><input type="number" id="f_salary_basic" value="${e.salary_basic || ''}" /></div>
+            <div class="field"><label>Basic *</label><input type="number" id="f_salary_basic" value="${e.salary_basic || ''}" /></div>
             <div class="field"><label>HRA</label><input type="number" id="f_salary_hra" value="${e.salary_hra || ''}" /></div>
             <div class="field"><label>DA</label><input type="number" id="f_salary_da" value="${e.salary_da || ''}" /></div>
             <div class="field"><label>TA</label><input type="number" id="f_salary_ta" value="${e.salary_ta || ''}" /></div>
@@ -1902,7 +1902,7 @@
               <option value="active">Active Employees</option>
               <option value="left">Left Employees</option>
             </select></div>
-            <div class="field"><label>Reference Employee</label><select id="f_ref_employee_name">
+            <div class="field"><label>REF Employee Reference *</label><select id="f_ref_employee_name">
               <option value="">Select employee</option>
               ${(employeeListData || []).filter(emp => emp.status === 'active' || emp.status === 'left').map(emp => `<option value="${emp.name}" data-status="${emp.status}" ${e.ref_employee_name === emp.name ? 'selected' : ''}>${emp.name} (${emp.employee_code || emp.mobile_number}) — ${emp.status}</option>`).join('')}
             </select></div>
@@ -2118,7 +2118,7 @@
     function render() {
       const editingRow = editingIndex !== null ? rows[editingIndex] : {};
       const formRowHtml = `
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; padding:14px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
           ${fields.map(f => {
             const val = f.type === 'checkbox' ? editingRow[f.key] : (editingRow[f.key] ?? '');
             const label = (f.required ? f.label + ' *' : f.label);
@@ -2151,8 +2151,25 @@
         fields.forEach(f => {
           const input = container.querySelector(`[data-key="${f.key}"]`);
           if (!input) return;
-          newRow[f.key] = f.type === 'checkbox' ? input.checked : input.value;
+          newRow[f.key] = f.type === 'checkbox' ? input.checked : input.value.trim();
         });
+
+        // Block entirely blank rows
+        const anyFilled = fields.some(f => {
+          const v = newRow[f.key];
+          return f.type === 'checkbox' ? false : !!v;
+        });
+        if (!anyFilled) {
+          alert('Please fill in at least the required fields before adding.');
+          return;
+        }
+        // Block if a required field is missing
+        const missingRequired = fields.find(f => f.required && !newRow[f.key]);
+        if (missingRequired) {
+          alert(`"${missingRequired.label}" is required.`);
+          return;
+        }
+
         if (editingIndex !== null) {
           rows[editingIndex] = newRow;
           editingIndex = null;
@@ -2316,6 +2333,7 @@
     }
     if (!core.salary_basic) errors.push('Salary Basic');
     if (!hasDoc('photo')) errors.push('Photo Upload');
+    if (checked('f_has_ref_employee') && !core.ref_employee_name) errors.push('REF Employee Reference (since "Has reference of a REF employee" is checked)');
     const educationRows = document.getElementById('educationRows').getRows();
     if (educationRows.length === 0) errors.push('At least one Education / Qualification entry');
     const familyRows = document.getElementById('familyRows').getRows();
