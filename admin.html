@@ -127,8 +127,9 @@
     height: 100vh;
     overflow-y: auto;
   }
-  .sidebar-brand { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
-  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 1.5px; }
+  .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
+  .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; margin-top: 2px; }
   .sidebar-nav { flex: 1; padding: 14px 10px; }
   .nav-item {
     display: flex;
@@ -530,8 +531,8 @@
 <div class="app-shell" id="appShell" style="display:none">
   <div class="sidebar">
     <div class="sidebar-brand">
-      <img src="logo.png" alt="REF logo" style="width:65px; height:65px; display:block; flex-shrink:0;" />
-      <div class="name">REF ERP</div>
+      <div class="name">REF</div>
+      <div class="tag">ERP</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
       <button class="nav-item active" data-view="km-tracker">
