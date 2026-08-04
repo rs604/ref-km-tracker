@@ -1266,7 +1266,6 @@
     { table: 'employee_categories', label: 'Employee Category' },
     { table: 'relationships', label: 'Relationship' },
     { table: 'asset_types', label: 'Asset Type' },
-    { table: 'salary_components', label: 'Salary Component', isSalary: true },
   ];
   let activeDropdownTab = DROPDOWN_CONFIG[0].table;
 
@@ -1291,23 +1290,24 @@
           <div class="panel-body">
             <div class="form-grid" style="align-items:end; margin-bottom:14px;">
               <div class="field"><label>${cfg.label} Name</label><input type="text" class="dd-name-input" data-table="${cfg.table}" /></div>
-              ${cfg.isSalary ? `<div class="field"><label>Type</label><select class="dd-calc-type" data-table="${cfg.table}">
-                <option value="fixed">Fixed Amount</option><option value="percentage">Percentage of Basic</option>
-              </select></div>
-              <div class="field"><label>Value</label><input type="number" class="dd-value-input" data-table="${cfg.table}" /></div>` : ''}
               <div class="field"><button class="btn dd-add-btn" data-table="${cfg.table}">Add</button></div>
             </div>
             <div class="msg" id="dd-msg-${cfg.table}"></div>
             <div class="table-scroll">
               <table class="ledger"><thead><tr>
-                <th>Name</th>${cfg.isSalary ? '<th>Type</th><th>Value</th>' : ''}<th>Status</th><th>Action</th>
+                <th>Name</th><th>Status</th><th>Action</th>
               </tr></thead><tbody>
-                ${items.length === 0 ? `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No ${cfg.label.toLowerCase()}s yet.</td></tr>` : items.map(item => `
+                ${items.length === 0 ? `<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:16px;">No ${cfg.label.toLowerCase()}s yet.</td></tr>` : items.map(item => `
                   <tr class="${item.is_active ? 'row-approved' : 'row-open'}">
                     <td data-label="Name">${item.name}</td>
-                    ${cfg.isSalary ? `<td data-label="Type">${item.calculation_type}</td><td data-label="Value" class="num-cell">${item.calculation_type === 'percentage' ? item.value + '%' : '₹' + item.value}</td>` : ''}
                     <td data-label="Status"><span class="status-tag ${item.is_active ? 'approved' : 'pending_evening'}">${item.is_active ? 'Active' : 'Inactive'}</span></td>
-                    <td data-label="Action" class="action-cell"><button class="btn btn-sm btn-outline dd-toggle-btn" data-table="${cfg.table}" data-id="${item.id}" data-active="${item.is_active}">${item.is_active ? 'Deactivate' : 'Activate'}</button></td>
+                    <td data-label="Action" class="action-cell">
+                      <div style="display:flex; gap:4px;">
+                        <button class="icon-btn dd-rename-btn" data-table="${cfg.table}" data-id="${item.id}" data-name="${item.name}" title="Rename">${ACTION_ICONS.edit}</button>
+                        <button class="btn btn-sm btn-outline dd-toggle-btn" data-table="${cfg.table}" data-id="${item.id}" data-active="${item.is_active}">${item.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button class="icon-btn icon-btn-danger dd-delete-btn" data-table="${cfg.table}" data-id="${item.id}" title="Delete Permanently">${ACTION_ICONS.exit}</button>
+                      </div>
+                    </td>
                   </tr>`).join('')}
               </tbody></table>
             </div>
@@ -1371,6 +1371,34 @@
         } else {
           setButtonLoading(btn, false);
           alert(res.error || 'Failed to update.');
+        }
+      });
+    });
+
+    document.querySelectorAll('.dd-rename-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newName = prompt('Rename to:', btn.dataset.name);
+        if (!newName || !newName.trim() || newName.trim() === btn.dataset.name) return;
+        const res = await apiHR({ action: 'rename_dropdown_item', table: btn.dataset.table, id: btn.dataset.id, new_name: newName.trim() });
+        if (res.success) {
+          const idx = dropdownsData[btn.dataset.table].findIndex(i => i.id === btn.dataset.id);
+          if (idx >= 0) dropdownsData[btn.dataset.table][idx] = res.item;
+          renderHRDropdowns();
+        } else {
+          alert(res.error || 'Failed to rename.');
+        }
+      });
+    });
+
+    document.querySelectorAll('.dd-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Permanently delete this item? This cannot be undone.')) return;
+        const res = await apiHR({ action: 'delete_dropdown_item', table: btn.dataset.table, id: btn.dataset.id });
+        if (res.success) {
+          dropdownsData[btn.dataset.table] = dropdownsData[btn.dataset.table].filter(i => i.id !== btn.dataset.id);
+          renderHRDropdowns();
+        } else {
+          alert(res.error || 'Failed to delete.');
         }
       });
     });
@@ -1565,6 +1593,14 @@
             ${viewField('UAN Number', e.uan_number)}
             ${viewField('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
             ${viewField('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
+          </div>
+          <p class="section-label">Salary Break-up (Monthly, ₹)</p>
+          <div class="form-grid">
+            ${viewField('Basic', e.salary_basic)}
+            ${viewField('HRA', e.salary_hra)}
+            ${viewField('DA', e.salary_da)}
+            ${viewField('TA', e.salary_ta)}
+            ${viewField('ESI Deduction', e.salary_esi)}
           </div>
         </div>
         <div id="etab-family" class="etab-content" style="display:none">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
@@ -1775,6 +1811,15 @@
             <div class="field" id="pfNumberField" style="${e.pf_applicable ? '' : 'display:none'}"><label>PF Number</label><input id="f_pf_number" value="${e.pf_number || ''}" /></div>
             <div class="field"><label><input type="checkbox" id="f_esi_applicable" ${e.esi_applicable ? 'checked' : ''} style="width:auto; margin-right:6px;" />ESI Applicable</label></div>
             <div class="field" id="esiNumberField" style="${e.esi_applicable ? '' : 'display:none'}"><label>ESI Number</label><input id="f_esi_number" value="${e.esi_number || ''}" /></div>
+          </div>
+
+          <p class="section-label">Salary Break-up (Monthly, ₹)</p>
+          <div class="form-grid">
+            <div class="field"><label>Basic</label><input type="number" id="f_salary_basic" value="${e.salary_basic || ''}" /></div>
+            <div class="field"><label>HRA</label><input type="number" id="f_salary_hra" value="${e.salary_hra || ''}" /></div>
+            <div class="field"><label>DA</label><input type="number" id="f_salary_da" value="${e.salary_da || ''}" /></div>
+            <div class="field"><label>TA</label><input type="number" id="f_salary_ta" value="${e.salary_ta || ''}" /></div>
+            <div class="field"><label>ESI Deduction</label><input type="number" id="f_salary_esi" value="${e.salary_esi || ''}" /></div>
           </div>
         </div>
 
@@ -2026,6 +2071,11 @@
       bank_account_holder_name: val('f_bank_account_holder_name'),
       pan_number: val('f_pan_number'),
       uan_number: val('f_uan_number'),
+      salary_basic: val('f_salary_basic'),
+      salary_hra: val('f_salary_hra'),
+      salary_da: val('f_salary_da'),
+      salary_ta: val('f_salary_ta'),
+      salary_esi: val('f_salary_esi'),
       pf_applicable: checked('f_pf_applicable'),
       pf_number: checked('f_pf_applicable') ? val('f_pf_number') : null,
       esi_applicable: checked('f_esi_applicable'),
