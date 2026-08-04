@@ -1485,6 +1485,7 @@
   let empListStatusFilter = 'active_suspended';
   let empListSearchQuery = '';
   let empListViewMode = 'list';
+  let empListGroupMode = 'grouped';
   let empGroupCollapsed = {};
 
   function escapeRegex(str) {
@@ -1538,6 +1539,45 @@
     let groupsHtml = '';
     if (deptNames.length === 0) {
       groupsHtml = '<div class="empty-state" style="padding:16px;">No employees match this filter.</div>';
+    } else if (empListGroupMode === 'flat') {
+      // Flat tabular view: no department grouping, single continuous list with a Department column
+      const flatEmployees = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+      if (empListViewMode === 'card') {
+        groupsHtml = `<div class="emp-card-grid">
+          ${flatEmployees.map(e => `
+            <div class="emp-card">
+              <div class="emp-card-top">
+                <div>
+                  <div class="emp-card-name"><a href="#" class="emp-view-link" data-id="${e.id}">${highlightMatch(e.name, rawSearchQ)}</a></div>
+                  <div class="emp-card-code">${highlightMatch(e.employee_code, rawSearchQ)} <span class="role-tag">${e.role}</span></div>
+                </div>
+                <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span>
+              </div>
+              <div class="emp-card-meta">
+                <div>${highlightMatch(e.departments?.name, rawSearchQ)}</div>
+                <div>${highlightMatch(e.designations?.name, rawSearchQ)}</div>
+                <div>${highlightMatch(e.mobile_number, rawSearchQ)}</div>
+              </div>
+              ${empActionIcons(e)}
+            </div>`).join('')}
+        </div>`;
+      } else {
+        groupsHtml = `<div class="table-scroll"><table class="ledger emp-dept-table"><thead><tr>
+          <th>Code</th><th>Name</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
+        </tr></thead><tbody>
+          ${flatEmployees.map(e => `
+            <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
+              <td data-label="Code" class="mono">${highlightMatch(e.employee_code, rawSearchQ)}</td>
+              <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${highlightMatch(e.name, rawSearchQ)}</a><span class="role-tag">${e.role}</span></td>
+              <td data-label="Mobile">${highlightMatch(e.mobile_number, rawSearchQ)}</td>
+              <td data-label="Department">${highlightMatch(e.departments?.name, rawSearchQ)}</td>
+              <td data-label="Designation">${highlightMatch(e.designations?.name, rawSearchQ)}</td>
+              <td data-label="Category">${e.employee_categories?.name || '—'}</td>
+              <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
+              <td data-label="Action" class="action-cell">${empActionIcons(e)}</td>
+            </tr>`).join('')}
+        </tbody></table></div>`;
+      }
     } else {
       deptNames.forEach((deptName, deptIdx) => {
         const groupEmployees = groups[deptName];
@@ -1607,6 +1647,14 @@
             <option value="left" ${empListStatusFilter === 'left' ? 'selected' : ''}>Left</option>
           </select>
           <div class="view-toggle">
+            <button type="button" class="view-toggle-btn ${empListGroupMode === 'grouped' ? 'active' : ''}" id="empGroupedModeBtn" title="Group by Department">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button type="button" class="view-toggle-btn ${empListGroupMode === 'flat' ? 'active' : ''}" id="empFlatModeBtn" title="Simple Table (no grouping)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M3 6v12M21 6v12"/></svg>
+            </button>
+          </div>
+          <div class="view-toggle">
             <button type="button" class="view-toggle-btn ${empListViewMode === 'list' ? 'active' : ''}" id="empListViewBtn" title="List View">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
             </button>
@@ -1614,7 +1662,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             </button>
           </div>
-          <button class="btn btn-sm" id="newEmployeeBtn">+ Add New Employee</button>
+          <button class="btn btn-sm" id="newEmployeeBtn" title="Add New Employee" style="width:32px; padding:0; font-size:16px; font-weight:700;">+</button>
         </div>
       </div>
       <div class="panel-body" style="padding:12px 18px;">
@@ -1635,6 +1683,8 @@
       empListStatusFilter = ev.target.value;
       renderEmployeeMasterList();
     });
+    document.getElementById('empGroupedModeBtn').addEventListener('click', () => { empListGroupMode = 'grouped'; renderEmployeeMasterList(); });
+    document.getElementById('empFlatModeBtn').addEventListener('click', () => { empListGroupMode = 'flat'; renderEmployeeMasterList(); });
     document.getElementById('empListViewBtn').addEventListener('click', () => { empListViewMode = 'list'; renderEmployeeMasterList(); });
     document.getElementById('empCardViewBtn').addEventListener('click', () => { empListViewMode = 'card'; renderEmployeeMasterList(); });
     document.querySelectorAll('.emp-dept-header').forEach(btn => {
