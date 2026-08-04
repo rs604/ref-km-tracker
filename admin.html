@@ -214,7 +214,7 @@
     padding: 0 0 8px;
     background: none;
     border: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     cursor: pointer;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 13px;
@@ -222,9 +222,10 @@
     color: var(--ink);
     text-align: left;
   }
-  .emp-dept-header:hover .emp-dept-name { color: var(--steel); }
-  .emp-dept-name { transition: color 0.1s ease; }
+  .emp-dept-header:hover .emp-dept-name { filter: brightness(0.8); }
+  .emp-dept-name { transition: filter 0.1s ease; }
   .emp-dept-body { padding: 10px 0 0; }
+  .emp-dept-table thead th { text-align: center; border-bottom: 2px solid var(--ink); }
 
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .view-toggle-btn {
@@ -1515,14 +1516,16 @@
       groups[deptName].push(e);
     });
     const deptNames = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+    const DEPT_COLORS = ['#2563a8', '#0f766e', '#7c3aed', '#b45309', '#be123c', '#4d7c0f', '#0369a1', '#9333ea', '#b91c1c', '#15803d'];
 
     let groupsHtml = '';
     if (deptNames.length === 0) {
       groupsHtml = '<div class="empty-state" style="padding:16px;">No employees match this filter.</div>';
     } else {
-      deptNames.forEach(deptName => {
+      deptNames.forEach((deptName, deptIdx) => {
         const groupEmployees = groups[deptName];
         const isCollapsed = !!empGroupCollapsed[deptName];
+        const deptColor = DEPT_COLORS[deptIdx % DEPT_COLORS.length];
 
         let groupBodyHtml;
         if (empListViewMode === 'card') {
@@ -1545,7 +1548,7 @@
               </div>`).join('')}
           </div>`;
         } else {
-          groupBodyHtml = `<table class="ledger"><thead><tr>
+          groupBodyHtml = `<table class="ledger emp-dept-table"><thead><tr>
             <th>Code</th><th>Name</th><th>Mobile</th><th>Designation</th><th>Category</th><th>Status</th><th>Action</th>
           </tr></thead><tbody>
             ${groupEmployees.map(e => `
@@ -1562,8 +1565,8 @@
         }
 
         groupsHtml += `<div class="emp-dept-group">
-          <button type="button" class="emp-dept-header" data-dept="${deptName}">
-            <span class="emp-dept-name">${deptName}</span>
+          <button type="button" class="emp-dept-header" data-dept="${deptName}" style="border-bottom-color:${deptColor};">
+            <span class="emp-dept-name" style="color:${deptColor};">${deptName}</span>
             <span class="count-chip">${groupEmployees.length}</span>
             <span style="margin-left:auto; font-size:11px; font-weight:500; color:var(--muted);">${isCollapsed ? 'Show' : 'Hide'}</span>
           </button>
