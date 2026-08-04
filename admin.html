@@ -152,6 +152,9 @@
   .nav-arrow { width: 12px !important; height: 12px !important; opacity: 0.45; }
   .nav-children { padding-left: 0; }
   .nav-item.level-2 { font-size: 12.5px; padding-left: 34px; }
+  .nav-item.level-3 { font-size: 12px; padding-left: 46px; color: rgba(255,255,255,0.62); }
+  .nav-item.level-3.active { color: #fff; }
+  .nav-item.nav-parent.level-2 .nav-arrow { margin-left: auto; }
   .nav-section-label {
     font-size: 10px;
     font-weight: 700;
@@ -450,14 +453,21 @@
       <div class="nav-children" id="tree-control-panel" style="display:none">
 
         <div class="nav-section-label">Masters</div>
-        <button class="nav-item level-2" data-view="employee-master">
+        <button class="nav-item nav-parent level-2" data-toggle="tree-hr">
           <svg class="ic-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
-          <span class="nav-label">Employee Master</span>
+          <span class="nav-label">HR</span>
+          <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
-        <button class="nav-item level-2" data-view="hr-dropdowns">
-          <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
-          <span class="nav-label">HR Dropdowns</span>
-        </button>
+        <div class="nav-children" id="tree-hr" style="display:none">
+          <button class="nav-item level-3" data-view="employee-master">
+            <svg class="ic-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+            <span class="nav-label">Employee Master</span>
+          </button>
+          <button class="nav-item level-3" data-view="hr-dropdowns">
+            <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
+            <span class="nav-label">HR Dropdowns</span>
+          </button>
+        </div>
 
         <div class="nav-section-label">System</div>
         <button class="nav-item level-2" data-view="admin-panel">
