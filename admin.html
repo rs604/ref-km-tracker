@@ -1491,6 +1491,17 @@
   let empListViewMode = 'list';
   let empGroupCollapsed = {};
 
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  function highlightMatch(text, query) {
+    if (text === null || text === undefined) return '—';
+    const str = String(text);
+    if (!query) return str;
+    const re = new RegExp('(' + escapeRegex(query) + ')', 'gi');
+    return str.replace(re, '<mark style="background:#fde68a; padding:0 1px; border-radius:2px;">$1</mark>');
+  }
+
   function empActionIcons(e) {
     return `<div style="display:flex; gap:4px;">
       ${iconBtn('emp-edit-btn', e.id, 'edit', 'Edit', '')}
@@ -1506,7 +1517,8 @@
       return;
     }
 
-    const searchQ = empListSearchQuery.trim().toLowerCase();
+    const rawSearchQ = empListSearchQuery.trim();
+    const searchQ = rawSearchQ.toLowerCase();
     const filtered = employeeListData.filter(e => {
       const statusMatch = empListStatusFilter === 'all' ? true
         : empListStatusFilter === 'active_suspended' ? (e.status === 'active' || e.status === 'suspended')
@@ -1543,15 +1555,15 @@
               <div class="emp-card">
                 <div class="emp-card-top">
                   <div>
-                    <div class="emp-card-name"><a href="#" class="emp-view-link" data-id="${e.id}">${e.name}</a></div>
-                    <div class="emp-card-code">${e.employee_code || '—'} <span class="role-tag">${e.role}</span></div>
+                    <div class="emp-card-name"><a href="#" class="emp-view-link" data-id="${e.id}">${highlightMatch(e.name, rawSearchQ)}</a></div>
+                    <div class="emp-card-code">${highlightMatch(e.employee_code, rawSearchQ)} <span class="role-tag">${e.role}</span></div>
                   </div>
                   <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span>
                 </div>
                 <div class="emp-card-meta">
-                  <div>${e.designations?.name || '—'}</div>
+                  <div>${highlightMatch(e.designations?.name, rawSearchQ)}</div>
                   <div>${e.employee_categories?.name || '—'}</div>
-                  <div>${e.mobile_number}</div>
+                  <div>${highlightMatch(e.mobile_number, rawSearchQ)}</div>
                 </div>
                 ${empActionIcons(e)}
               </div>`).join('')}
@@ -1562,10 +1574,10 @@
           </tr></thead><tbody>
             ${groupEmployees.map(e => `
               <tr class="${e.status === 'active' ? 'row-approved' : e.status === 'suspended' ? 'row-pending' : 'row-open'}">
-                <td data-label="Code" class="mono">${e.employee_code || '—'}</td>
-                <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${e.name}</a><span class="role-tag">${e.role}</span></td>
-                <td data-label="Mobile">${e.mobile_number}</td>
-                <td data-label="Designation">${e.designations?.name || '—'}</td>
+                <td data-label="Code" class="mono">${highlightMatch(e.employee_code, rawSearchQ)}</td>
+                <td data-label="Name"><a href="#" class="emp-view-link" data-id="${e.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${highlightMatch(e.name, rawSearchQ)}</a><span class="role-tag">${e.role}</span></td>
+                <td data-label="Mobile">${highlightMatch(e.mobile_number, rawSearchQ)}</td>
+                <td data-label="Designation">${highlightMatch(e.designations?.name, rawSearchQ)}</td>
                 <td data-label="Category">${e.employee_categories?.name || '—'}</td>
                 <td data-label="Status"><span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}">${e.status}</span></td>
                 <td data-label="Action" class="action-cell">${empActionIcons(e)}</td>
@@ -1575,7 +1587,7 @@
 
         groupsHtml += `<div class="emp-dept-group">
           <button type="button" class="emp-dept-header" data-dept="${deptName}" style="border-bottom-color:${deptColor};">
-            <span class="emp-dept-name" style="color:${deptColor};">${deptName}</span>
+            <span class="emp-dept-name" style="color:${deptColor};">${highlightMatch(deptName, rawSearchQ)}</span>
             <span class="count-chip">${groupEmployees.length}</span>
             <span style="margin-left:auto; font-size:11px; font-weight:500; color:var(--muted);">${isCollapsed ? 'Show' : 'Hide'}</span>
           </button>
