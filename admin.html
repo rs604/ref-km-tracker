@@ -38,7 +38,7 @@
     color: var(--ink);
     font-size: 14px;
   }
-  h1, h2, h3, .label-face { font-family: 'IBM Plex Sans', sans-serif; }
+  h1, h2, h3, .label-face { font-family: 'Inter', sans-serif; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
 
   #authGate {
@@ -56,7 +56,7 @@
     border-radius: 10px;
     padding: 32px 26px;
   }
-  .auth-brand { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 2px; color: var(--steel); margin-bottom: 4px; }
+  .auth-brand { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 2px; color: var(--steel); margin-bottom: 4px; }
   .auth-title { font-size: 20px; font-weight: 650; margin: 0 0 22px; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
@@ -83,7 +83,7 @@
     color: #fff;
     font-size: 13px;
     font-weight: 600;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
   }
   .btn:hover { background: var(--steel-dark); }
@@ -131,7 +131,7 @@
     overflow-y: auto;
   }
   .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-  .sidebar-brand .name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
+  .sidebar-brand .name { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1.5px; }
   .sidebar-brand .tag { font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; margin-top: 2px; }
   .sidebar-nav { flex: 1; padding: 14px 10px; }
   .nav-item {
@@ -144,7 +144,7 @@
     border: none;
     background: transparent;
     color: rgba(255,255,255,0.72);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13.5px;
     font-weight: 500;
     cursor: pointer;
@@ -219,7 +219,7 @@
     border: none;
     border-bottom: 2px solid var(--border);
     cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 650;
     color: var(--ink);
@@ -269,7 +269,7 @@
   }
   .panel-header.header-pending { background: var(--amber-bg); border-bottom-color: #ecd9ae; }
   .panel-header.header-recent { background: var(--slate-bg); border-bottom-color: #d2d9df; }
-  .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'IBM Plex Sans', sans-serif; }
+  .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'Inter', sans-serif; }
   .section-label { font-size: 12.5px; font-weight: 700; color: var(--steel); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
   .form-section-heading {
     font-size: 15.5px;
@@ -419,7 +419,7 @@
     padding: 13px 2px;
     border: none;
     background: none;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13.5px;
     font-weight: 600;
     color: var(--muted);
@@ -3051,13 +3051,13 @@
         <!-- LEFT: employee list -->
         <div style="width:270px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column;">
           <div style="padding:14px; border-bottom:1px solid var(--border);">
-            <input type="text" id="permSearchInput" placeholder="Search name, email, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px; padding:9px 12px; border-radius:8px;" />
+            <input type="text" id="permSearchInput" placeholder="Search name, email, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:#fff;" />
             <div style="display:flex; gap:8px;">
-              <select id="permDeptFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px;">
+              <select id="permDeptFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:#fff;">
                 <option value="all">All Departments</option>
                 ${deptNames.map(d => `<option value="${d}" ${permDeptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
               </select>
-              <select id="permStatusFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px;">
+              <select id="permStatusFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:#fff;">
                 <option value="all" ${permStatusFilter === 'all' ? 'selected' : ''}>All Status</option>
                 <option value="active" ${permStatusFilter === 'active' ? 'selected' : ''}>Active</option>
                 <option value="suspended" ${permStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
