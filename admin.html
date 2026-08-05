@@ -230,6 +230,12 @@
   .emp-dept-body { padding: 10px 0 0; }
   .emp-dept-table thead th { text-align: center; border-bottom: 2px solid var(--ink); }
 
+  .perm-grid-table th, .perm-grid-table td { text-align: center; vertical-align: middle; }
+  .perm-grid-table th:first-child, .perm-grid-table td:first-child { text-align: left; }
+  .perm-grid-table td input[type="checkbox"], .perm-grid-table th input[type="checkbox"] { width: 16px; height: 16px; margin: 0 auto; display: block; cursor: pointer; }
+  .perm-col-header { user-select: none; }
+  .perm-col-header:hover { background: var(--surface-sunken); }
+
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .view-toggle-btn {
     width: 32px; height: 32px;
@@ -3044,13 +3050,13 @@
         <!-- LEFT: employee list -->
         <div style="width:270px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column;">
           <div style="padding:14px; border-bottom:1px solid var(--border);">
-            <input type="text" id="permSearchInput" placeholder="Search name, code, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px;" />
-            <div style="display:flex; gap:6px;">
-              <select id="permDeptFilterSelect" style="flex:1; font-size:12px; padding:6px 8px;">
+            <input type="text" id="permSearchInput" placeholder="Search name, email, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px; padding:9px 12px; border-radius:8px;" />
+            <div style="display:flex; gap:8px;">
+              <select id="permDeptFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px;">
                 <option value="all">All Departments</option>
                 ${deptNames.map(d => `<option value="${d}" ${permDeptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
               </select>
-              <select id="permStatusFilterSelect" style="flex:1; font-size:12px; padding:6px 8px;">
+              <select id="permStatusFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px;">
                 <option value="all" ${permStatusFilter === 'all' ? 'selected' : ''}>All Status</option>
                 <option value="active" ${permStatusFilter === 'active' ? 'selected' : ''}>Active</option>
                 <option value="suspended" ${permStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
@@ -3083,7 +3089,7 @@
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="btn btn-sm btn-outline" id="permGrantAllBtn">Grant All</button>
                 <button class="btn btn-sm btn-outline" id="permRevokeAllBtn" style="color:var(--danger); border-color:#efd2cf;">Revoke All</button>
-                <button class="btn btn-sm" id="permSaveBtn" ${permDirty ? '' : 'disabled'}>Save${permDirty ? ' *' : ''}</button>
+                <button class="btn btn-sm" id="permSaveBtn" ${permDirty ? '' : 'disabled'}>Save</button>
               </div>` : ''}
             </div>
 
@@ -3093,10 +3099,10 @@
               </div>
             ` : `
               <div class="table-scroll" style="max-height:none;">
-                <table class="ledger">
+                <table class="ledger perm-grid-table">
                   <thead><tr>
                     <th style="text-align:left;">Module</th>
-                    ${ACTION_ORDER.map(a => `<th class="perm-col-header" data-action="${a}" style="cursor:pointer;" title="Click to toggle all">${ACTION_LABELS[a]}<br/><input type="checkbox" class="perm-col-select-all" data-action="${a}" style="width:auto; margin-top:4px;" /></th>`).join('')}
+                    ${ACTION_ORDER.map(a => `<th class="perm-col-header" data-action="${a}" style="text-align:center; cursor:pointer;" title="Click to toggle all in this column">${ACTION_LABELS[a]}<br/><span style="font-size:10px; font-weight:500; color:var(--muted); text-transform:none;">all</span></th>`).join('')}
                   </tr></thead>
                   <tbody>
                     ${modules.map(mod => {
@@ -3145,12 +3151,13 @@
       });
     });
 
-    document.querySelectorAll('.perm-col-select-all').forEach(cb => {
-      cb.addEventListener('change', (ev) => {
-        const action = ev.target.dataset.action;
+    document.querySelectorAll('.perm-col-header').forEach(th => {
+      th.addEventListener('click', () => {
+        const action = th.dataset.action;
         const permIdsForAction = permissions.filter(p => p.action === action).map(p => p.id);
-        if (ev.target.checked) permIdsForAction.forEach(id => pendingGrantedIds.add(id));
-        else permIdsForAction.forEach(id => pendingGrantedIds.delete(id));
+        const allChecked = permIdsForAction.every(id => pendingGrantedIds.has(id));
+        if (allChecked) permIdsForAction.forEach(id => pendingGrantedIds.delete(id));
+        else permIdsForAction.forEach(id => pendingGrantedIds.add(id));
         permDirty = true;
         renderAdminPanel();
       });
