@@ -3047,11 +3047,11 @@
 
     let html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Roles &amp; Permissions</span></div>
-      <div style="display:flex; min-height:560px; gap:24px;">
+      <div style="display:flex; min-height:560px; gap:24px; background:var(--paper); padding:20px;">
 
         <!-- LEFT: employee list -->
-        <div style="width:270px; flex-shrink:0; display:flex; flex-direction:column;">
-          <div style="padding:14px 14px 14px 0; border-bottom:1px solid var(--border);">
+        <div style="width:270px; flex-shrink:0; display:flex; flex-direction:column; background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+          <div style="padding:14px; border-bottom:1px solid var(--border);">
             <input type="text" id="permSearchInput" placeholder="Search name, email, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:#fff;" />
             <div style="display:flex; gap:8px;">
               <select id="permDeptFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:#fff;">
@@ -3080,7 +3080,7 @@
         </div>
 
         <!-- RIGHT: selected employee's permission grid -->
-        <div id="permDetailScrollArea" style="flex:1; padding:0 20px; min-width:0; max-height:560px; overflow-y:auto;">
+        <div id="permDetailScrollArea" style="flex:1; padding:0 20px; min-width:0; max-height:560px; overflow-y:auto; overflow-x:hidden; background:#fff; border:1px solid var(--border); border-radius:8px;">
           ${!selectedEmp ? '<div class="empty-state">Select an employee.</div>' : `
             <div id="permDetailStickyHeader" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; padding:16px 0; background:#fff; position:sticky; top:0; z-index:20;">
               <div>
