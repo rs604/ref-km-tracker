@@ -635,11 +635,7 @@
     <!-- Admin Panel view -->
     <div id="view-admin-panel" class="view-content" style="display:none">
       <div class="content">
-        <div class="panel">
-          <div class="panel-body empty-state">
-            Role-based permissions will be configured here once roles are finalized as the ERP grows.
-          </div>
-        </div>
+        <div id="adminPanelContent"></div>
       </div>
     </div>
 
@@ -736,7 +732,18 @@
     return res.json();
   }
 
+  async function apiPermissions(payload) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/permissions-actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ requester_id: currentUser.id, ...payload })
+    });
+    return res.json();
+  }
+
   let controlPanelLoaded = false;
+  let adminPanelLoaded = false;
+  let permissionsData = null;
   let dropdownsData = null;
   let employeeListData = null;
 
@@ -809,6 +816,9 @@
     const isControlPanelView = ['employee-master', 'hr-dropdowns', 'admin-panel'].includes(viewKey);
     if (isControlPanelView && !controlPanelLoaded) {
       loadControlPanel();
+    }
+    if (viewKey === 'admin-panel' && !adminPanelLoaded) {
+      loadAdminPanel();
     }
     if (isControlPanelView) {
       const cpChildren = document.getElementById('tree-control-panel');
@@ -2949,6 +2959,109 @@
       sessionStorage.removeItem('admin_session');
     }
   })();
+
+  // ============ ADMIN PANEL: ROLES & PERMISSIONS ============
+  const MODULE_LABELS = {
+    employee_master: 'Employee Master',
+    km_tracker: 'Km Tracker',
+    vendor_master: 'Vendor Master',
+    vendor_data_bank: 'Vendor Data Bank',
+  };
+  const ACTION_LABELS = { view: 'View', create: 'Create', edit: 'Edit', approve: 'Approve', delete: 'Delete' };
+  let selectedPermEmployeeId = null;
+
+  async function loadAdminPanel() {
+    adminPanelLoaded = true;
+    const res = await apiPermissions({ action: 'get_permissions_data' });
+    if (res.success) {
+      permissionsData = res;
+    } else {
+      document.getElementById('adminPanelContent').innerHTML = `<div class="panel"><div class="panel-body msg error" style="display:block;">${res.error || 'Failed to load.'}</div></div>`;
+      return;
+    }
+    renderAdminPanel();
+  }
+
+  function renderAdminPanel() {
+    if (!permissionsData) return;
+    const { permissions, employees, grants } = permissionsData;
+    if (!selectedPermEmployeeId && employees.length > 0) {
+      selectedPermEmployeeId = employees.find(e => e.role !== 'owner')?.id || employees[0].id;
+    }
+    const selectedEmp = employees.find(e => e.id === selectedPermEmployeeId);
+    const empGrantedIds = new Set(grants.filter(g => g.employee_id === selectedPermEmployeeId).map(g => g.permission_id));
+
+    const modules = [...new Set(permissions.map(p => p.module))];
+
+    let html = `<div class="panel">
+      <div class="panel-header"><span class="panel-title">Roles &amp; Permissions</span></div>
+      <div class="panel-body">
+        <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+          <div style="min-width:220px;">
+            <label style="display:block; font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px;">Employee</label>
+            <select id="permEmployeeSelect" style="width:100%; max-width:260px;">
+              ${employees.map(e => `<option value="${e.id}" ${e.id === selectedPermEmployeeId ? 'selected' : ''}>${e.name}${e.role === 'owner' ? ' (Owner)' : ''}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        ${selectedEmp?.role === 'owner' ? `
+          <div class="empty-state" style="margin-top:20px;">
+            <strong>${selectedEmp.name}</strong> is the Owner — Owner automatically has full access to everything and can never be restricted. No permissions need to be granted here.
+          </div>
+        ` : `
+          <div style="margin-top:22px;">
+            ${modules.map(mod => {
+              const modPerms = permissions.filter(p => p.module === mod);
+              return `<div style="margin-bottom:20px;">
+                <div style="font-size:12.5px; font-weight:650; color:var(--steel); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border);">${MODULE_LABELS[mod] || mod}</div>
+                <div style="display:flex; gap:18px; flex-wrap:wrap;">
+                  ${modPerms.map(p => `
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+                      <input type="checkbox" class="perm-checkbox" data-permission-id="${p.id}" ${empGrantedIds.has(p.id) ? 'checked' : ''} style="width:auto;" />
+                      ${ACTION_LABELS[p.action] || p.action}
+                    </label>`).join('')}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="msg" id="permMsg"></div>
+        `}
+      </div>
+    </div>`;
+
+    document.getElementById('adminPanelContent').innerHTML = html;
+
+    document.getElementById('permEmployeeSelect').addEventListener('change', (ev) => {
+      selectedPermEmployeeId = ev.target.value;
+      renderAdminPanel();
+    });
+
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+      cb.addEventListener('change', async (ev) => {
+        const permissionId = ev.target.dataset.permissionId;
+        const msg = document.getElementById('permMsg');
+        ev.target.disabled = true;
+        const res = await apiPermissions({
+          action: ev.target.checked ? 'grant_permission' : 'revoke_permission',
+          employee_id: selectedPermEmployeeId,
+          permission_id: permissionId,
+        });
+        ev.target.disabled = false;
+        if (res.success) {
+          if (ev.target.checked) {
+            permissionsData.grants.push({ employee_id: selectedPermEmployeeId, permission_id: permissionId });
+          } else {
+            permissionsData.grants = permissionsData.grants.filter(g => !(g.employee_id === selectedPermEmployeeId && g.permission_id === permissionId));
+          }
+          if (msg) { msg.className = 'msg success'; msg.textContent = 'Updated.'; setTimeout(() => { msg.className = 'msg'; msg.textContent = ''; }, 1500); }
+        } else {
+          ev.target.checked = !ev.target.checked;
+          if (msg) { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to update.'; }
+        }
+      });
+    });
+  }
 </script>
 </body>
 </html>
