@@ -235,7 +235,8 @@
   .perm-grid-table td input[type="checkbox"], .perm-grid-table th input[type="checkbox"] { width: 16px; height: 16px; margin: 0 auto; display: block; cursor: pointer; }
   .perm-col-header { user-select: none; }
   .perm-col-header:hover { background: var(--surface-sunken); }
-  .perm-category-row td { background: var(--surface-sunken); }
+  .perm-category-row td { background: #e8f0f9; }
+  .perm-grid-table thead th { background: #eef1f4 !important; position: sticky; z-index: 25; }
 
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .view-toggle-btn {
@@ -3046,11 +3047,11 @@
 
     let html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Roles &amp; Permissions</span></div>
-      <div style="display:flex; min-height:560px;">
+      <div style="display:flex; min-height:560px; gap:24px;">
 
         <!-- LEFT: employee list -->
-        <div style="width:270px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column;">
-          <div style="padding:14px; border-bottom:1px solid var(--border);">
+        <div style="width:270px; flex-shrink:0; display:flex; flex-direction:column;">
+          <div style="padding:14px 14px 14px 0; border-bottom:1px solid var(--border);">
             <input type="text" id="permSearchInput" placeholder="Search name, email, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:#fff;" />
             <div style="display:flex; gap:8px;">
               <select id="permDeptFilterSelect" style="flex:1; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:#fff;">
@@ -3065,7 +3066,7 @@
               </select>
             </div>
           </div>
-          <div style="flex:1; overflow-y:auto; max-height:560px;">
+          <div style="flex:1; overflow-y:auto; max-height:520px;">
             ${filteredEmployees.length === 0 ? '<div class="empty-state" style="padding:16px;">No matches.</div>' : filteredEmployees.map(e => `
               <button type="button" class="perm-emp-row ${e.id === selectedPermEmployeeId ? 'active' : ''}" data-id="${e.id}" style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 14px; border:none; border-bottom:1px solid var(--border); background:${e.id === selectedPermEmployeeId ? 'var(--steel-dark)' : '#fff'}; color:${e.id === selectedPermEmployeeId ? '#fff' : 'var(--ink)'}; cursor:pointer; text-align:left;">
                 <div style="width:32px; height:32px; border-radius:50%; background:${avatarColor(e.name)}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0;">${initials(e.name)}</div>
@@ -3079,9 +3080,9 @@
         </div>
 
         <!-- RIGHT: selected employee's permission grid -->
-        <div style="flex:1; padding:20px; min-width:0;">
+        <div id="permDetailScrollArea" style="flex:1; padding:0 20px; min-width:0; max-height:560px; overflow-y:auto;">
           ${!selectedEmp ? '<div class="empty-state">Select an employee.</div>' : `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <div id="permDetailStickyHeader" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; padding:16px 0; background:#fff; position:sticky; top:0; z-index:20;">
               <div>
                 <div style="font-size:16px; font-weight:700;">${selectedEmp.name}</div>
                 <div style="font-size:12.5px; color:var(--muted); margin-top:2px;">${selectedEmp.designations?.name || '—'} · ${selectedEmp.departments?.name || '—'} · ${selectedEmp.mobile_number || ''}</div>
@@ -3099,8 +3100,7 @@
                 <strong>${selectedEmp.name}</strong> is the Owner — automatic full access to everything, cannot be restricted. No permissions to manage here.
               </div>
             ` : `
-              <div class="table-scroll" style="max-height:none;">
-                <table class="ledger perm-grid-table">
+              <table class="ledger perm-grid-table">
                   <thead><tr>
                     <th style="text-align:left;">Module / Sub-head</th>
                     ${ACTION_ORDER.map(a => `<th class="perm-col-header" data-action="${a}" style="text-align:center; cursor:pointer;" title="Click to toggle all in this column">${ACTION_LABELS[a]}<br/><span style="font-size:10px; font-weight:500; color:var(--muted); text-transform:none;">all</span></th>`).join('')}
@@ -3139,7 +3139,6 @@
                     }).join('')}
                   </tbody>
                 </table>
-              </div>
               <div class="msg" id="permMsg"></div>
             `}
           `}
@@ -3148,6 +3147,14 @@
     </div>`;
 
     document.getElementById('adminPanelContent').innerHTML = html;
+
+    // Freeze the table's column headers directly below the sticky employee-info/buttons row,
+    // within the right panel's own scroll region
+    const permStickyHeader = document.getElementById('permDetailStickyHeader');
+    if (permStickyHeader) {
+      const h = permStickyHeader.offsetHeight;
+      document.querySelectorAll('.perm-grid-table thead th').forEach(th => { th.style.top = h + 'px'; });
+    }
 
     document.getElementById('permSearchInput').addEventListener('input', (ev) => {
       permSearchQuery = ev.target.value;
