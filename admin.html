@@ -2970,8 +2970,16 @@
     vendor_master: 'Vendor Master',
     vendor_data_bank: 'Vendor Data Bank',
   };
+  const ACTION_ORDER = ['view', 'create', 'edit', 'approve', 'delete'];
   const ACTION_LABELS = { view: 'View', create: 'Create', edit: 'Edit', approve: 'Approve', delete: 'Delete' };
+  const AVATAR_COLORS = ['#2563a8', '#0f766e', '#7c3aed', '#b45309', '#be123c', '#4d7c0f', '#0369a1', '#9333ea'];
+
   let selectedPermEmployeeId = null;
+  let permSearchQuery = '';
+  let permDeptFilter = 'all';
+  let permStatusFilter = 'all';
+  let pendingGrantedIds = null; // working set of permission_ids for the selected employee, null until loaded
+  let permDirty = false;
 
   async function loadAdminPanel() {
     adminPanelLoaded = true;
@@ -2985,84 +2993,202 @@
     renderAdminPanel();
   }
 
+  function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  }
+  function avatarColor(name) {
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  }
+
+  function selectPermEmployee(id) {
+    selectedPermEmployeeId = id;
+    const grants = permissionsData.grants.filter(g => g.employee_id === id).map(g => g.permission_id);
+    pendingGrantedIds = new Set(grants);
+    permDirty = false;
+    renderAdminPanel();
+  }
+
   function renderAdminPanel() {
     if (!permissionsData) return;
     const { permissions, employees, grants } = permissionsData;
-    if (!selectedPermEmployeeId && employees.length > 0) {
-      selectedPermEmployeeId = employees.find(e => e.role !== 'owner')?.id || employees[0].id;
-    }
-    const selectedEmp = employees.find(e => e.id === selectedPermEmployeeId);
-    const empGrantedIds = new Set(grants.filter(g => g.employee_id === selectedPermEmployeeId).map(g => g.permission_id));
 
+    if (!selectedPermEmployeeId && employees.length > 0) {
+      const first = employees.find(e => e.role !== 'owner') || employees[0];
+      selectPermEmployee(first.id);
+      return; // selectPermEmployee re-calls renderAdminPanel
+    }
+
+    const deptNames = [...new Set(employees.map(e => e.departments?.name).filter(Boolean))].sort();
+
+    const filteredEmployees = employees.filter(e => {
+      if (permStatusFilter !== 'all' && e.status !== permStatusFilter) return false;
+      if (permDeptFilter !== 'all' && e.departments?.name !== permDeptFilter) return false;
+      if (permSearchQuery) {
+        const hay = [e.name, e.employee_code, e.designations?.name].filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(permSearchQuery.toLowerCase())) return false;
+      }
+      return true;
+    });
+
+    const selectedEmp = employees.find(e => e.id === selectedPermEmployeeId);
     const modules = [...new Set(permissions.map(p => p.module))];
 
-    let html = `<div class="panel">
+    const empHasAccess = (empId) => grants.some(g => g.employee_id === empId);
+
+    let html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Roles &amp; Permissions</span></div>
-      <div class="panel-body">
-        <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
-          <div style="min-width:220px;">
-            <label style="display:block; font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px;">Employee</label>
-            <select id="permEmployeeSelect" style="width:100%; max-width:260px;">
-              ${employees.map(e => `<option value="${e.id}" ${e.id === selectedPermEmployeeId ? 'selected' : ''}>${e.name}${e.role === 'owner' ? ' (Owner)' : ''}</option>`).join('')}
-            </select>
+      <div style="display:flex; min-height:560px;">
+
+        <!-- LEFT: employee list -->
+        <div style="width:270px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column;">
+          <div style="padding:14px; border-bottom:1px solid var(--border);">
+            <input type="text" id="permSearchInput" placeholder="Search name, code, designation..." value="${permSearchQuery}" style="width:100%; margin-bottom:8px;" />
+            <div style="display:flex; gap:6px;">
+              <select id="permDeptFilterSelect" style="flex:1; font-size:12px; padding:6px 8px;">
+                <option value="all">All Departments</option>
+                ${deptNames.map(d => `<option value="${d}" ${permDeptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
+              </select>
+              <select id="permStatusFilterSelect" style="flex:1; font-size:12px; padding:6px 8px;">
+                <option value="all" ${permStatusFilter === 'all' ? 'selected' : ''}>All Status</option>
+                <option value="active" ${permStatusFilter === 'active' ? 'selected' : ''}>Active</option>
+                <option value="suspended" ${permStatusFilter === 'suspended' ? 'selected' : ''}>Suspended</option>
+                <option value="left" ${permStatusFilter === 'left' ? 'selected' : ''}>Left</option>
+              </select>
+            </div>
+          </div>
+          <div style="flex:1; overflow-y:auto; max-height:560px;">
+            ${filteredEmployees.length === 0 ? '<div class="empty-state" style="padding:16px;">No matches.</div>' : filteredEmployees.map(e => `
+              <button type="button" class="perm-emp-row ${e.id === selectedPermEmployeeId ? 'active' : ''}" data-id="${e.id}" style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 14px; border:none; border-bottom:1px solid var(--border); background:${e.id === selectedPermEmployeeId ? 'var(--steel-dark)' : '#fff'}; color:${e.id === selectedPermEmployeeId ? '#fff' : 'var(--ink)'}; cursor:pointer; text-align:left;">
+                <div style="width:32px; height:32px; border-radius:50%; background:${avatarColor(e.name)}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0;">${initials(e.name)}</div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.name}</div>
+                  <div style="font-size:11px; opacity:0.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.designations?.name || '—'} · ${e.departments?.name || '—'}</div>
+                </div>
+                <span style="font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; background:${empHasAccess(e.id) ? (e.id === selectedPermEmployeeId ? 'rgba(255,255,255,0.2)' : 'var(--green-bg)') : (e.id === selectedPermEmployeeId ? 'rgba(255,255,255,0.1)' : 'var(--surface-sunken)')}; color:${empHasAccess(e.id) ? (e.id === selectedPermEmployeeId ? '#fff' : 'var(--green)') : (e.id === selectedPermEmployeeId ? 'rgba(255,255,255,0.6)' : 'var(--muted)')};">${empHasAccess(e.id) || e.role === 'owner' ? 'HAS ACCESS' : 'NO ACCESS'}</span>
+              </button>`).join('')}
           </div>
         </div>
 
-        ${selectedEmp?.role === 'owner' ? `
-          <div class="empty-state" style="margin-top:20px;">
-            <strong>${selectedEmp.name}</strong> is the Owner — Owner automatically has full access to everything and can never be restricted. No permissions need to be granted here.
-          </div>
-        ` : `
-          <div style="margin-top:22px;">
-            ${modules.map(mod => {
-              const modPerms = permissions.filter(p => p.module === mod);
-              return `<div style="margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:650; color:var(--steel); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border);">${MODULE_LABELS[mod] || mod}</div>
-                <div style="display:flex; gap:18px; flex-wrap:wrap;">
-                  ${modPerms.map(p => `
-                    <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
-                      <input type="checkbox" class="perm-checkbox" data-permission-id="${p.id}" ${empGrantedIds.has(p.id) ? 'checked' : ''} style="width:auto;" />
-                      ${ACTION_LABELS[p.action] || p.action}
-                    </label>`).join('')}
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="msg" id="permMsg"></div>
-        `}
+        <!-- RIGHT: selected employee's permission grid -->
+        <div style="flex:1; padding:20px; min-width:0;">
+          ${!selectedEmp ? '<div class="empty-state">Select an employee.</div>' : `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+              <div>
+                <div style="font-size:16px; font-weight:700;">${selectedEmp.name}</div>
+                <div style="font-size:12.5px; color:var(--muted); margin-top:2px;">${selectedEmp.designations?.name || '—'} · ${selectedEmp.departments?.name || '—'} · ${selectedEmp.mobile_number || ''}</div>
+              </div>
+              ${selectedEmp.role !== 'owner' ? `
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-sm btn-outline" id="permGrantAllBtn">Grant All</button>
+                <button class="btn btn-sm btn-outline" id="permRevokeAllBtn" style="color:var(--danger); border-color:#efd2cf;">Revoke All</button>
+                <button class="btn btn-sm" id="permSaveBtn" ${permDirty ? '' : 'disabled'}>Save${permDirty ? ' *' : ''}</button>
+              </div>` : ''}
+            </div>
+
+            ${selectedEmp.role === 'owner' ? `
+              <div class="empty-state">
+                <strong>${selectedEmp.name}</strong> is the Owner — automatic full access to everything, cannot be restricted. No permissions to manage here.
+              </div>
+            ` : `
+              <div class="table-scroll" style="max-height:none;">
+                <table class="ledger">
+                  <thead><tr>
+                    <th style="text-align:left;">Module</th>
+                    ${ACTION_ORDER.map(a => `<th class="perm-col-header" data-action="${a}" style="cursor:pointer;" title="Click to toggle all">${ACTION_LABELS[a]}<br/><input type="checkbox" class="perm-col-select-all" data-action="${a}" style="width:auto; margin-top:4px;" /></th>`).join('')}
+                  </tr></thead>
+                  <tbody>
+                    ${modules.map(mod => {
+                      const modPerms = permissions.filter(p => p.module === mod);
+                      return `<tr>
+                        <td style="font-weight:600;">${MODULE_LABELS[mod] || mod}</td>
+                        ${ACTION_ORDER.map(a => {
+                          const perm = modPerms.find(p => p.action === a);
+                          if (!perm) return `<td style="text-align:center; color:var(--border);">—</td>`;
+                          return `<td style="text-align:center;"><input type="checkbox" class="perm-cell-checkbox" data-permission-id="${perm.id}" data-action="${a}" ${pendingGrantedIds.has(perm.id) ? 'checked' : ''} style="width:auto;" /></td>`;
+                        }).join('')}
+                      </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div class="msg" id="permMsg"></div>
+            `}
+          `}
+        </div>
       </div>
     </div>`;
 
     document.getElementById('adminPanelContent').innerHTML = html;
 
-    document.getElementById('permEmployeeSelect').addEventListener('change', (ev) => {
-      selectedPermEmployeeId = ev.target.value;
+    document.getElementById('permSearchInput').addEventListener('input', (ev) => {
+      permSearchQuery = ev.target.value;
+      renderAdminPanel();
+      const el = document.getElementById('permSearchInput');
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+    document.getElementById('permDeptFilterSelect').addEventListener('change', (ev) => { permDeptFilter = ev.target.value; renderAdminPanel(); });
+    document.getElementById('permStatusFilterSelect').addEventListener('change', (ev) => { permStatusFilter = ev.target.value; renderAdminPanel(); });
+
+    document.querySelectorAll('.perm-emp-row').forEach(btn => {
+      btn.addEventListener('click', () => selectPermEmployee(btn.dataset.id));
+    });
+
+    document.querySelectorAll('.perm-cell-checkbox').forEach(cb => {
+      cb.addEventListener('change', (ev) => {
+        const pid = ev.target.dataset.permissionId;
+        if (ev.target.checked) pendingGrantedIds.add(pid); else pendingGrantedIds.delete(pid);
+        permDirty = true;
+        renderAdminPanel();
+      });
+    });
+
+    document.querySelectorAll('.perm-col-select-all').forEach(cb => {
+      cb.addEventListener('change', (ev) => {
+        const action = ev.target.dataset.action;
+        const permIdsForAction = permissions.filter(p => p.action === action).map(p => p.id);
+        if (ev.target.checked) permIdsForAction.forEach(id => pendingGrantedIds.add(id));
+        else permIdsForAction.forEach(id => pendingGrantedIds.delete(id));
+        permDirty = true;
+        renderAdminPanel();
+      });
+    });
+
+    document.getElementById('permGrantAllBtn')?.addEventListener('click', () => {
+      permissions.forEach(p => pendingGrantedIds.add(p.id));
+      permDirty = true;
+      renderAdminPanel();
+    });
+    document.getElementById('permRevokeAllBtn')?.addEventListener('click', () => {
+      pendingGrantedIds.clear();
+      permDirty = true;
       renderAdminPanel();
     });
 
-    document.querySelectorAll('.perm-checkbox').forEach(cb => {
-      cb.addEventListener('change', async (ev) => {
-        const permissionId = ev.target.dataset.permissionId;
-        const msg = document.getElementById('permMsg');
-        ev.target.disabled = true;
-        const res = await apiPermissions({
-          action: ev.target.checked ? 'grant_permission' : 'revoke_permission',
-          employee_id: selectedPermEmployeeId,
-          permission_id: permissionId,
-        });
-        ev.target.disabled = false;
-        if (res.success) {
-          if (ev.target.checked) {
-            permissionsData.grants.push({ employee_id: selectedPermEmployeeId, permission_id: permissionId });
-          } else {
-            permissionsData.grants = permissionsData.grants.filter(g => !(g.employee_id === selectedPermEmployeeId && g.permission_id === permissionId));
-          }
-          if (msg) { msg.className = 'msg success'; msg.textContent = 'Updated.'; setTimeout(() => { msg.className = 'msg'; msg.textContent = ''; }, 1500); }
-        } else {
-          ev.target.checked = !ev.target.checked;
-          if (msg) { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to update.'; }
-        }
+    document.getElementById('permSaveBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('permSaveBtn');
+      const msg = document.getElementById('permMsg');
+      setButtonLoading(btn, true, 'Saving');
+      const res = await apiPermissions({
+        action: 'bulk_set_permissions',
+        employee_id: selectedPermEmployeeId,
+        permission_ids: [...pendingGrantedIds],
       });
+      if (res.success) {
+        permissionsData.grants = permissionsData.grants.filter(g => g.employee_id !== selectedPermEmployeeId)
+          .concat([...pendingGrantedIds].map(pid => ({ employee_id: selectedPermEmployeeId, permission_id: pid })));
+        permDirty = false;
+        renderAdminPanel();
+        setTimeout(() => {
+          const m = document.getElementById('permMsg');
+          if (m) { m.className = 'msg success'; m.textContent = 'Saved.'; setTimeout(() => { m.className = 'msg'; m.textContent = ''; }, 1800); }
+        }, 50);
+      } else {
+        setButtonLoading(btn, false);
+        if (msg) { msg.className = 'msg error'; msg.textContent = res.error || 'Failed to save.'; }
+      }
     });
   }
 </script>
