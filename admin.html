@@ -235,6 +235,7 @@
   .perm-grid-table td input[type="checkbox"], .perm-grid-table th input[type="checkbox"] { width: 16px; height: 16px; margin: 0 auto; display: block; cursor: pointer; }
   .perm-col-header { user-select: none; }
   .perm-col-header:hover { background: var(--surface-sunken); }
+  .perm-category-row td { background: var(--surface-sunken); }
 
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .view-toggle-btn {
@@ -2970,7 +2971,7 @@
   })();
 
   // ============ ADMIN PANEL: ROLES & PERMISSIONS ============
-  const MODULE_LABELS = {
+  const SUB_HEAD_LABELS = {
     employee_master: 'Employee Master',
     km_tracker: 'Km Tracker',
     vendor_master: 'Vendor Master',
@@ -3039,7 +3040,7 @@
     });
 
     const selectedEmp = employees.find(e => e.id === selectedPermEmployeeId);
-    const modules = [...new Set(permissions.map(p => p.module))];
+    const categories = [...new Set(permissions.map(p => p.category))];
 
     const empHasAccess = (empId) => grants.some(g => g.employee_id === empId);
 
@@ -3101,20 +3102,40 @@
               <div class="table-scroll" style="max-height:none;">
                 <table class="ledger perm-grid-table">
                   <thead><tr>
-                    <th style="text-align:left;">Module</th>
+                    <th style="text-align:left;">Module / Sub-head</th>
                     ${ACTION_ORDER.map(a => `<th class="perm-col-header" data-action="${a}" style="text-align:center; cursor:pointer;" title="Click to toggle all in this column">${ACTION_LABELS[a]}<br/><span style="font-size:10px; font-weight:500; color:var(--muted); text-transform:none;">all</span></th>`).join('')}
                   </tr></thead>
                   <tbody>
-                    ${modules.map(mod => {
-                      const modPerms = permissions.filter(p => p.module === mod);
-                      return `<tr>
-                        <td style="font-weight:600;">${MODULE_LABELS[mod] || mod}</td>
+                    ${categories.map(cat => {
+                      const catPerms = permissions.filter(p => p.category === cat);
+                      const subHeads = [...new Set(catPerms.map(p => p.sub_head))];
+                      const catPermIds = catPerms.map(p => p.id);
+
+                      // Category header row: its own select-all checkboxes per action, toggling every sub-head under it at once
+                      let rowsHtml = `<tr class="perm-category-row" data-category="${cat}">
+                        <td style="font-weight:700; color:var(--steel);">${cat}</td>
                         ${ACTION_ORDER.map(a => {
-                          const perm = modPerms.find(p => p.action === a);
-                          if (!perm) return `<td style="text-align:center; color:var(--border);">—</td>`;
-                          return `<td style="text-align:center;"><input type="checkbox" class="perm-cell-checkbox" data-permission-id="${perm.id}" data-action="${a}" ${pendingGrantedIds.has(perm.id) ? 'checked' : ''} style="width:auto;" /></td>`;
+                          const idsForAction = catPerms.filter(p => p.action === a).map(p => p.id);
+                          if (idsForAction.length === 0) return `<td style="text-align:center; color:var(--border);">—</td>`;
+                          const allChecked = idsForAction.every(id => pendingGrantedIds.has(id));
+                          return `<td style="text-align:center;"><input type="checkbox" class="perm-category-checkbox" data-category="${cat}" data-action="${a}" ${allChecked ? 'checked' : ''} style="width:auto;" /></td>`;
                         }).join('')}
                       </tr>`;
+
+                      // Sub-head rows nested under the category
+                      subHeads.forEach(sh => {
+                        const shPerms = catPerms.filter(p => p.sub_head === sh);
+                        rowsHtml += `<tr>
+                          <td style="padding-left:28px;">${SUB_HEAD_LABELS[sh] || sh}</td>
+                          ${ACTION_ORDER.map(a => {
+                            const perm = shPerms.find(p => p.action === a);
+                            if (!perm) return `<td style="text-align:center; color:var(--border);">—</td>`;
+                            return `<td style="text-align:center;"><input type="checkbox" class="perm-cell-checkbox" data-permission-id="${perm.id}" data-category="${cat}" data-action="${a}" ${pendingGrantedIds.has(perm.id) ? 'checked' : ''} style="width:auto;" /></td>`;
+                          }).join('')}
+                        </tr>`;
+                      });
+
+                      return rowsHtml;
                     }).join('')}
                   </tbody>
                 </table>
@@ -3146,6 +3167,18 @@
       cb.addEventListener('change', (ev) => {
         const pid = ev.target.dataset.permissionId;
         if (ev.target.checked) pendingGrantedIds.add(pid); else pendingGrantedIds.delete(pid);
+        permDirty = true;
+        renderAdminPanel();
+      });
+    });
+
+    document.querySelectorAll('.perm-category-checkbox').forEach(cb => {
+      cb.addEventListener('change', (ev) => {
+        const cat = ev.target.dataset.category;
+        const action = ev.target.dataset.action;
+        const permIds = permissions.filter(p => p.category === cat && p.action === action).map(p => p.id);
+        if (ev.target.checked) permIds.forEach(id => pendingGrantedIds.add(id));
+        else permIds.forEach(id => pendingGrantedIds.delete(id));
         permDirty = true;
         renderAdminPanel();
       });
