@@ -7,6 +7,24 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
+<script>window.__BUILD_VERSION__ = '1786010043';</script>
+<script>
+(function() {
+  function checkVersion() {
+    fetch('version.txt?_=' + Date.now(), { cache: 'no-store' })
+      .then(function(r) { return r.text(); })
+      .then(function(v) {
+        v = v.trim();
+        if (v && v !== window.__BUILD_VERSION__) {
+          window.location.href = window.location.pathname + '?_v=' + Date.now();
+        }
+      })
+      .catch(function() {});
+  }
+  checkVersion();
+  setInterval(checkVersion, 60000);
+})();
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
 

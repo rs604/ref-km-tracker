@@ -7,6 +7,24 @@
 <meta http-equiv="Expires" content="0" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Vehicle KM Tracker — Login</title>
+<script>window.__BUILD_VERSION__ = '1786010043';</script>
+<script>
+(function() {
+  function checkVersion() {
+    fetch('version.txt?_=' + Date.now(), { cache: 'no-store' })
+      .then(function(r) { return r.text(); })
+      .then(function(v) {
+        v = v.trim();
+        if (v && v !== window.__BUILD_VERSION__) {
+          window.location.href = window.location.pathname + '?_v=' + Date.now();
+        }
+      })
+      .catch(function() {});
+  }
+  checkVersion();
+  setInterval(checkVersion, 60000);
+})();
+</script>
 <style>
   :root {
     --bg: #eef1f4;
