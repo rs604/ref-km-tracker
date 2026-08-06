@@ -277,12 +277,21 @@
     font-weight: 700;
     color: var(--ink);
     margin: 0 0 16px;
-    padding-top: 26px;
-    border-top: 2px solid var(--border);
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
     scroll-margin-top: 64px;
   }
   .etab-content:first-of-type .form-section-heading { border-top: none; padding-top: 0; }
   .form-subnav-sticky { position: sticky; top: 0; z-index: 5; }
+
+  .msdd-trigger { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--border); border-radius:6px; padding:10px 11px; background:var(--surface-sunken); cursor:pointer; font-size:14px; }
+  .msdd-trigger:hover { border-color: var(--steel); }
+  .msdd-trigger svg { width:14px; height:14px; color:var(--muted); flex-shrink:0; }
+  .msdd-field { position: relative; }
+  .msdd-panel { position:absolute; top:100%; left:0; right:0; margin-top:4px; background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.12); z-index:30; padding:6px 0; }
+  .msdd-option { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13.5px; cursor:pointer; }
+  .msdd-option:hover { background:var(--surface-sunken); }
+  .msdd-option input { width:auto; }
   .category-content, .cptab-content, .etab-content, .hrtab-content { }
   .panel-body { padding: 18px; }
   .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
@@ -2235,6 +2244,44 @@
   }
 
   // Reusable inline "upload next to this field" widget — used for Aadhar/License/PF/ESI docs
+  // Reusable "dropdown with checkboxes" multi-select
+  function multiSelectDropdown(id, label, options, selected) {
+    selected = selected || [];
+    return `<div class="field msdd-field">
+      <label>${label}</label>
+      <div class="msdd-trigger" id="${id}-trigger" tabindex="0">
+        <span id="${id}-display">${selected.length ? selected.join(', ') : 'Select...'}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="msdd-panel" id="${id}-panel" style="display:none;">
+        ${options.map(o => `<label class="msdd-option"><input type="checkbox" class="msdd-checkbox" data-value="${o}" ${selected.includes(o) ? 'checked' : ''} />${o}</label>`).join('')}
+      </div>
+    </div>`;
+  }
+  function wireMultiSelectDropdown(id) {
+    const trigger = document.getElementById(`${id}-trigger`);
+    const panel = document.getElementById(`${id}-panel`);
+    const display = document.getElementById(`${id}-display`);
+    if (!trigger || !panel) return;
+    trigger.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      document.querySelectorAll('.msdd-panel').forEach(p => { if (p !== panel) p.style.display = 'none'; });
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', (ev) => {
+      if (panel.style.display !== 'none' && !panel.contains(ev.target) && ev.target !== trigger) panel.style.display = 'none';
+    });
+    panel.querySelectorAll('.msdd-checkbox').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const selected = [...panel.querySelectorAll('.msdd-checkbox:checked')].map(c => c.dataset.value);
+        display.textContent = selected.length ? selected.join(', ') : 'Select...';
+      });
+    });
+  }
+  function getMultiSelectValues(id) {
+    return [...document.querySelectorAll(`#${id}-panel .msdd-checkbox:checked`)].map(c => c.dataset.value);
+  }
+
   function docUploadField(slot, label, existingDoc) {
     return `<div class="field">
       <label>${label}</label>
@@ -3397,13 +3444,8 @@
           <div class="field" id="vf_pan_field" style="${isIndividual ? 'display:none' : ''}"><label>PAN Number *</label><input id="vf_pan" placeholder="AAAAA9999A" style="text-transform:uppercase;" maxlength="10" /></div>
           <div class="field" id="vf_aadhar_field" style="${isIndividual ? '' : 'display:none'}"><label>Aadhar Number *</label><input id="vf_aadhar_number" placeholder="12-digit Aadhar number" maxlength="12" /></div>
         </div>
-        <div id="vf_company_type_tags" class="field" style="${isIndividual ? 'display:none' : ''} margin-top:10px;">
-          <label>Vendor Is</label>
-          <div style="display:flex; gap:16px; margin-top:4px;">
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="vf_is_trader" style="width:auto;" />Trader</label>
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="vf_is_manufacturer" style="width:auto;" />Manufacturer</label>
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="vf_is_exporter" style="width:auto;" />Exporter</label>
-          </div>
+        <div id="vf_company_type_tags" style="${isIndividual ? 'display:none' : ''} margin-top:10px; max-width:340px;">
+          ${multiSelectDropdown('vf_vendor_tags', 'Vendor Is', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], [])}
         </div>
         <div class="field" id="vf_msme_field" style="${isIndividual ? 'display:none' : ''} margin-top:10px;">
           <label><input type="checkbox" id="vf_msme_registered" style="width:auto; margin-right:6px;" />MSME Registered</label>
@@ -3412,33 +3454,40 @@
 
         <p class="section-label">Address</p>
         <div class="form-grid">
-          <div class="field"><label>State *</label><select id="vf_registered_state_id">${opt(dd.states, null)}</select></div>
-          <div class="field"><label>City</label><select id="vf_registered_city_id">${opt(dd.cities, null)}</select></div>
+          <div class="field"><label>State *</label><select id="vf_registered_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
+          <div class="field"><label>City</label><select id="vf_registered_city_id">${opt((dd.cities || []).filter(c => c.state_id === '447c39c5-046f-4298-88ed-0e3f269bea74'), 'f694e1f1-0378-4797-a6ea-4b1a03518882')}</select></div>
           <div class="field"><label>Pincode</label><input id="vf_registered_pincode" maxlength="6" /></div>
-          <div class="field full"><label>Address *</label><input id="vf_registered_address" /></div>
+          <div class="field"><label>Address *</label><textarea id="vf_registered_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
         </div>
 
         <p class="section-label">Contact Details</p>
         <div class="form-grid">
+          ${!isIndividual ? '<div class="field"><label>Primary Contact Name *</label><input id="vf_primary_contact_name" /></div>' : ''}
           <div class="field"><label>Primary Mobile *</label><input id="vf_primary_contact_mobile" maxlength="10" /></div>
           <div class="field"><label>Primary Email</label><input id="vf_primary_contact_email" type="email" /></div>
-          ${!isIndividual ? '<div class="field"><label>Primary Contact Name *</label><input id="vf_primary_contact_name" /></div>' : ''}
+          <div class="field">
+            <label>Other Numbers / Landline <span title="You can add multiple numbers separated by commas, e.g. 0161-1234567, 9988776655" style="cursor:help; color:var(--steel); font-weight:700;">ⓘ</span></label>
+            <input id="vf_other_numbers" placeholder="e.g. 0161-1234567, 9988776655" />
+          </div>
         </div>
 
         <p class="section-label">Bank Details</p>
-        <div class="form-grid">
-          <div class="field"><label>Bank Name *</label><input id="vf_bank_name" /></div>
-          <div class="field"><label>Account No. *</label><input id="vf_account_number" /></div>
-          <div class="field"><label>IFSC Code *</label><input id="vf_ifsc" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
-          <div class="field"><label>Branch</label><input id="vf_bank_branch" /></div>
-          <div class="field"><label>Account Holder Name *</label><input id="vf_account_holder_name" /></div>
+        <p style="font-size:11.5px; color:var(--muted); margin-top:-6px; margin-bottom:10px;">The company/individual name is used as the account holder name.</p>
+        <div class="form-grid" id="vf_bank_block_0" data-bank-index="0">
+          <div class="field"><label>Bank Name *</label><input id="vf_bank_name_0" /></div>
+          <div class="field"><label>Account No. *</label><input id="vf_account_number_0" /></div>
+          <div class="field"><label>IFSC Code *</label><input id="vf_ifsc_0" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
+          <div class="field"><label>Branch</label><input id="vf_bank_branch_0" /></div>
+          <div class="field">${docUploadField('cancelled_cheque_0', 'Cancelled Cheque')}</div>
         </div>
+        <div id="vf_extra_banks"></div>
+        <button type="button" class="btn btn-sm btn-outline" id="vf_add_bank_btn" style="margin-top:6px;">+ Add Bank Account</button>
 
         <div id="vf_gst_section" style="${isIndividual ? 'display:none' : ''}">
           <h3 class="form-section-heading">GST Registration &amp; Branch</h3>
           <p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">Checked automatically against every existing vendor — if this vendor or this exact branch already exists, it will be linked instead of duplicated.</p>
           <div class="form-grid">
-            <div class="field"><label>State *</label><select id="vf_gst_state_id">${opt(dd.states, null)}</select></div>
+            <div class="field"><label>State *</label><select id="vf_gst_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
             <div class="field"><label>GSTIN *</label><input id="vf_gstin" placeholder="99AAAAA9999A9Z9" style="text-transform:uppercase;" maxlength="15" /></div>
             <div class="field full"><label>Branch Address *</label><input id="vf_branch_address" /></div>
             <div class="field"><label>Branch Alias *</label><input id="vf_branch_alias" placeholder="e.g. Unit 3, Gurgaon" /></div>
@@ -3451,12 +3500,10 @@
           ${isIndividual ? `
             ${docUploadField('aadhar_card', 'Aadhar Card')}
             ${docUploadField('pan_card', 'PAN Card')}
-            ${docUploadField('cancelled_cheque', 'Cancelled Cheque')}
           ` : `
             ${docUploadField('gst_certificate', 'GST Certificate')}
             ${docUploadField('pan_card', 'PAN Card')}
             ${docUploadField('msme_certificate', 'MSME Certificate')}
-            ${docUploadField('cancelled_cheque', 'Cancelled Cheque')}
           `}
         </div>
 
@@ -3489,17 +3536,36 @@
     });
 
     wireGenerateRowsSection('vf_contacts', CONTACT_FIELDS);
+    wireMultiSelectDropdown('vf_vendor_tags');
     pendingUploads = {};
     if (isIndividual) {
       wireDocUploadTrigger('aadhar_card');
       wireDocUploadTrigger('pan_card');
-      wireDocUploadTrigger('cancelled_cheque');
     } else {
       wireDocUploadTrigger('gst_certificate');
       wireDocUploadTrigger('pan_card');
       wireDocUploadTrigger('msme_certificate');
-      wireDocUploadTrigger('cancelled_cheque');
     }
+    wireDocUploadTrigger('cancelled_cheque_0');
+
+    let bankAccountIndex = 1;
+    document.getElementById('vf_add_bank_btn').addEventListener('click', () => {
+      const idx = bankAccountIndex++;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `<div class="form-grid" data-bank-index="${idx}" style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
+        <div class="field"><label>Bank Name *</label><input id="vf_bank_name_${idx}" /></div>
+        <div class="field"><label>Account No. *</label><input id="vf_account_number_${idx}" /></div>
+        <div class="field"><label>IFSC Code *</label><input id="vf_ifsc_${idx}" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
+        <div class="field"><label>Branch</label><input id="vf_bank_branch_${idx}" /></div>
+        <div class="field">${docUploadField('cancelled_cheque_' + idx, 'Cancelled Cheque')}</div>
+        <div class="field" style="align-self:end;"><button type="button" class="btn btn-sm btn-outline remove-bank-btn" data-idx="${idx}" style="color:var(--danger); border-color:#efd2cf;">Remove This Account</button></div>
+      </div>`;
+      document.getElementById('vf_extra_banks').appendChild(wrapper.firstElementChild);
+      wireDocUploadTrigger('cancelled_cheque_' + idx);
+      document.querySelector(`.remove-bank-btn[data-idx="${idx}"]`).addEventListener('click', (ev) => {
+        ev.target.closest('[data-bank-index]').remove();
+      });
+    });
 
     document.getElementById('vendorSaveBtn').addEventListener('click', () => saveVendorForm(isIndividual));
   }
@@ -3511,6 +3577,7 @@
 
     const val = (id) => document.getElementById(id)?.value.trim() || null;
     const checked = (id) => document.getElementById(id)?.checked || false;
+    const vendorTags = isIndividual ? [] : getMultiSelectValues('vf_vendor_tags');
 
     const core = {
       vendor_type: isIndividual ? 'individual' : 'company',
@@ -3518,13 +3585,15 @@
       deals_in: val('vf_deals_in'),
       pan: !isIndividual ? val('vf_pan')?.toUpperCase() : null,
       aadhar_number: isIndividual ? val('vf_aadhar_number') : null,
-      is_trader: checked('vf_is_trader'),
-      is_manufacturer: checked('vf_is_manufacturer'),
-      is_exporter: checked('vf_is_exporter'),
+      is_trader: vendorTags.includes('Trader'),
+      is_manufacturer: vendorTags.includes('Manufacturer'),
+      is_exporter: vendorTags.includes('Exporter'),
+      is_service_provider: vendorTags.includes('Service Provider'),
       msme_registered: checked('vf_msme_registered'),
       msme_number: checked('vf_msme_registered') ? val('vf_msme_number') : null,
       primary_contact_name: isIndividual ? val('vf_vendor_name') : val('vf_primary_contact_name'),
       primary_contact_mobile: val('vf_primary_contact_mobile'),
+      other_numbers: val('vf_other_numbers'),
       primary_contact_email: val('vf_primary_contact_email'),
       registered_address: val('vf_registered_address'),
       registered_state_id: val('vf_registered_state_id'),
@@ -3538,13 +3607,18 @@
       branch_alias: val('vf_branch_alias'),
       location_url: val('vf_location_url'),
     };
-    const bank = {
-      account_holder_name: val('vf_account_holder_name'),
-      bank_name: val('vf_bank_name'),
-      account_number: val('vf_account_number'),
-      ifsc: val('vf_ifsc')?.toUpperCase() || null,
-      branch: val('vf_bank_branch'),
-    };
+    // Collect all bank account blocks (base one at index 0, plus any added dynamically)
+    const bankBlocks = [document.getElementById('vf_bank_block_0'), ...document.querySelectorAll('#vf_extra_banks [data-bank-index]')];
+    const banks = bankBlocks.map(block => {
+      const idx = block.dataset.bankIndex;
+      return {
+        bank_name: document.getElementById(`vf_bank_name_${idx}`)?.value.trim() || null,
+        account_number: document.getElementById(`vf_account_number_${idx}`)?.value.trim() || null,
+        ifsc: document.getElementById(`vf_ifsc_${idx}`)?.value.trim().toUpperCase() || null,
+        branch: document.getElementById(`vf_bank_branch_${idx}`)?.value.trim() || null,
+        _idx: idx,
+      };
+    });
 
     const errors = [];
     const err = (label, targetId) => errors.push({ label, targetId });
@@ -3559,11 +3633,17 @@
     if (!core.primary_contact_mobile) err('Primary Mobile', 'vf_primary_contact_mobile');
     else if (!/^[6-9][0-9]{9}$/.test(core.primary_contact_mobile)) err('Primary Mobile is invalid', 'vf_primary_contact_mobile');
     if (!isIndividual && !core.primary_contact_name) err('Primary Contact Name', 'vf_primary_contact_name');
-    if (!bank.bank_name) err('Bank Name', 'vf_bank_name');
-    if (!bank.account_number) err('Account No.', 'vf_account_number');
-    if (!bank.ifsc) err('IFSC Code', 'vf_ifsc');
-    else if (!/^[A-Z]{4}0[0-9A-Z]{6}$/.test(bank.ifsc)) err('IFSC format is invalid (must be AAAA0999999)', 'vf_ifsc');
-    if (!bank.account_holder_name) err('Account Holder Name', 'vf_account_holder_name');
+    if (!isIndividual && core.msme_registered) {
+      if (!core.msme_number) err('MSME Number (required since MSME Registered is checked)', 'vf_msme_number');
+      if (!pendingUploads['msme_certificate']) err('MSME Certificate Upload (required since MSME Registered is checked)', 'uploadBtn_msme_certificate');
+    }
+    banks.forEach((b, i) => {
+      const label = banks.length > 1 ? ` (Bank Account ${i + 1})` : '';
+      if (!b.bank_name) err('Bank Name' + label, `vf_bank_name_${b._idx}`);
+      if (!b.account_number) err('Account No.' + label, `vf_account_number_${b._idx}`);
+      if (!b.ifsc) err('IFSC Code' + label, `vf_ifsc_${b._idx}`);
+      else if (!/^[A-Z]{4}0[0-9A-Z]{6}$/.test(b.ifsc)) err('IFSC format is invalid' + label, `vf_ifsc_${b._idx}`);
+    });
     if (!isIndividual) {
       if (!gst.state_id) err('GST State', 'vf_gst_state_id');
       if (!gst.gstin) err('GSTIN', 'vf_gstin');
@@ -3582,7 +3662,7 @@
     }
 
     setButtonLoading(btn, true, 'Saving');
-    const res = await apiVendor({ action: 'create_vendor', core, gst, bank });
+    const res = await apiVendor({ action: 'create_vendor', core, gst, banks: banks.map(({ _idx, ...b }) => b) });
 
     if (!res.success) {
       setButtonLoading(btn, false);
@@ -3593,7 +3673,7 @@
 
     const vendorId = res.vendor_id;
 
-    // Upload any selected documents
+    // Upload any selected documents (including per-bank cancelled cheques)
     const uploadPromises = Object.entries(pendingUploads).map(([slot, data]) =>
       apiVendor({ action: 'upload_document', vendor_id: vendorId, slot, file_base64: data.base64, file_ext: data.ext, document_name: data.document_name })
     );
