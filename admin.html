@@ -292,6 +292,12 @@
   .msdd-option { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13.5px; cursor:pointer; }
   .msdd-option:hover { background:var(--surface-sunken); }
   .msdd-option input { width:auto; }
+
+  .doc-dropzone { display:flex; align-items:center; gap:10px; border:1px dashed var(--border); border-radius:6px; padding:10px 12px; background:var(--surface-sunken); width:100%; box-sizing:border-box; }
+  .doc-dropzone-icon { font-size:14px; flex-shrink:0; }
+  .doc-dropzone-label { flex:1; font-size:13px; color:var(--steel); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .doc-dropzone-btn { flex-shrink:0; background:var(--green); border-color:var(--green); color:#fff; }
+  .doc-dropzone-btn:hover { background:#256b45; }
   .category-content, .cptab-content, .etab-content, .hrtab-content { }
   .panel-body { padding: 18px; }
   .count-chip { font-size: 11px; font-weight: 700; background: var(--amber); color: #fff; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
@@ -2283,11 +2289,13 @@
   }
 
   function docUploadField(slot, label, existingDoc) {
-    return `<div class="field">
-      <label>${label}</label>
-      <input type="file" id="upload_${slot}" accept="image/*,application/pdf" style="display:none" />
-      <button type="button" class="btn btn-sm btn-outline" id="uploadBtn_${slot}">${existingDoc ? 'Replace File' : 'Choose File'}</button>
-      <div style="font-size:11px; color:var(--muted); margin-top:4px;" id="uploadStatus_${slot}">${existingDoc ? `<a href="${existingDoc.signed_url}" target="_blank" style="color:var(--steel);">Current file</a>` : 'No file selected'}</div>
+    return `<div class="field full">
+      <div class="doc-dropzone" id="dropzone_${slot}">
+        <span class="doc-dropzone-icon">📎</span>
+        <span class="doc-dropzone-label" id="uploadStatus_${slot}">${existingDoc ? `<a href="${existingDoc.signed_url}" target="_blank" style="color:var(--steel);">${label} — Current file</a>` : 'Upload ' + label}</span>
+        <input type="file" id="upload_${slot}" accept="image/*,application/pdf" style="display:none" />
+        <button type="button" class="btn btn-sm doc-dropzone-btn" id="uploadBtn_${slot}">${existingDoc ? 'Replace File' : 'Choose File'}</button>
+      </div>
     </div>`;
   }
 
@@ -3441,22 +3449,31 @@
         <div class="form-grid">
           <div class="field"><label>${isIndividual ? 'Individual Name' : 'Company Name'} *</label><input id="vf_vendor_name" placeholder="e.g. Suresh Kumar" /></div>
           <div class="field"><label>Deals In${isIndividual ? ' / Type of Work' : ''} *</label><input id="vf_deals_in" placeholder="e.g. Ovens, Conveyors" /></div>
+
           <div class="field" id="vf_pan_field" style="${isIndividual ? 'display:none' : ''}"><label>PAN Number *</label><input id="vf_pan" placeholder="AAAAA9999A" style="text-transform:uppercase;" maxlength="10" /></div>
           <div class="field" id="vf_aadhar_field" style="${isIndividual ? '' : 'display:none'}"><label>Aadhar Number *</label><input id="vf_aadhar_number" placeholder="12-digit Aadhar number" maxlength="12" /></div>
+          <div id="vf_aadhar_upload_field" style="${isIndividual ? '' : 'display:none'}">${docUploadField('aadhar_card', 'Aadhar Card')}</div>
+          <div id="vf_pan_upload_field">${docUploadField('pan_card', 'PAN Card')}</div>
+
+          <div id="vf_gstin_field" class="field" style="${isIndividual ? 'display:none' : ''}"><label>GST Number *</label><input id="vf_gstin" placeholder="99AAAAA9999A9Z9" style="text-transform:uppercase;" maxlength="15" /></div>
+          <div id="vf_gst_upload_field" style="${isIndividual ? 'display:none' : ''}">${docUploadField('gst_certificate', 'GST Certificate')}</div>
+
+          <div id="vf_company_type_tags" style="${isIndividual ? 'display:none' : ''}">
+            ${multiSelectDropdown('vf_vendor_tags', 'Vendor Is *', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], [])}
+          </div>
+          <div class="field" id="vf_msme_field" style="${isIndividual ? 'display:none' : ''}">
+            <label>MSME Registered *</label>
+            <select id="vf_msme_registered"><option value="yes" selected>Yes</option><option value="no">No</option></select>
+          </div>
+          <div class="field" id="vf_msme_number_field" style="${isIndividual ? 'display:none' : ''}"><label>MSME Number *</label><input id="vf_msme_number" /></div>
+          <div id="vf_msme_upload_field" style="${isIndividual ? 'display:none' : ''}">${docUploadField('msme_certificate', 'MSME Certificate')}</div>
         </div>
-        <div id="vf_company_type_tags" style="${isIndividual ? 'display:none' : ''} margin-top:10px; max-width:340px;">
-          ${multiSelectDropdown('vf_vendor_tags', 'Vendor Is', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], [])}
-        </div>
-        <div class="field" id="vf_msme_field" style="${isIndividual ? 'display:none' : ''} margin-top:10px;">
-          <label><input type="checkbox" id="vf_msme_registered" style="width:auto; margin-right:6px;" />MSME Registered</label>
-        </div>
-        <div class="field" id="vf_msme_number_field" style="display:none; margin-top:10px;"><label>MSME Number</label><input id="vf_msme_number" /></div>
 
         <p class="section-label">Address</p>
         <div class="form-grid">
           <div class="field"><label>State *</label><select id="vf_registered_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
           <div class="field"><label>City</label><select id="vf_registered_city_id">${opt((dd.cities || []).filter(c => c.state_id === '447c39c5-046f-4298-88ed-0e3f269bea74'), 'f694e1f1-0378-4797-a6ea-4b1a03518882')}</select></div>
-          <div class="field"><label>Pincode</label><input id="vf_registered_pincode" maxlength="6" /></div>
+          <div class="field"><label>Pincode *</label><input id="vf_registered_pincode" maxlength="6" /></div>
           <div class="field"><label>Address *</label><textarea id="vf_registered_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
         </div>
 
@@ -3478,33 +3495,20 @@
           <div class="field"><label>Account No. *</label><input id="vf_account_number_0" /></div>
           <div class="field"><label>IFSC Code *</label><input id="vf_ifsc_0" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
           <div class="field"><label>Branch</label><input id="vf_bank_branch_0" /></div>
-          <div class="field">${docUploadField('cancelled_cheque_0', 'Cancelled Cheque')}</div>
+          <div>${docUploadField('cancelled_cheque_0', 'Cancelled Cheque')}</div>
         </div>
         <div id="vf_extra_banks"></div>
         <button type="button" class="btn btn-sm btn-outline" id="vf_add_bank_btn" style="margin-top:6px;">+ Add Bank Account</button>
 
         <div id="vf_gst_section" style="${isIndividual ? 'display:none' : ''}">
-          <h3 class="form-section-heading">GST Registration &amp; Branch</h3>
+          <h3 class="form-section-heading">Branch</h3>
           <p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">Checked automatically against every existing vendor — if this vendor or this exact branch already exists, it will be linked instead of duplicated.</p>
           <div class="form-grid">
             <div class="field"><label>State *</label><select id="vf_gst_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
-            <div class="field"><label>GSTIN *</label><input id="vf_gstin" placeholder="99AAAAA9999A9Z9" style="text-transform:uppercase;" maxlength="15" /></div>
-            <div class="field full"><label>Branch Address *</label><input id="vf_branch_address" /></div>
             <div class="field"><label>Branch Alias *</label><input id="vf_branch_alias" placeholder="e.g. Unit 3, Gurgaon" /></div>
+            <div class="field full"><label>Branch Address *</label><input id="vf_branch_address" /></div>
             <div class="field full"><label>Location URL <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(map link shared by vendor, e.g. via WhatsApp)</span></label><input id="vf_location_url" placeholder="https://maps.google.com/..." /></div>
           </div>
-        </div>
-
-        <h3 class="form-section-heading">Upload Documents</h3>
-        <div class="form-grid">
-          ${isIndividual ? `
-            ${docUploadField('aadhar_card', 'Aadhar Card')}
-            ${docUploadField('pan_card', 'PAN Card')}
-          ` : `
-            ${docUploadField('gst_certificate', 'GST Certificate')}
-            ${docUploadField('pan_card', 'PAN Card')}
-            ${docUploadField('msme_certificate', 'MSME Certificate')}
-          `}
         </div>
 
         <h3 class="form-section-heading">${isIndividual ? 'Team Members (optional)' : 'Contact Persons'}</h3>
@@ -3528,7 +3532,9 @@
       renderVendorForm(ev.target.checked ? 'individual' : 'company');
     });
     document.getElementById('vf_msme_registered')?.addEventListener('change', (ev) => {
-      document.getElementById('vf_msme_number_field').style.display = ev.target.checked ? 'block' : 'none';
+      const show = ev.target.value === 'yes';
+      document.getElementById('vf_msme_number_field').style.display = show ? 'block' : 'none';
+      document.getElementById('vf_msme_upload_field').style.display = show ? 'block' : 'none';
     });
     document.getElementById('vf_registered_state_id').addEventListener('change', () => {
       const stateId = document.getElementById('vf_registered_state_id').value;
@@ -3538,14 +3544,10 @@
     wireGenerateRowsSection('vf_contacts', CONTACT_FIELDS);
     wireMultiSelectDropdown('vf_vendor_tags');
     pendingUploads = {};
-    if (isIndividual) {
-      wireDocUploadTrigger('aadhar_card');
-      wireDocUploadTrigger('pan_card');
-    } else {
-      wireDocUploadTrigger('gst_certificate');
-      wireDocUploadTrigger('pan_card');
-      wireDocUploadTrigger('msme_certificate');
-    }
+    wireDocUploadTrigger('aadhar_card');
+    wireDocUploadTrigger('pan_card');
+    wireDocUploadTrigger('gst_certificate');
+    wireDocUploadTrigger('msme_certificate');
     wireDocUploadTrigger('cancelled_cheque_0');
 
     let bankAccountIndex = 1;
@@ -3589,8 +3591,8 @@
       is_manufacturer: vendorTags.includes('Manufacturer'),
       is_exporter: vendorTags.includes('Exporter'),
       is_service_provider: vendorTags.includes('Service Provider'),
-      msme_registered: checked('vf_msme_registered'),
-      msme_number: checked('vf_msme_registered') ? val('vf_msme_number') : null,
+      msme_registered: val('vf_msme_registered') === 'yes',
+      msme_number: val('vf_msme_registered') === 'yes' ? val('vf_msme_number') : null,
       primary_contact_name: isIndividual ? val('vf_vendor_name') : val('vf_primary_contact_name'),
       primary_contact_mobile: val('vf_primary_contact_mobile'),
       other_numbers: val('vf_other_numbers'),
@@ -3630,12 +3632,19 @@
     else if (isIndividual && !/^[0-9]{12}$/.test(core.aadhar_number || '')) err('Aadhar Number must be 12 digits', 'vf_aadhar_number');
     if (!core.registered_address) err('Address', 'vf_registered_address');
     if (!core.registered_state_id) err('State', 'vf_registered_state_id');
+    if (!core.registered_pincode) err('Pincode', 'vf_registered_pincode');
+    else if (!/^[1-9][0-9]{5}$/.test(core.registered_pincode)) err('Pincode is invalid', 'vf_registered_pincode');
     if (!core.primary_contact_mobile) err('Primary Mobile', 'vf_primary_contact_mobile');
     else if (!/^[6-9][0-9]{9}$/.test(core.primary_contact_mobile)) err('Primary Mobile is invalid', 'vf_primary_contact_mobile');
     if (!isIndividual && !core.primary_contact_name) err('Primary Contact Name', 'vf_primary_contact_name');
+    if (!isIndividual && vendorTags.length === 0) err('Vendor Is', 'vf_vendor_tags-trigger');
+    if (!isIndividual && !pendingUploads['pan_card']) err('PAN Card Upload', 'uploadBtn_pan_card');
+    if (isIndividual && !pendingUploads['pan_card']) err('PAN Card Upload', 'uploadBtn_pan_card');
+    if (isIndividual && !pendingUploads['aadhar_card']) err('Aadhar Card Upload', 'uploadBtn_aadhar_card');
+    if (!isIndividual && !pendingUploads['gst_certificate']) err('GST Certificate Upload', 'uploadBtn_gst_certificate');
     if (!isIndividual && core.msme_registered) {
-      if (!core.msme_number) err('MSME Number (required since MSME Registered is checked)', 'vf_msme_number');
-      if (!pendingUploads['msme_certificate']) err('MSME Certificate Upload (required since MSME Registered is checked)', 'uploadBtn_msme_certificate');
+      if (!core.msme_number) err('MSME Number (required since MSME Registered is Yes)', 'vf_msme_number');
+      if (!pendingUploads['msme_certificate']) err('MSME Certificate Upload (required since MSME Registered is Yes)', 'uploadBtn_msme_certificate');
     }
     banks.forEach((b, i) => {
       const label = banks.length > 1 ? ` (Bank Account ${i + 1})` : '';
