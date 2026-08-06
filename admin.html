@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786010043';</script>
+<script>window.__BUILD_VERSION__ = '1786010625';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -311,10 +311,10 @@
   .msdd-option:hover { background:var(--surface-sunken); }
   .msdd-option input { width:auto; }
 
-  .doc-dropzone { display:flex; align-items:center; gap:10px; border:1px dashed var(--border); border-radius:6px; padding:10px 12px; background:var(--surface-sunken); width:100%; box-sizing:border-box; }
-  .doc-dropzone-icon { font-size:14px; flex-shrink:0; }
+  .doc-dropzone { display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:9px 10px; background:var(--surface-sunken); width:100%; box-sizing:border-box; height:41px; }
+  .doc-dropzone-icon { font-size:13px; flex-shrink:0; }
   .doc-dropzone-label { flex:1; font-size:13px; color:var(--steel); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .doc-dropzone-btn { flex-shrink:0; background:var(--green); border-color:var(--green); color:#fff; }
+  .doc-dropzone-btn { flex-shrink:0; background:var(--green); border-color:var(--green); color:#fff; padding:5px 12px; font-size:12px; }
   .doc-dropzone-btn:hover { background:#256b45; }
   .category-content, .cptab-content, .etab-content, .hrtab-content { }
   .panel-body { padding: 18px; }
@@ -2307,7 +2307,8 @@
   }
 
   function docUploadField(slot, label, existingDoc) {
-    return `<div class="field full">
+    return `<div class="field">
+      <label style="visibility:hidden;">${label}</label>
       <div class="doc-dropzone" id="dropzone_${slot}">
         <span class="doc-dropzone-icon">📎</span>
         <span class="doc-dropzone-label" id="uploadStatus_${slot}">${existingDoc ? `<a href="${existingDoc.signed_url}" target="_blank" style="color:var(--steel);">${label} — Current file</a>` : 'Upload ' + label}</span>
@@ -3508,15 +3509,15 @@
 
         <p class="section-label">Bank Details</p>
         <p style="font-size:11.5px; color:var(--muted); margin-top:-6px; margin-bottom:10px;">The company/individual name is used as the account holder name.</p>
-        <div class="form-grid" id="vf_bank_block_0" data-bank-index="0">
+        <div class="form-grid" id="vf_bank_block_0" data-bank-index="0" style="margin-bottom:22px;">
           <div class="field"><label>Bank Name *</label><input id="vf_bank_name_0" /></div>
           <div class="field"><label>Account No. *</label><input id="vf_account_number_0" /></div>
           <div class="field"><label>IFSC Code *</label><input id="vf_ifsc_0" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
           <div class="field"><label>Branch</label><input id="vf_bank_branch_0" /></div>
           <div>${docUploadField('cancelled_cheque_0', 'Cancelled Cheque')}</div>
+          <div class="field" style="display:flex; align-items:end;"><button type="button" class="btn btn-sm btn-outline" id="vf_add_bank_btn">+ Add Bank Account</button></div>
         </div>
         <div id="vf_extra_banks"></div>
-        <button type="button" class="btn btn-sm btn-outline" id="vf_add_bank_btn" style="margin-top:6px;">+ Add Bank Account</button>
 
         <div id="vf_gst_section" style="${isIndividual ? 'display:none' : ''}">
           <h3 class="form-section-heading">Branch</h3>
