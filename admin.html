@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786010625';</script>
+<script>window.__BUILD_VERSION__ = '1786010829';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3493,7 +3493,8 @@
           <div class="field"><label>State *</label><select id="vf_registered_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
           <div class="field"><label>City</label><select id="vf_registered_city_id">${opt((dd.cities || []).filter(c => c.state_id === '447c39c5-046f-4298-88ed-0e3f269bea74'), 'f694e1f1-0378-4797-a6ea-4b1a03518882')}</select></div>
           <div class="field"><label>Pincode *</label><input id="vf_registered_pincode" maxlength="6" /></div>
-          <div class="field"><label>Address *</label><textarea id="vf_registered_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
+          <div class="field"><label>Location URL <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(map link, e.g. via WhatsApp)</span></label><input id="vf_registered_location_url" placeholder="https://maps.google.com/..." /></div>
+          <div class="field full"><label>Address *</label><textarea id="vf_registered_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
         </div>
 
         <p class="section-label">Contact Details</p>
@@ -3620,6 +3621,7 @@
       registered_state_id: val('vf_registered_state_id'),
       registered_city_id: val('vf_registered_city_id'),
       registered_pincode: val('vf_registered_pincode'),
+      location_url: val('vf_registered_location_url'),
     };
     const gst = isIndividual ? null : {
       state_id: val('vf_gst_state_id'),
