@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786101815';</script>
+<script>window.__BUILD_VERSION__ = '1786102223';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -310,6 +310,10 @@
   .msdd-option { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13.5px; cursor:pointer; }
   .msdd-option:hover { background:var(--surface-sunken); }
   .msdd-option input { width:auto; }
+  .doc-tree-nav .nav-item { color: var(--ink); border-left: none; }
+  .doc-tree-nav .nav-item:hover { background: var(--surface-sunken); }
+  .doc-tree-nav .nav-item.active { background: var(--steel-dark); color: #fff; border-radius: 4px; }
+  .doc-tree-nav .nav-arrow { transition: transform 0.15s ease; }
 
   .doc-dropzone { display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:9px 10px; background:var(--surface-sunken); width:100%; box-sizing:border-box; height:41px; }
   .doc-dropzone-icon { font-size:13px; flex-shrink:0; }
@@ -4177,23 +4181,55 @@
     return points.map(p => `<li><strong>${p.t}</strong>${p.d ? ' — ' + p.d : ''}</li>`).join('');
   }
 
+  // Tree structure for the nav (references DOC_SECTIONS ids for content)
+  const DOC_TREE = [
+    { label: 'General', leaves: [{ id: 'erp-conventions', label: 'ERP-Wide Conventions' }] },
+    { label: 'Operations', leaves: [{ id: 'km-tracker', label: 'Km Tracker' }] },
+    {
+      label: 'Masters',
+      children: [
+        { label: 'HR', leaves: [{ id: 'employee-master', label: 'Employee Master' }, { id: 'hr-dropdowns', label: 'HR Dropdowns' }] },
+      ],
+      leaves: [{ id: 'vendor-master', label: 'Vendor Master' }],
+    },
+    { label: 'System', leaves: [{ id: 'roles-permissions', label: 'Roles & Permissions' }] },
+  ];
+
+  let docActiveSection = DOC_SECTIONS[0].id;
+  let docTreeExpanded = { 'Masters': true, 'Masters > HR': true }; // expanded by default so everything's reachable at a glance
+
   async function loadDocumentation() {
     documentationLoaded = true;
-    renderDocumentation(DOC_SECTIONS[0].id);
+    renderDocumentation();
   }
 
-  function renderDocumentation(activeSectionId) {
-    const active = DOC_SECTIONS.find(s => s.id === activeSectionId) || DOC_SECTIONS[0];
+  function docTreeGroupHtml(group, path) {
+    const key = path ? path + ' > ' + group.label : group.label;
+    const isExpanded = docTreeExpanded[key] !== false; // default expanded
+    let html = `<button type="button" class="nav-item nav-parent doc-tree-toggle ${isExpanded ? 'expanded' : ''}" data-key="${key}">
+      <span class="nav-label">${group.label}</span>
+      <svg class="nav-arrow" style="${isExpanded ? 'transform:rotate(90deg);' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div class="nav-children" style="${isExpanded ? '' : 'display:none'}">`;
+    (group.children || []).forEach(child => { html += docTreeGroupHtml(child, key); });
+    (group.leaves || []).forEach(leaf => {
+      html += `<button type="button" class="nav-item level-3 doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}">
+        <span class="nav-label">${leaf.label}</span>
+      </button>`;
+    });
+    html += `</div>`;
+    return html;
+  }
+
+  function renderDocumentation() {
+    const active = DOC_SECTIONS.find(s => s.id === docActiveSection) || DOC_SECTIONS[0];
 
     const html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Documentation</span></div>
       <div style="display:flex; min-height:600px;">
 
-        <div style="width:230px; flex-shrink:0; border-right:1px solid var(--border);">
-          ${DOC_SECTIONS.map(s => `
-            <button type="button" class="doc-nav-item ${s.id === active.id ? 'active' : ''}" data-section="${s.id}" style="display:block; width:100%; text-align:left; padding:11px 16px; border:none; background:${s.id === active.id ? 'var(--steel-dark)' : 'transparent'}; color:${s.id === active.id ? '#fff' : 'var(--ink)'}; font-size:13px; font-weight:600; cursor:pointer; border-bottom:1px solid var(--border);">
-              ${s.label}
-            </button>`).join('')}
+        <div class="doc-tree-nav" style="width:240px; flex-shrink:0; border-right:1px solid var(--border); position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; padding:10px 0;">
+          ${DOC_TREE.map(g => docTreeGroupHtml(g, '')).join('')}
         </div>
 
         <div style="flex:1; padding:24px 28px; min-width:0;">
@@ -4210,8 +4246,19 @@
     </div>`;
 
     document.getElementById('documentationContent').innerHTML = html;
-    document.querySelectorAll('.doc-nav-item').forEach(btn => {
-      btn.addEventListener('click', () => renderDocumentation(btn.dataset.section));
+
+    document.querySelectorAll('.doc-tree-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        docTreeExpanded[key] = docTreeExpanded[key] === false ? true : !docTreeExpanded[key];
+        renderDocumentation();
+      });
+    });
+    document.querySelectorAll('.doc-tree-leaf').forEach(btn => {
+      btn.addEventListener('click', () => {
+        docActiveSection = btn.dataset.section;
+        renderDocumentation();
+      });
     });
   }
 
