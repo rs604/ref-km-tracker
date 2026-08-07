@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786105504';</script>
+<script>window.__BUILD_VERSION__ = '1786105685';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -317,6 +317,8 @@
   .doc-tree-nav .nav-item.nav-parent { color: var(--ink); font-weight: 650; }
   .doc-tree-nav .nav-item:hover { background: #dfe9f2; }
   .doc-tree-nav .nav-item.active { background: var(--steel); color: #fff; border-radius: 4px; font-weight: 600; }
+  .doc-tree-nav .nav-item { outline: none; -webkit-tap-highlight-color: transparent; }
+  .doc-tree-nav .nav-item:focus, .doc-tree-nav .nav-item:active { outline: none; box-shadow: none; }
   .doc-tree-nav .nav-arrow { transition: transform 0.15s ease; }
   .doc-tree-nav .nav-children { border-left-color: #c9d8e6; }
   .doc-panel-header-sticky { position: sticky; top: 0; z-index: 25; background: #fff; }
@@ -4255,7 +4257,8 @@
     document.querySelectorAll('.doc-tree-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.key;
-        docTreeExpanded[key] = docTreeExpanded[key] === false ? true : !docTreeExpanded[key];
+        const currentlyExpanded = docTreeExpanded[key] !== false; // same logic used when rendering
+        docTreeExpanded[key] = !currentlyExpanded;
         renderDocumentation();
       });
     });
