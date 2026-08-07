@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786105685';</script>
+<script>window.__BUILD_VERSION__ = '1786105858';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -364,6 +364,9 @@
   }
 
   .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 0; }
+  .spinner-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; color:var(--muted); }
+  .spinner { width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--steel); border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .table-scroll { max-height: 480px; overflow-y: auto; }
   table.ledger { width: 100%; border-collapse: collapse; }
@@ -757,6 +760,14 @@
     }, true);
   });
 
+  function spinnerHtml(label) {
+    return `<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:12px; font-size:12.5px;">${label || 'Loading...'}</div></div>`;
+  }
+  function showSpinner(containerId, label) {
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = spinnerHtml(label);
+  }
+
   function setButtonLoading(btn, isLoading, loadingText, originalText) {
     if (isLoading) {
       btn.dataset.originalText = originalText !== undefined ? originalText : btn.textContent;
@@ -840,6 +851,8 @@
 
   async function loadControlPanel() {
     controlPanelLoaded = true;
+    showSpinner('hrtab-employee-master');
+    showSpinner('hrtab-hr-dropdowns');
     const [dd, el] = await Promise.all([
       apiHR({ action: 'get_dropdowns' }),
       apiHR({ action: 'get_employee_list' }),
@@ -961,7 +974,7 @@
   document.getElementById('lightbox').addEventListener('click', (e) => { if (e.target.id === 'lightbox') e.currentTarget.classList.remove('open'); });
 
   async function loadDashboard() {
-    document.getElementById('tab-approvals').innerHTML = '<div class="empty-state">Loading...</div>';
+    showSpinner('tab-approvals');
     const data = await apiAdmin({ action: 'get_dashboard' });
     if (!data.success) {
       document.getElementById('tab-approvals').innerHTML = `<div class="msg error" style="display:block">${data.error}</div>`;
@@ -3113,6 +3126,7 @@
 
   async function loadAdminPanel() {
     adminPanelLoaded = true;
+    showSpinner('adminPanelContent');
     const res = await apiPermissions({ action: 'get_permissions_data' });
     if (res.success) {
       permissionsData = res;
@@ -3371,6 +3385,7 @@
 
   async function loadVendorMaster() {
     vendorMasterLoaded = true;
+    showSpinner('vendorMasterContent');
     const [ddRes, listRes] = await Promise.all([
       apiVendor({ action: 'get_vendor_dropdowns' }),
       apiVendor({ action: 'get_vendor_list' }),
