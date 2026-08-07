@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786103267';</script>
+<script>window.__BUILD_VERSION__ = '1786104445';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -317,6 +317,16 @@
   .doc-tree-nav .nav-item.active { background: var(--steel); color: #fff; border-radius: 4px; font-weight: 600; }
   .doc-tree-nav .nav-arrow { transition: transform 0.15s ease; }
   .doc-tree-nav .nav-children { border-left-color: #c9d8e6; }
+  .doc-tree-nav .nav-children > .nav-item { position: relative; }
+  .doc-tree-nav .nav-children > .nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background: #c9d8e6;
+  }
   .doc-panel-header-sticky { position: sticky; top: 0; z-index: 25; background: #fff; }
 
   .doc-dropzone { display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:9px 10px; background:var(--surface-sunken); width:100%; box-sizing:border-box; height:41px; }
