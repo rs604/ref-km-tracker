@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786105902';</script>
+<script>window.__BUILD_VERSION__ = '1786106444';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -311,7 +311,7 @@
   .msdd-option { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13.5px; cursor:pointer; }
   .msdd-option:hover { background:var(--surface-sunken); }
   .msdd-option input { width:auto; }
-  .doc-tree-nav { background: #eef3f8; }
+  .doc-tree-nav { background: #eef3f8; z-index: 30; }
   .doc-tree-nav .nav-item { color: var(--steel-dark); border-left: none; font-weight: 500; }
   .doc-tree-nav .nav-item.nav-parent { color: var(--ink); font-weight: 650; }
   .doc-tree-nav .nav-item:hover { background: #dfe9f2; }
@@ -4265,7 +4265,14 @@
 
     const docHeader = document.getElementById('docPanelHeader');
     if (docHeader) {
-      document.getElementById('docTreeNav').style.top = docHeader.offsetHeight + 'px';
+      const applyOffset = () => {
+        const nav = document.getElementById('docTreeNav');
+        if (nav && docHeader) nav.style.top = docHeader.offsetHeight + 'px';
+      };
+      applyOffset();
+      // Re-measure once fonts/layout settle, in case the header's height shifts slightly after initial paint
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(applyOffset);
+      setTimeout(applyOffset, 300);
     }
 
     document.querySelectorAll('.doc-tree-toggle').forEach(btn => {
