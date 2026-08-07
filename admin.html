@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786102223';</script>
+<script>window.__BUILD_VERSION__ = '1786102804';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3075,23 +3075,6 @@
     authGate.style.display = 'flex';
   });
 
-  (function restoreSession() {
-    const saved = sessionStorage.getItem('admin_session');
-    if (!saved) return;
-    try {
-      currentUser = JSON.parse(saved);
-      authGate.style.display = 'none';
-      appShell.style.display = 'flex';
-      document.getElementById('userName').textContent = currentUser.name;
-      document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
-      loadDashboard();
-      const savedView = sessionStorage.getItem('admin_active_view');
-      if (savedView) switchMainView(savedView);
-    } catch (e) {
-      sessionStorage.removeItem('admin_session');
-    }
-  })();
-
   // ============ ADMIN PANEL: ROLES & PERMISSIONS ============
   const SUB_HEAD_LABELS = {
     employee_master: 'Employee Master',
@@ -4262,6 +4245,25 @@
     });
   }
 
+  // This must stay the LAST statement in the script — it can trigger navigation to any view
+  // (via the saved-view restore below), so every module's functions/consts it might call into
+  // need to already be defined by the time it runs.
+  (function restoreSession() {
+    const saved = sessionStorage.getItem('admin_session');
+    if (!saved) return;
+    try {
+      currentUser = JSON.parse(saved);
+      authGate.style.display = 'none';
+      appShell.style.display = 'flex';
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
+      loadDashboard();
+      const savedView = sessionStorage.getItem('admin_active_view');
+      if (savedView) switchMainView(savedView);
+    } catch (e) {
+      sessionStorage.removeItem('admin_session');
+    }
+  })();
 </script>
 
 
