@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786103070';</script>
+<script>window.__BUILD_VERSION__ = '1786103179';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -4190,15 +4190,14 @@
     depth = depth || 0;
     const key = path ? path + ' > ' + group.label : group.label;
     const isExpanded = docTreeExpanded[key] !== false; // default expanded
-    const indent = 16 + depth * 16;
-    let html = `<button type="button" class="nav-item nav-parent doc-tree-toggle ${isExpanded ? 'expanded' : ''}" data-key="${key}" style="padding-left:${indent}px;">
+    let html = `<button type="button" class="nav-item nav-parent doc-tree-toggle ${isExpanded ? 'expanded' : ''}" data-key="${key}" style="padding-left:16px;">
       <span class="nav-label">${group.label}</span>
       <svg class="nav-arrow" style="${isExpanded ? 'transform:rotate(90deg);' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
     </button>
-    <div class="nav-children" style="${isExpanded ? '' : 'display:none'}">`;
+    <div class="nav-children" style="${isExpanded ? '' : 'display:none'} margin-left:15px; border-left:1px solid var(--border); padding-left:0;">`;
     (group.children || []).forEach(child => { html += docTreeGroupHtml(child, key, depth + 1); });
     (group.leaves || []).forEach(leaf => {
-      html += `<button type="button" class="nav-item doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:${indent + 16}px;">
+      html += `<button type="button" class="nav-item doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:16px;">
         <span class="nav-label">${leaf.label}</span>
       </button>`;
     });
