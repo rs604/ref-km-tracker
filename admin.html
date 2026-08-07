@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786104738';</script>
+<script>window.__BUILD_VERSION__ = '1786105100';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -175,7 +175,7 @@
   .nav-item svg { flex-shrink: 0; width: 17px; height: 17px; }
   .nav-item .nav-label { flex: 1; }
   .nav-arrow { width: 12px !important; height: 12px !important; opacity: 0.45; }
-  .nav-children { padding-left: 0; }
+  .nav-children { padding-left: 0; margin-left: 21px; border-left: 1px solid rgba(255,255,255,0.15); }
   .nav-item.level-2 { font-size: 12.5px; padding-left: 34px; }
   .nav-item.level-3 { font-size: 12px; padding-left: 46px; color: rgba(255,255,255,0.62); }
   .nav-item.level-3.active { color: #fff; }
@@ -4190,22 +4190,20 @@
     renderDocumentation();
   }
 
-  function docTreeGroupHtml(group, path, depth, wrapWithStub) {
+  function docTreeGroupHtml(group, path, depth) {
     depth = depth || 0;
     const key = path ? path + ' > ' + group.label : group.label;
     const isExpanded = docTreeExpanded[key] !== false; // default expanded
-    const stub = `<span style="position:absolute; left:0; top:50%; width:12px; height:1px; background:#c9d8e6;"></span>`;
-    const buttonHtml = `<button type="button" class="nav-item nav-parent doc-tree-toggle ${isExpanded ? 'expanded' : ''}" data-key="${key}" style="padding-left:16px;">
+    let html = `<button type="button" class="nav-item nav-parent doc-tree-toggle ${isExpanded ? 'expanded' : ''}" data-key="${key}" style="padding-left:16px;">
       <span class="nav-label">${group.label}</span>
       <svg class="nav-arrow" style="${isExpanded ? 'transform:rotate(90deg);' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-    </button>`;
-    let html = wrapWithStub ? `<div style="position:relative;">${stub}${buttonHtml}</div>` : buttonHtml;
-    html += `<div class="nav-children" style="${isExpanded ? '' : 'display:none'} margin-left:15px; border-left:1px solid var(--border); padding-left:0;">`;
-    (group.children || []).forEach(child => { html += docTreeGroupHtml(child, key, depth + 1, true); });
+    </button>
+    <div class="nav-children" style="${isExpanded ? '' : 'display:none'} margin-left:15px; border-left:1px solid var(--border); padding-left:0;">`;
+    (group.children || []).forEach(child => { html += docTreeGroupHtml(child, key, depth + 1); });
     (group.leaves || []).forEach(leaf => {
-      html += `<div style="position:relative;">${stub}<button type="button" class="nav-item doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:16px;">
+      html += `<button type="button" class="nav-item doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:16px;">
         <span class="nav-label">${leaf.label}</span>
-      </button></div>`;
+      </button>`;
     });
     html += `</div>`;
     return html;
@@ -4219,7 +4217,7 @@
       <div style="display:flex; min-height:600px;">
 
         <div class="doc-tree-nav" id="docTreeNav" style="width:240px; flex-shrink:0; border-right:1px solid var(--border); position:sticky; align-self:flex-start; max-height:100vh; overflow-y:auto; padding:10px 0;">
-          ${DOC_TREE.map(g => docTreeGroupHtml(g, '', 0, false)).join('')}
+          ${DOC_TREE.map(g => docTreeGroupHtml(g, '')).join('')}
         </div>
 
         <div style="flex:1; padding:24px 28px; min-width:0;">
