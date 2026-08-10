@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786354344';</script>
+<script>window.__BUILD_VERSION__ = '1786355143';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -322,6 +322,7 @@
   .doc-tree-nav { background: #eef3f8; z-index: 30; }
   .doc-tree-nav .nav-item { color: var(--steel-dark); border-left: none; font-weight: 500; }
   .doc-tree-nav .nav-item.nav-parent { color: var(--ink); font-weight: 650; }
+  .doc-tree-nav .nav-item.doc-tree-leaf-shallow:not(.active) { color: var(--ink); font-weight: 650; }
   .doc-tree-nav .nav-item:hover { background: #dfe9f2; }
   .doc-tree-nav .nav-item.active { background: var(--steel); color: #fff; border-radius: 4px; font-weight: 600; }
   .doc-tree-nav .nav-item { outline: none; -webkit-tap-highlight-color: transparent; }
@@ -4237,7 +4238,7 @@
     <div class="nav-children" style="${isExpanded ? '' : 'display:none;'} margin-left:15px; border-left:1px solid var(--border); padding-left:0;">`;
     (group.children || []).forEach(child => { html += docTreeGroupHtml(child, key, depth + 1); });
     (group.leaves || []).forEach(leaf => {
-      html += `<button type="button" class="nav-item doc-tree-leaf ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:16px;">
+      html += `<button type="button" class="nav-item doc-tree-leaf ${depth === 0 ? 'doc-tree-leaf-shallow' : ''} ${leaf.id === docActiveSection ? 'active' : ''}" data-section="${leaf.id}" style="padding-left:16px;">
         <span class="nav-label">${leaf.label}</span>
       </button>`;
     });
