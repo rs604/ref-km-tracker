@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786355143';</script>
+<script>window.__BUILD_VERSION__ = '1786356282';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3508,6 +3508,42 @@
     { key: 'name', label: 'Name' }, { key: 'mobile', label: 'Mobile' }, { key: 'email', label: 'Email' }, { key: 'designation', label: 'Designation / Role' },
   ];
 
+  // Reusable "how many? -> Generate" repeatable-row block
+  function renderGenerateRowsSection(containerId, fields) {
+    return `
+      <div style="display:flex; gap:8px; align-items:end; margin-bottom:14px;">
+        <div class="field" style="margin-bottom:0; max-width:160px;"><label>How many?</label><input type="number" min="0" max="50" id="${containerId}-count" placeholder="e.g. 2" /></div>
+        <button type="button" class="btn btn-sm" id="${containerId}-generateBtn">Generate</button>
+        <span style="font-size:11.5px; color:var(--muted);">Optional — enter count, then click Generate</span>
+      </div>
+      <div id="${containerId}"></div>`;
+  }
+  function wireGenerateRowsSection(containerId, fields) {
+    document.getElementById(`${containerId}-generateBtn`).addEventListener('click', () => {
+      const n = Math.max(0, Math.min(50, parseInt(document.getElementById(`${containerId}-count`).value) || 0));
+      const container = document.getElementById(containerId);
+      let rowsHtml = '';
+      for (let i = 0; i < n; i++) {
+        rowsHtml += `<div class="form-grid" style="border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:8px; background:#fff;">
+          ${fields.map(f => `<div class="field"><label>${f.label}</label><input data-key="${f.key}" placeholder="${f.label}" /></div>`).join('')}
+        </div>`;
+      }
+      container.innerHTML = rowsHtml;
+    });
+  }
+  function collectGenerateRows(containerId, fields) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    const rowDivs = container.querySelectorAll(':scope > div');
+    const rows = [];
+    rowDivs.forEach(rowDiv => {
+      const row = {};
+      fields.forEach(f => { row[f.key] = rowDiv.querySelector(`[data-key="${f.key}"]`)?.value.trim() || ''; });
+      if (Object.values(row).some(v => v)) rows.push(row);
+    });
+    return rows;
+  }
+
   function renderVendorForm(vendorType) {
     const dd = vendorDropdowns;
     const isIndividual = vendorType === 'individual';
@@ -3564,25 +3600,26 @@
         <h3 class="form-section-heading">${isIndividual ? 'Location' : 'Branch 1 (initial branch)'}</h3>
         <p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">${isIndividual ? 'Where this individual/contractor operates from.' : 'Every vendor location — including this first one — is a branch. You can add more branches later from the vendor\'s page.'}</p>
         <div class="form-grid">
-          <div class="field"><label>Branch Name *</label><input id="vf_branch_name" placeholder="e.g. Unit 1, Main Office" /></div>
-          <div class="field"><label>Branch Alias <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(optional, for search only)</span></label><input id="vf_branch_alias" placeholder="e.g. Samrala Chowk Unit" /></div>
+          <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Name *</label><input id="vf_branch_name" placeholder="e.g. Unit 1, Main Office" /></div>
+          <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Alias <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(optional, for search only)</span></label><input id="vf_branch_alias" placeholder="e.g. Samrala Chowk Unit" /></div>
           <div class="field"><label>State *</label><select id="vf_branch_state_id">${opt(dd.states, '447c39c5-046f-4298-88ed-0e3f269bea74')}</select></div>
           <div class="field"><label>City</label><select id="vf_branch_city_id">${opt((dd.cities || []).filter(c => c.state_id === '447c39c5-046f-4298-88ed-0e3f269bea74'), 'f694e1f1-0378-4797-a6ea-4b1a03518882')}</select></div>
           <div class="field"><label>Pincode</label><input id="vf_branch_pincode" maxlength="6" /></div>
-          <div class="field"><label>Location URL <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(map link)</span></label><input id="vf_branch_location_url" placeholder="https://maps.google.com/..." /></div>
+          <div class="field"><label>Location URL <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(map link, optional)</span></label><input id="vf_branch_location_url" placeholder="https://maps.google.com/..." /></div>
           <div class="field"><label>Address *</label><textarea id="vf_branch_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
         </div>
 
-        <p class="section-label">Branch Contact Person</p>
-        <div class="form-grid">
-          <div class="field"><label>Name *</label><input id="vf_branch_contact_name" /></div>
-          <div class="field"><label>Mobile *</label><input id="vf_branch_contact_mobile" maxlength="10" /></div>
-          <div class="field"><label>Email</label><input id="vf_branch_contact_email" type="email" /></div>
-          <div class="field"><label>Designation</label><input id="vf_branch_contact_designation" /></div>
-        </div>
+        <p class="section-label">Contact Persons ${isIndividual ? '' : '<span style="font-weight:400; color:var(--muted); font-size:11px;">(other people linked to this branch — helpers, staff, etc.)</span>'}</p>
+        ${renderGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V)}
 
-        <p class="section-label">Branch Bank Account</p>
-        <div class="form-grid">
+        <p class="section-label">Bank Account</p>
+        ${isIndividual ? `
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; cursor:pointer;">
+          <input type="checkbox" id="vf_has_bank_account" style="width:auto;" />
+          This person has a bank account (if unchecked, they'll be assumed cash-only)
+        </label>
+        ` : ''}
+        <div class="form-grid" id="vf_bank_fields" style="${isIndividual ? 'display:none' : ''}">
           <div class="field"><label>Bank Name *</label><input id="vf_bank_name" /></div>
           <div class="field"><label>Account No. *</label><input id="vf_account_number" /></div>
           <div class="field"><label>IFSC Code *</label><input id="vf_ifsc" placeholder="AAAA0999999" style="text-transform:uppercase;" maxlength="11" /></div>
@@ -3614,6 +3651,10 @@
     });
 
     wireMultiSelectDropdown('vf_vendor_tags');
+    wireGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V);
+    document.getElementById('vf_has_bank_account')?.addEventListener('change', (ev) => {
+      document.getElementById('vf_bank_fields').style.display = ev.target.checked ? 'grid' : 'none';
+    });
     pendingUploads = {};
     wireDocUploadTrigger('pan_card');
     wireDocUploadTrigger('aadhar_card');
@@ -3647,14 +3688,18 @@
       other_numbers: val('vf_other_numbers'),
       primary_contact_email: val('vf_primary_contact_email'),
     };
+    const hasBankAccount = isIndividual ? (document.getElementById('vf_has_bank_account')?.checked || false) : true;
     const branch = {
-      branch_name: val('vf_branch_name'), branch_alias: val('vf_branch_alias'),
+      branch_name: isIndividual ? null : val('vf_branch_name'),
+      branch_alias: isIndividual ? null : val('vf_branch_alias'),
       gstin: !isIndividual ? val('vf_gstin')?.toUpperCase() : null,
       address: val('vf_branch_address'), state_id: val('vf_branch_state_id'), city_id: val('vf_branch_city_id'),
       pincode: val('vf_branch_pincode'), location_url: val('vf_branch_location_url'),
-      contact: { name: val('vf_branch_contact_name'), mobile: val('vf_branch_contact_mobile'), email: val('vf_branch_contact_email'), designation: val('vf_branch_contact_designation') },
+      contacts: collectGenerateRows('vf_contacts', CONTACT_FIELDS_V),
     };
-    const bank = { bank_name: val('vf_bank_name'), account_number: val('vf_account_number'), ifsc: val('vf_ifsc')?.toUpperCase(), branch: val('vf_bank_branch'), holder_name: core.vendor_name };
+    const bank = hasBankAccount
+      ? { bank_name: val('vf_bank_name'), account_number: val('vf_account_number'), ifsc: val('vf_ifsc')?.toUpperCase(), branch: val('vf_bank_branch'), holder_name: core.vendor_name, has_bank_account: true }
+      : (isIndividual ? { has_bank_account: false } : null);
 
     const errors = [];
     const err = (label, targetId) => errors.push({ label, targetId });
@@ -3675,17 +3720,17 @@
       if (!core.msme_number) err('MSME Number', 'vf_msme_number');
       if (!pendingUploads['msme_certificate']) err('MSME Certificate Upload', 'uploadBtn_msme_certificate');
     }
-    if (!branch.branch_name) err('Branch Name', 'vf_branch_name');
+    if (!isIndividual && !branch.branch_name) err('Branch Name', 'vf_branch_name');
     if (!branch.address) err('Branch Address', 'vf_branch_address');
     if (!branch.state_id) err('Branch State', 'vf_branch_state_id');
     if (!isIndividual && !branch.gstin) err('GST Number', 'vf_gstin');
-    if (!branch.contact.name) err('Branch Contact Name', 'vf_branch_contact_name');
-    if (!branch.contact.mobile) err('Branch Contact Mobile', 'vf_branch_contact_mobile');
-    if (!bank.bank_name) err('Bank Name', 'vf_bank_name');
-    if (!bank.account_number) err('Account No.', 'vf_account_number');
-    if (!bank.ifsc) err('IFSC Code', 'vf_ifsc');
-    else if (!/^[A-Z]{4}0[0-9A-Z]{6}$/.test(bank.ifsc)) err('IFSC format is invalid', 'vf_ifsc');
-    if (!pendingUploads['cancelled_cheque']) err('Cancelled Cheque Upload', 'uploadBtn_cancelled_cheque');
+    if (hasBankAccount) {
+      if (!bank.bank_name) err('Bank Name', 'vf_bank_name');
+      if (!bank.account_number) err('Account No.', 'vf_account_number');
+      if (!bank.ifsc) err('IFSC Code', 'vf_ifsc');
+      else if (!/^[A-Z]{4}0[0-9A-Z]{6}$/.test(bank.ifsc)) err('IFSC format is invalid', 'vf_ifsc');
+      if (!pendingUploads['cancelled_cheque']) err('Cancelled Cheque Upload', 'uploadBtn_cancelled_cheque');
+    }
 
     document.querySelectorAll('.field-error-highlight').forEach(el => el.classList.remove('field-error-highlight'));
     if (errors.length > 0) {
