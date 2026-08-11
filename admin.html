@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786439591';</script>
+<script>window.__BUILD_VERSION__ = '1786439937';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3992,12 +3992,94 @@
     return `<div class="vv-info-cell"><div class="vv-info-label">${label}</div><div class="vv-info-value">${value || '—'}</div></div>`;
   }
 
+  let vendorViewActiveTab = 'info';
+
   function renderVendorView(detail) {
     const v = detail.vendor;
     const isIndividual = v.vendor_type === 'individual';
     const primaryBranch = (detail.branches || [])[0];
     const allContacts = detail.contacts || [];
     const allBanks = detail.bankAccounts || [];
+
+    const TABS = [
+      { key: 'info', label: isIndividual ? 'Individual Information' : 'Company Information' },
+      ...(!isIndividual ? [{ key: 'branches', label: 'Branches' }] : []),
+      { key: 'contacts', label: isIndividual ? 'Team Members' : 'Active Contact Persons' },
+      { key: 'bank', label: 'Bank Details' },
+      { key: 'docs', label: 'Documents' },
+      ...((detail.relatedVendors || []).length > 0 ? [{ key: 'related', label: 'Related Companies' }] : []),
+      { key: 'po', label: 'Purchase Orders' },
+      { key: 'quotations', label: 'Quotations Received' },
+      { key: 'challans_sent', label: 'Challans Sent' },
+      { key: 'challans_received', label: 'Challans Received' },
+      { key: 'invoices', label: 'Invoices' },
+    ];
+    if (!TABS.find(t => t.key === vendorViewActiveTab)) vendorViewActiveTab = 'info';
+
+    function tabPane(key, contentHtml) {
+      return `<div class="vv-tab-pane" data-pane="${key}" style="${vendorViewActiveTab === key ? '' : 'display:none;'}">${contentHtml}</div>`;
+    }
+
+    const infoPane = `
+      <div class="vv-info-grid">
+        ${vvCell('Code', v.vendor_code)}
+        ${vvCell(isIndividual ? 'Individual Name' : 'Company Name', v.vendor_name)}
+        ${vvCell('GST Number', primaryBranch?.gstin)}
+        ${vvCell(isIndividual ? 'Aadhar Number' : 'PAN Number', isIndividual ? v.aadhar_number : v.pan)}
+        ${vvCell('Deals In', v.deals_in)}
+        ${vvCell('Primary Mobile', v.primary_contact_mobile)}
+        ${vvCell('Other Numbers', v.other_numbers)}
+        ${vvCell('Primary Email', v.primary_contact_email)}
+        ${vvCell('Address', primaryBranch?.address)}
+        ${vvCell('City', primaryBranch?.cities?.name)}
+        ${vvCell('State', primaryBranch?.states?.name)}
+        ${vvCell('Pincode', primaryBranch?.pincode)}
+        ${vvCell('Registered', isIndividual ? 'No' : 'Yes')}
+        ${vvCell('Blacklisted', v.blacklist_status === 'blacklisted' ? 'Yes' : 'No')}
+        ${vvCell('Status', v.status.replace('_',' '))}
+        ${vvCell('Created', fmtDate(v.created_at))}
+      </div>`;
+
+    const branchesPane = !isIndividual ? `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm btn-outline" id="vendorAddBranchBtn">+ Add Branch</button></div>
+      ${(detail.branches || []).map(b => `
+        <div style="border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+          <div style="font-weight:600; font-size:13px; margin-bottom:6px;">${b.branch_name}${b.branch_alias ? ` <span style="font-weight:400; color:var(--muted);">(${b.branch_alias})</span>` : ''}</div>
+          <div style="font-size:12.5px; color:var(--muted);">${b.gstin || '\u2014'} \u00b7 ${b.address}${b.location_url ? ` \u00b7 <a href="${b.location_url}" target="_blank" style="color:var(--steel);">Map</a>` : ''}</div>
+        </div>`).join('') || '<div class="empty-state">No branches.</div>'}` : '';
+
+    const contactsPane = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorTransferContactBtn" title="Move a contact to a different branch/vendor \u2014 coming soon">\u2194 Transfer Contact</button></div>
+      ${allContacts.length === 0 ? '<div class="empty-state">No active contacts linked.</div>' : allContacts.map(c => `
+        <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+          ${vvCell('Name', c.vendor_contacts?.name)}
+          ${vvCell('Mobile', c.vendor_contacts?.mobile)}
+          ${vvCell('Email', c.vendor_contacts?.email)}
+          ${vvCell('Designation', c.designation)}
+        </div>`).join('')}`;
+
+    const bankPane = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorAddBankBtn2">+ Add Bank</button></div>
+      ${allBanks.length === 0 ? '<div class="empty-state">No bank details added.</div>' : allBanks.map(b => `
+        <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+          ${vvCell('Bank', b.bank_name)}
+          ${vvCell('Account No.', b.account_number)}
+          ${vvCell('IFSC', b.ifsc)}
+          ${vvCell('Primary', b.is_primary ? 'Yes' : 'No')}
+        </div>`).join('')}`;
+
+    const docsPane = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorAddDocBtn2">+ Add Doc</button></div>
+      ${(detail.documents || []).length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
+      <div class="vv-info-grid">
+        ${detail.documents.map(d => vvCell(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('')}
+      </div>`}`;
+
+    const relatedPane = `
+      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Cross-check pricing across these before issuing a PO to any one of them.</p>
+      ${(detail.relatedVendors || []).map(r => `<div style="padding:8px 0; border-bottom:1px solid var(--border);"><a href="#" class="related-vendor-link" data-id="${r.id}" style="color:var(--steel); font-weight:600;">${r.vendor_code} \u2014 ${r.vendor_name}</a></div>`).join('')}`;
+
+    const moduleEmpty = (label, moduleName) => `<div class="empty-state">No ${label} yet \u2014 the ${moduleName} module hasn't been built yet.</div>`;
 
     const html = `<div class="panel panel-no-clip">
       <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
@@ -4011,123 +4093,45 @@
           </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="btn btn-sm btn-outline" id="vendorViewBackBtn">‹ Back</button>
+          <button class="btn btn-sm btn-outline" id="vendorViewBackBtn">\u2039 Back</button>
           <button class="btn btn-sm" id="vendorEditBtn">Edit</button>
           <button class="btn btn-sm btn-outline" id="vendorQuickAddBankBtn">+ Bank</button>
           <button class="btn btn-sm btn-outline" id="vendorQuickAddDocBtn">+ Doc</button>
           <button class="btn btn-sm btn-outline" id="vendorDeactivateBtn" style="color:var(--danger); border-color:#efd2cf;">${v.status === 'suspended' ? 'Reactivate' : 'Deactivate'}</button>
         </div>
       </div>
+
+      <div class="subtabs" id="vendorViewTabs">
+        ${TABS.map(t => `<button type="button" class="subtab-item vv-tab-btn ${vendorViewActiveTab === t.key ? 'active' : ''}" data-tab="${t.key}">${t.label}</button>`).join('')}
+      </div>
+
       <div class="panel-body">
-
-        <span class="pill-section-label">${isIndividual ? 'Individual Information' : 'Company Information'}</span>
-        <div class="vv-info-grid">
-          ${vvCell('Code', v.vendor_code)}
-          ${vvCell(isIndividual ? 'Individual Name' : 'Company Name', v.vendor_name)}
-          ${vvCell('GST Number', primaryBranch?.gstin)}
-          ${vvCell(isIndividual ? 'Aadhar Number' : 'PAN Number', isIndividual ? v.aadhar_number : v.pan)}
-          ${vvCell('Deals In', v.deals_in)}
-          ${vvCell('Primary Mobile', v.primary_contact_mobile)}
-          ${vvCell('Other Numbers', v.other_numbers)}
-          ${vvCell('Primary Email', v.primary_contact_email)}
-          ${vvCell('Address', primaryBranch?.address)}
-          ${vvCell('City', primaryBranch?.cities?.name)}
-          ${vvCell('State', primaryBranch?.states?.name)}
-          ${vvCell('Pincode', primaryBranch?.pincode)}
-          ${vvCell('Registered', isIndividual ? 'No' : 'Yes')}
-          ${vvCell('Blacklisted', v.blacklist_status === 'blacklisted' ? 'Yes' : 'No')}
-          ${vvCell('Status', v.status.replace('_',' '))}
-          ${vvCell('Created', fmtDate(v.created_at))}
-        </div>
-
-        ${!isIndividual ? `
-        <div style="margin-top:22px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="pill-section-label">Branches</span>
-            <button class="btn btn-sm btn-outline" id="vendorAddBranchBtn">+ Add Branch</button>
-          </div>
-          <div style="margin-top:10px;">
-            ${(detail.branches || []).map(b => `
-              <div style="border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px;">
-                <div style="font-weight:600; font-size:13px; margin-bottom:6px;">${b.branch_name}${b.branch_alias ? ` <span style="font-weight:400; color:var(--muted);">(${b.branch_alias})</span>` : ''}</div>
-                <div style="font-size:12.5px; color:var(--muted);">${b.gstin || '—'} · ${b.address}${b.location_url ? ` · <a href="${b.location_url}" target="_blank" style="color:var(--steel);">Map</a>` : ''}</div>
-              </div>`).join('') || '<div class="empty-state">No branches.</div>'}
-          </div>
-        </div>` : ''}
-
-        <div style="margin-top:22px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="pill-section-label">${isIndividual ? 'Team Members' : 'Active Contact Persons'}</span>
-            <button class="btn btn-sm" id="vendorTransferContactBtn" title="Move a contact to a different branch/vendor — coming soon">↔ Transfer Contact</button>
-          </div>
-          <div style="margin-top:10px;">
-            ${allContacts.length === 0 ? '<div class="empty-state">No active contacts linked.</div>' : allContacts.map(c => `
-              <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
-                ${vvCell('Name', c.vendor_contacts?.name)}
-                ${vvCell('Mobile', c.vendor_contacts?.mobile)}
-                ${vvCell('Email', c.vendor_contacts?.email)}
-                ${vvCell('Designation', c.designation)}
-              </div>`).join('')}
-          </div>
-        </div>
-
-        <div style="margin-top:22px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="pill-section-label">Bank Details</span>
-            <button class="btn btn-sm" id="vendorAddBankBtn2">+ Add Bank</button>
-          </div>
-          <div style="margin-top:10px;">
-            ${allBanks.length === 0 ? '<div class="empty-state">No bank details added.</div>' : allBanks.map(b => `
-              <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
-                ${vvCell('Bank', b.bank_name)}
-                ${vvCell('Account No.', b.account_number)}
-                ${vvCell('IFSC', b.ifsc)}
-                ${vvCell('Primary', b.is_primary ? 'Yes' : 'No')}
-              </div>`).join('')}
-          </div>
-        </div>
-
-        <div style="margin-top:22px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="pill-section-label">Documents</span>
-            <button class="btn btn-sm" id="vendorAddDocBtn2">+ Add Doc</button>
-          </div>
-          <div style="margin-top:10px;">
-            ${(detail.documents || []).length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
-            <div class="vv-info-grid">
-              ${detail.documents.map(d => vvCell(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('')}
-            </div>`}
-          </div>
-        </div>
-
-        ${(detail.relatedVendors || []).length > 0 ? `
-        <div style="margin-top:22px;">
-          <span class="pill-section-label">Related Companies (Subsidiary / Sister Concern)</span>
-          <p style="font-size:12px; color:var(--muted); margin:6px 0 0;">Cross-check pricing across these before issuing a PO to any one of them.</p>
-          <div style="margin-top:10px;">
-            ${detail.relatedVendors.map(r => `<div style="padding:8px 0; border-bottom:1px solid var(--border);"><a href="#" class="related-vendor-link" data-id="${r.id}" style="color:var(--steel); font-weight:600;">${r.vendor_code} — ${r.vendor_name}</a></div>`).join('')}
-          </div>
-        </div>` : ''}
-
-        <div style="margin-top:22px;"><span class="pill-section-label">Purchase Orders</span>
-          <div style="margin-top:10px;"><div class="empty-state">No purchase orders yet — the Purchase Order module hasn't been built yet.</div></div></div>
-        <div style="margin-top:22px;"><span class="pill-section-label">Quotations Received</span>
-          <div style="margin-top:10px;"><div class="empty-state">No quotations yet — the Quotations module hasn't been built yet.</div></div></div>
-        <div style="margin-top:22px;"><span class="pill-section-label">Challans Sent</span>
-          <div style="margin-top:10px;"><div class="empty-state">No outbound challans yet — the Challan module hasn't been built yet.</div></div></div>
-        <div style="margin-top:22px;"><span class="pill-section-label">Challans Received</span>
-          <div style="margin-top:10px;"><div class="empty-state">No inbound challans yet — the Challan module hasn't been built yet.</div></div></div>
-        <div style="margin-top:22px;"><span class="pill-section-label">Invoices</span>
-          <div style="margin-top:10px;"><div class="empty-state">No invoices yet — the Invoice module hasn't been built yet.</div></div></div>
-
+        ${tabPane('info', infoPane)}
+        ${tabPane('branches', branchesPane)}
+        ${tabPane('contacts', contactsPane)}
+        ${tabPane('bank', bankPane)}
+        ${tabPane('docs', docsPane)}
+        ${tabPane('related', relatedPane)}
+        ${tabPane('po', moduleEmpty('purchase orders', 'Purchase Order'))}
+        ${tabPane('quotations', moduleEmpty('quotations', 'Quotations'))}
+        ${tabPane('challans_sent', moduleEmpty('outbound challans', 'Challan'))}
+        ${tabPane('challans_received', moduleEmpty('inbound challans', 'Challan'))}
+        ${tabPane('invoices', moduleEmpty('invoices', 'Invoice'))}
       </div>
     </div>`;
 
     document.getElementById('vendorMasterContent').innerHTML = html;
+    document.querySelectorAll('.vv-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        vendorViewActiveTab = btn.dataset.tab;
+        document.querySelectorAll('.vv-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === vendorViewActiveTab));
+        document.querySelectorAll('.vv-tab-pane').forEach(p => { p.style.display = p.dataset.pane === vendorViewActiveTab ? '' : 'none'; });
+      });
+    });
     document.getElementById('vendorViewBackBtn').addEventListener('click', () => switchVendorView('list'));
     document.getElementById('vendorEditBtn').addEventListener('click', () => openVendorEditForm(detail));
     document.getElementById('vendorAddBranchBtn')?.addEventListener('click', () => openAddBranchWizard(v.id, v.pan));
-    document.getElementById('vendorTransferContactBtn').addEventListener('click', () => alert('Transfer Contact is coming soon — let\'s discuss exactly how you want this to work before I build it.'));
+    document.getElementById('vendorTransferContactBtn').addEventListener('click', () => alert('Transfer Contact is coming soon \u2014 let\'s discuss exactly how you want this to work before I build it.'));
     document.getElementById('vendorQuickAddBankBtn').addEventListener('click', () => openQuickAddBank(v.id, primaryBranch?.id));
     document.getElementById('vendorAddBankBtn2').addEventListener('click', () => openQuickAddBank(v.id, primaryBranch?.id));
     document.getElementById('vendorQuickAddDocBtn').addEventListener('click', () => openQuickAddDoc(v.id));
@@ -4135,13 +4139,15 @@
     document.getElementById('vendorDeactivateBtn').addEventListener('click', async () => {
       const goingTo = v.status === 'suspended' ? 'approved' : 'suspended';
       const label = goingTo === 'suspended' ? 'deactivate' : 'reactivate';
-      if (!confirm(`Are you sure you want to ${label} ${v.vendor_name}? This changes their status — nothing is ever deleted from the system.`)) return;
+      if (!confirm(`Are you sure you want to ${label} ${v.vendor_name}? This changes their status \u2014 nothing is ever deleted from the system.`)) return;
       const res = await apiVendor({ action: 'update_vendor_status', vendor_id: v.id, new_status: goingTo });
       if (!res.success) { alert(res.error); return; }
       openVendorView(v.id);
     });
     document.querySelectorAll('.related-vendor-link').forEach(l => l.addEventListener('click', (ev) => { ev.preventDefault(); switchVendorView('view', l.dataset.id); }));
   }
+
+
 
   // ---------------- QUICK ADD: Document to existing vendor ----------------
   function openQuickAddDoc(vendorId) {
