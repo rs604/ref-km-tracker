@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786436560';</script>
+<script>window.__BUILD_VERSION__ = '1786438128';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3513,7 +3513,7 @@
         ${pageItems.length === 0 ? '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No vendors match.</td></tr>' : pageItems.map(v => `
           <tr class="${v.status === 'approved' ? 'row-approved' : v.status === 'rejected' ? 'row-open' : 'row-pending'}">
             <td data-label="Code" class="mono">${highlightMatch(v.vendor_code, searchQ)}</td>
-            <td data-label="Name"><a href="#" class="vendor-view-link" data-id="${v.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${highlightMatch(v.vendor_name, searchQ)}</a></td>
+            <td data-label="Name"><a href="#" class="vendor-view-link" data-id="${v.id}" style="color:var(--steel); font-weight:600; text-decoration:none;">${highlightMatch(v.vendor_name, searchQ)}</a>${v.is_test_entry ? ' <span class="status-tag rejected" style="font-size:9px;">TEST</span>' : ''}</td>
             <td data-label="Alias">${highlightMatch(v.vendor_alias, searchQ)}</td>
             <td data-label="Type">${v.vendor_type === 'individual' ? 'Individual/Contractor' : 'Company'}</td>
             <td data-label="Deals In">${highlightMatch(v.deals_in, searchQ)}</td>
@@ -3644,7 +3644,16 @@
     const isIndividual = vendorType === 'individual';
 
     const html = `<div class="panel panel-no-clip">
-      <div class="panel-header"><span class="panel-title">${isIndividual ? 'Add New Individual/Contractor' : 'Add New Vendor'}</span><button class="btn btn-sm btn-outline" id="vendorFormBackBtn">‹ Back to List</button></div>
+      <div class="panel-header"><span class="panel-title">${isIndividual ? 'Add New Individual/Contractor' : 'Add New Vendor'}</span>
+        <div style="display:flex; align-items:center; gap:14px;">
+          ${currentUser.role === 'owner' ? `
+          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--danger); cursor:pointer;">
+            <input type="checkbox" id="vf_is_test_entry" style="width:auto;" />
+            Mark as Test Entry
+          </label>` : ''}
+          <button class="btn btn-sm btn-outline" id="vendorFormBackBtn">‹ Back to List</button>
+        </div>
+      </div>
       <div class="panel-body">
 
         <div style="background:var(--green-bg); border:1px solid #cfe6d9; border-radius:6px; padding:12px 14px; margin-bottom:18px;">
@@ -3779,6 +3788,7 @@
       vendor_type: isIndividual ? 'individual' : 'company',
       vendor_name: val('vf_vendor_name'),
       vendor_alias: val('vf_vendor_alias'),
+      is_test_entry: document.getElementById('vf_is_test_entry')?.checked || false,
       deals_in: val('vf_deals_in'),
       pan: !isIndividual ? val('vf_pan')?.toUpperCase() : null,
       aadhar_number: isIndividual ? val('vf_aadhar_number') : null,
@@ -3891,7 +3901,7 @@
 
     const html = `<div class="panel">
       <div class="panel-header">
-        <span class="panel-title">${v.vendor_name}${v.vendor_alias ? ` <span class="role-tag">${v.vendor_alias}</span>` : ''} <span class="status-tag ${VENDOR_STATUS_TAG[v.status] || 'pending_evening'}" style="margin-left:8px;">${v.status.replace('_',' ')}</span>${v.blacklist_status === 'blacklisted' ? ' <span class="status-tag rejected">Blacklisted</span>' : ''}</span>
+        <span class="panel-title">${v.vendor_name}${v.vendor_alias ? ` <span class="role-tag">${v.vendor_alias}</span>` : ''} <span class="status-tag ${VENDOR_STATUS_TAG[v.status] || 'pending_evening'}" style="margin-left:8px;">${v.status.replace('_',' ')}</span>${v.blacklist_status === 'blacklisted' ? ' <span class="status-tag rejected">Blacklisted</span>' : ''}${v.is_test_entry ? ' <span class="status-tag rejected">TEST ENTRY</span>' : ''}</span>
         <button class="btn btn-sm btn-outline" id="vendorViewBackBtn">‹ Back to List</button>
       </div>
       <div class="panel-body">
