@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786436101';</script>
+<script>window.__BUILD_VERSION__ = '1786436560';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3692,8 +3692,7 @@
           </div>
         </div>
 
-        <h3 class="form-section-heading">${isIndividual ? 'Address' : 'Branch 1 (initial branch)'}</h3>
-        ${!isIndividual ? `<p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">Every vendor location — including this first one — is a branch. You can add more branches later from the vendor's page.</p>` : ''}
+        <h3 class="form-section-heading">Address</h3>
         <div class="form-grid">
           <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Name *</label><input id="vf_branch_name" placeholder="e.g. Unit 1, Main Office" /></div>
           <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Alias <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(optional, for search only)</span></label><input id="vf_branch_alias" placeholder="e.g. Samrala Chowk Unit" /></div>
