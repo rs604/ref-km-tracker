@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786429183';</script>
+<script>window.__BUILD_VERSION__ = '1786435041';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3505,10 +3505,12 @@
 
   // ---------------- ADD SCREEN (separate full screen, Employee Master style) ----------------
   const CONTACT_FIELDS_V = [
-    { key: 'name', label: 'Name' }, { key: 'mobile', label: 'Mobile' }, { key: 'email', label: 'Email' }, { key: 'designation', label: 'Designation / Role' },
+    { key: 'name', label: 'Name', required: true }, { key: 'mobile', label: 'Mobile', required: true },
+    { key: 'other_no', label: 'Other No.' }, { key: 'email', label: 'Email' },
+    { key: 'other_email', label: 'Other Email' }, { key: 'designation', label: 'Designation' },
   ];
 
-  // Reusable "how many? -> Generate" repeatable-row block
+  // Reusable "how many? -> Generate" table with per-row delete
   function renderGenerateRowsSection(containerId, fields) {
     return `
       <div style="display:flex; gap:8px; align-items:end; margin-bottom:14px;">
@@ -3516,29 +3518,49 @@
         <button type="button" class="btn btn-sm" id="${containerId}-generateBtn">Generate</button>
         <span style="font-size:11.5px; color:var(--muted);">Optional — enter count, then click Generate</span>
       </div>
-      <div id="${containerId}"></div>`;
+      <div style="overflow-x:auto;">
+        <table class="ledger" id="${containerId}-table" style="display:none; min-width:900px;">
+          <thead><tr>
+            <th style="width:36px;">#</th>
+            ${fields.map(f => `<th>${f.label}${f.required ? ' *' : ''}</th>`).join('')}
+            <th style="width:40px;"></th>
+          </tr></thead>
+          <tbody id="${containerId}"></tbody>
+        </table>
+      </div>`;
+  }
+  function renumberGenerateRows(containerId) {
+    document.querySelectorAll(`#${containerId} tr`).forEach((tr, i) => {
+      const numCell = tr.querySelector('.gen-row-num');
+      if (numCell) numCell.textContent = i + 1;
+    });
   }
   function wireGenerateRowsSection(containerId, fields) {
+    function addRow() {
+      const container = document.getElementById(containerId);
+      const table = document.getElementById(`${containerId}-table`);
+      table.style.display = '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="gen-row-num"></td>
+        ${fields.map(f => `<td><input data-key="${f.key}" placeholder="${f.label}${f.required ? ' *' : ''}" style="width:100%;" /></td>`).join('')}
+        <td><button type="button" class="btn btn-sm btn-outline gen-row-delete" style="color:var(--danger); border-color:#efd2cf; padding:4px 8px;">✕</button></td>`;
+      tr.querySelector('.gen-row-delete').addEventListener('click', () => { tr.remove(); renumberGenerateRows(containerId); if (!container.children.length) table.style.display = 'none'; });
+      container.appendChild(tr);
+      renumberGenerateRows(containerId);
+    }
     document.getElementById(`${containerId}-generateBtn`).addEventListener('click', () => {
       const n = Math.max(0, Math.min(50, parseInt(document.getElementById(`${containerId}-count`).value) || 0));
-      const container = document.getElementById(containerId);
-      let rowsHtml = '';
-      for (let i = 0; i < n; i++) {
-        rowsHtml += `<div class="form-grid" style="border:1px solid var(--border); border-radius:6px; padding:12px; margin-bottom:8px; background:#fff;">
-          ${fields.map(f => `<div class="field"><label>${f.label}</label><input data-key="${f.key}" placeholder="${f.label}" /></div>`).join('')}
-        </div>`;
-      }
-      container.innerHTML = rowsHtml;
+      for (let i = 0; i < n; i++) addRow();
+      document.getElementById(`${containerId}-count`).value = '';
     });
   }
   function collectGenerateRows(containerId, fields) {
     const container = document.getElementById(containerId);
     if (!container) return [];
-    const rowDivs = container.querySelectorAll(':scope > div');
     const rows = [];
-    rowDivs.forEach(rowDiv => {
+    container.querySelectorAll('tr').forEach(tr => {
       const row = {};
-      fields.forEach(f => { row[f.key] = rowDiv.querySelector(`[data-key="${f.key}"]`)?.value.trim() || ''; });
+      fields.forEach(f => { row[f.key] = tr.querySelector(`[data-key="${f.key}"]`)?.value.trim() || ''; });
       if (Object.values(row).some(v => v)) rows.push(row);
     });
     return rows;
@@ -3731,6 +3753,11 @@
       else if (!/^[A-Z]{4}0[0-9A-Z]{6}$/.test(bank.ifsc)) err('IFSC format is invalid', 'vf_ifsc');
       if (!pendingUploads['cancelled_cheque']) err('Cancelled Cheque Upload', 'uploadBtn_cancelled_cheque');
     }
+    branch.contacts.forEach((c, i) => {
+      if (!c.name) err(`Contact ${i + 1}: Name is required`, 'vf_contacts');
+      if (!c.mobile) err(`Contact ${i + 1}: Mobile is required`, 'vf_contacts');
+      else if (!/^[6-9][0-9]{9}$/.test(c.mobile)) err(`Contact ${i + 1}: Mobile is invalid`, 'vf_contacts');
+    });
 
     document.querySelectorAll('.field-error-highlight').forEach(el => el.classList.remove('field-error-highlight'));
     if (errors.length > 0) {
