@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786438128';</script>
+<script>window.__BUILD_VERSION__ = '1786439591';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -300,6 +300,12 @@
   .panel-header.header-recent { background: var(--slate-bg); border-bottom-color: #d2d9df; }
   .panel-title { font-size: 13.5px; font-weight: 650; font-family: 'Inter', sans-serif; }
   .section-label { font-size: 12.5px; font-weight: 700; color: var(--steel); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .pill-section-label { display:inline-block; font-size:11px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.4px; border:1px solid var(--green); border-radius:5px; padding:3px 10px; }
+  .vv-info-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:0; border:1px solid var(--border); border-radius:6px; overflow:hidden; margin-top:12px; }
+  .vv-info-cell { padding:12px 14px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .vv-info-cell:nth-child(4n) { border-right:none; }
+  .vv-info-label { font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .vv-info-value { font-size:13.5px; font-weight:600; color:var(--ink); }
   .form-section-heading {
     font-size: 15.5px;
     font-weight: 700;
@@ -3885,6 +3891,87 @@
   }
 
   // ---------------- VIEW SCREEN ----------------
+  async function openVendorEditForm(detail) {
+    const v = detail.vendor;
+    const isIndividual = v.vendor_type === 'individual';
+    const area = document.getElementById('vendorMasterContent');
+
+    const html = `<div class="panel panel-no-clip">
+      <div class="panel-header"><span class="panel-title">Edit ${isIndividual ? 'Individual' : 'Company'} Details</span><button class="btn btn-sm btn-outline" id="editBackBtn">‹ Cancel</button></div>
+      <div class="panel-body">
+        <p style="font-size:12px; color:var(--muted); margin-top:-4px;">This edits the core profile only. Branches, bank accounts, and documents each have their own add actions on the View screen.</p>
+        <div class="form-grid" style="margin-top:14px;">
+          <div class="field"><label>${isIndividual ? 'Individual Name' : 'Company Name'} *</label><input id="ef_vendor_name" value="${v.vendor_name || ''}" /></div>
+          <div class="field"><label>Alias</label><input id="ef_vendor_alias" value="${v.vendor_alias || ''}" /></div>
+          <div class="field"><label>Deals In *</label><input id="ef_deals_in" value="${v.deals_in || ''}" /></div>
+          <div class="field"><label>Primary Mobile *</label><input id="ef_primary_contact_mobile" value="${v.primary_contact_mobile || ''}" maxlength="10" /></div>
+          <div class="field"><label>Primary Email</label><input id="ef_primary_contact_email" value="${v.primary_contact_email || ''}" /></div>
+          <div class="field"><label>Other Numbers</label><input id="ef_other_numbers" value="${v.other_numbers || ''}" /></div>
+          ${!isIndividual ? `<div class="field"><label>Primary Contact Name *</label><input id="ef_primary_contact_name" value="${v.primary_contact_name || ''}" /></div>` : ''}
+        </div>
+        ${!isIndividual ? `
+        <div id="ef_vendor_tags_wrap" style="margin-top:10px; max-width:340px;"></div>
+        <div class="form-grid" style="margin-top:14px;">
+          <div class="field"><label>MSME Registered</label><select id="ef_msme_registered"><option value="yes" ${v.msme_registered ? 'selected' : ''}>Yes</option><option value="no" ${!v.msme_registered ? 'selected' : ''}>No</option></select></div>
+          <div class="field" id="ef_msme_number_field" style="${v.msme_registered ? '' : 'display:none'}"><label>MSME Number</label><input id="ef_msme_number" value="${v.msme_number || ''}" /></div>
+        </div>` : ''}
+        <div style="margin-top:20px; display:flex; gap:10px;">
+          <button class="btn" id="editSaveBtn">Save Changes</button>
+          <button class="btn btn-outline" id="editCancelBtn2" type="button">Cancel</button>
+        </div>
+        <div class="msg" id="editFormMsg"></div>
+      </div>
+    </div>`;
+
+    area.innerHTML = html;
+    if (!isIndividual) {
+      const selectedTags = [v.is_trader && 'Trader', v.is_manufacturer && 'Manufacturer', v.is_exporter && 'Exporter', v.is_service_provider && 'Service Provider'].filter(Boolean);
+      document.getElementById('ef_vendor_tags_wrap').innerHTML = multiSelectDropdown('ef_vendor_tags', 'Vendor Is', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], selectedTags);
+      wireMultiSelectDropdown('ef_vendor_tags');
+      document.getElementById('ef_msme_registered').addEventListener('change', (ev) => {
+        document.getElementById('ef_msme_number_field').style.display = ev.target.value === 'yes' ? 'block' : 'none';
+      });
+    }
+    document.getElementById('editBackBtn').addEventListener('click', () => openVendorView(v.id));
+    document.getElementById('editCancelBtn2').addEventListener('click', () => openVendorView(v.id));
+
+    document.getElementById('editSaveBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('editSaveBtn');
+      const msg = document.getElementById('editFormMsg');
+      msg.className = 'msg';
+      const val = (id) => document.getElementById(id)?.value.trim() || null;
+      const vendorTags = isIndividual ? [] : getMultiSelectValues('ef_vendor_tags');
+
+      const core = {
+        vendor_name: val('ef_vendor_name'),
+        vendor_alias: val('ef_vendor_alias'),
+        deals_in: val('ef_deals_in'),
+        primary_contact_mobile: val('ef_primary_contact_mobile'),
+        primary_contact_email: val('ef_primary_contact_email'),
+        other_numbers: val('ef_other_numbers'),
+        primary_contact_name: isIndividual ? val('ef_vendor_name') : val('ef_primary_contact_name'),
+        is_trader: vendorTags.includes('Trader'), is_manufacturer: vendorTags.includes('Manufacturer'),
+        is_exporter: vendorTags.includes('Exporter'), is_service_provider: vendorTags.includes('Service Provider'),
+        msme_registered: !isIndividual && document.getElementById('ef_msme_registered')?.value === 'yes',
+        msme_number: val('ef_msme_number'),
+      };
+
+      if (!core.vendor_name || !core.deals_in || !core.primary_contact_mobile || !/^[6-9][0-9]{9}$/.test(core.primary_contact_mobile)) {
+        msg.className = 'msg error';
+        msg.textContent = 'Please fill Name, Deals In, and a valid Primary Mobile.';
+        return;
+      }
+
+      setButtonLoading(btn, true, 'Saving');
+      const res = await apiVendor({ action: 'update_vendor', vendor_id: v.id, core });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      msg.className = 'msg success';
+      msg.textContent = 'Saved.';
+      setTimeout(() => openVendorView(v.id), 800);
+    });
+  }
+
   async function openVendorView(vendorId) {
     document.getElementById('vendorMasterContent').innerHTML = '<div class="panel"><div class="panel-body empty-state">Loading...</div></div>';
     const res = await apiVendor({ action: 'get_vendor_detail', vendor_id: vendorId });
@@ -3895,69 +3982,205 @@
     renderVendorView(res);
   }
 
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function vvCell(label, value) {
+    return `<div class="vv-info-cell"><div class="vv-info-label">${label}</div><div class="vv-info-value">${value || '—'}</div></div>`;
+  }
+
   function renderVendorView(detail) {
     const v = detail.vendor;
     const isIndividual = v.vendor_type === 'individual';
+    const primaryBranch = (detail.branches || [])[0];
+    const allContacts = detail.contacts || [];
+    const allBanks = detail.bankAccounts || [];
 
-    const html = `<div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">${v.vendor_name}${v.vendor_alias ? ` <span class="role-tag">${v.vendor_alias}</span>` : ''} <span class="status-tag ${VENDOR_STATUS_TAG[v.status] || 'pending_evening'}" style="margin-left:8px;">${v.status.replace('_',' ')}</span>${v.blacklist_status === 'blacklisted' ? ' <span class="status-tag rejected">Blacklisted</span>' : ''}${v.is_test_entry ? ' <span class="status-tag rejected">TEST ENTRY</span>' : ''}</span>
-        <button class="btn btn-sm btn-outline" id="vendorViewBackBtn">‹ Back to List</button>
+    const html = `<div class="panel panel-no-clip">
+      <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+        <div>
+          <span class="panel-title">${isIndividual ? 'Individual/Contractor Profile' : 'Company Profile'}</span>
+          <div style="font-size:13px; margin-top:2px;">
+            <strong>${v.vendor_name}</strong>
+            <span class="status-tag ${VENDOR_STATUS_TAG[v.status] || 'pending_evening'}" style="margin-left:6px;">${v.status.replace('_',' ')}</span>
+            ${v.blacklist_status === 'blacklisted' ? ' <span class="status-tag rejected">Blacklisted</span>' : ''}
+            ${v.is_test_entry ? ' <span class="status-tag rejected">TEST ENTRY</span>' : ''}
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-sm btn-outline" id="vendorViewBackBtn">‹ Back</button>
+          <button class="btn btn-sm" id="vendorEditBtn">Edit</button>
+          <button class="btn btn-sm btn-outline" id="vendorQuickAddBankBtn">+ Bank</button>
+          <button class="btn btn-sm btn-outline" id="vendorQuickAddDocBtn">+ Doc</button>
+          <button class="btn btn-sm btn-outline" id="vendorDeactivateBtn" style="color:var(--danger); border-color:#efd2cf;">${v.status === 'suspended' ? 'Reactivate' : 'Deactivate'}</button>
+        </div>
       </div>
       <div class="panel-body">
-        <h3 class="form-section-heading" style="margin-top:0;">${isIndividual ? 'Individual Details' : 'Company Details'}</h3>
-        <div class="form-grid">
-          ${viewField('Code', v.vendor_code)}
-          ${viewField('Deals In', v.deals_in)}
-          ${isIndividual ? viewField('Aadhar Number', v.aadhar_number) : viewField('PAN', v.pan)}
-          ${!isIndividual ? viewField('Vendor Is', [v.is_trader && 'Trader', v.is_manufacturer && 'Manufacturer', v.is_exporter && 'Exporter', v.is_service_provider && 'Service Provider'].filter(Boolean).join(', ') || '—') : ''}
-          ${!isIndividual ? viewField('MSME Registered', v.msme_registered ? 'Yes — ' + (v.msme_number || '') : 'No') : ''}
-          ${viewField('Primary Contact', v.primary_contact_name + ' · ' + v.primary_contact_mobile)}
-          ${viewField('Other Numbers', v.other_numbers)}
+
+        <span class="pill-section-label">${isIndividual ? 'Individual Information' : 'Company Information'}</span>
+        <div class="vv-info-grid">
+          ${vvCell('Code', v.vendor_code)}
+          ${vvCell(isIndividual ? 'Individual Name' : 'Company Name', v.vendor_name)}
+          ${vvCell('GST Number', primaryBranch?.gstin)}
+          ${vvCell(isIndividual ? 'Aadhar Number' : 'PAN Number', isIndividual ? v.aadhar_number : v.pan)}
+          ${vvCell('Deals In', v.deals_in)}
+          ${vvCell('Primary Mobile', v.primary_contact_mobile)}
+          ${vvCell('Other Numbers', v.other_numbers)}
+          ${vvCell('Primary Email', v.primary_contact_email)}
+          ${vvCell('Address', primaryBranch?.address)}
+          ${vvCell('City', primaryBranch?.cities?.name)}
+          ${vvCell('State', primaryBranch?.states?.name)}
+          ${vvCell('Pincode', primaryBranch?.pincode)}
+          ${vvCell('Registered', isIndividual ? 'No' : 'Yes')}
+          ${vvCell('Blacklisted', v.blacklist_status === 'blacklisted' ? 'Yes' : 'No')}
+          ${vvCell('Status', v.status.replace('_',' '))}
+          ${vvCell('Created', fmtDate(v.created_at))}
         </div>
 
-        <h3 class="form-section-heading">Branches</h3>
-        ${(detail.branches || []).map(b => {
-          const bContacts = (detail.contacts || []).filter(c => c.branch_id === b.id);
-          const bBanks = (detail.bankAccounts || []).filter(ba => ba.branch_id === b.id);
-          return `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px;">
-            <div class="form-grid">
-              ${viewField('Branch Name', b.branch_name)}
-              ${viewField('Branch Alias', b.branch_alias)}
-              ${!isIndividual ? viewField('GSTIN', b.gstin) : ''}
-              ${viewField('State', b.states?.name)}
-              ${viewField('City', b.cities?.name)}
-              ${viewField('Pincode', b.pincode)}
-              ${viewField('Address', b.address)}
-              ${b.location_url ? viewField('Location', `<a href="${b.location_url}" target="_blank" style="color:var(--steel);">View Map</a>`) : ''}
-            </div>
-            <p class="section-label">Contact${bContacts.length > 1 ? 's' : ''}</p>
-            ${bContacts.map(c => `<div class="form-grid">${viewField(c.vendor_contacts?.name, c.vendor_contacts?.mobile + (c.designation ? ' — ' + c.designation : ''))}</div>`).join('') || '<div class="empty-state">None.</div>'}
-            <p class="section-label">Bank Account${bBanks.length > 1 ? 's' : ''}</p>
-            ${bBanks.map(ba => `<div class="form-grid">${viewField(ba.bank_name, ba.account_number + ' · ' + ba.ifsc)}</div>`).join('') || '<div class="empty-state">None.</div>'}
-          </div>`;
-        }).join('') || '<div class="empty-state">No branches.</div>'}
-        ${!isIndividual ? `<button class="btn btn-sm btn-outline" id="vendorAddBranchBtn">+ Add Branch</button>` : ''}
+        ${!isIndividual ? `
+        <div style="margin-top:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pill-section-label">Branches</span>
+            <button class="btn btn-sm btn-outline" id="vendorAddBranchBtn">+ Add Branch</button>
+          </div>
+          <div style="margin-top:10px;">
+            ${(detail.branches || []).map(b => `
+              <div style="border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                <div style="font-weight:600; font-size:13px; margin-bottom:6px;">${b.branch_name}${b.branch_alias ? ` <span style="font-weight:400; color:var(--muted);">(${b.branch_alias})</span>` : ''}</div>
+                <div style="font-size:12.5px; color:var(--muted);">${b.gstin || '—'} · ${b.address}${b.location_url ? ` · <a href="${b.location_url}" target="_blank" style="color:var(--steel);">Map</a>` : ''}</div>
+              </div>`).join('') || '<div class="empty-state">No branches.</div>'}
+          </div>
+        </div>` : ''}
 
-        <h3 class="form-section-heading">Documents</h3>
-        <div class="form-grid">
-          ${(detail.documents || []).map(d => viewField(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('') || '<div class="empty-state">None uploaded.</div>'}
+        <div style="margin-top:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pill-section-label">${isIndividual ? 'Team Members' : 'Active Contact Persons'}</span>
+            <button class="btn btn-sm" id="vendorTransferContactBtn" title="Move a contact to a different branch/vendor — coming soon">↔ Transfer Contact</button>
+          </div>
+          <div style="margin-top:10px;">
+            ${allContacts.length === 0 ? '<div class="empty-state">No active contacts linked.</div>' : allContacts.map(c => `
+              <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+                ${vvCell('Name', c.vendor_contacts?.name)}
+                ${vvCell('Mobile', c.vendor_contacts?.mobile)}
+                ${vvCell('Email', c.vendor_contacts?.email)}
+                ${vvCell('Designation', c.designation)}
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pill-section-label">Bank Details</span>
+            <button class="btn btn-sm" id="vendorAddBankBtn2">+ Add Bank</button>
+          </div>
+          <div style="margin-top:10px;">
+            ${allBanks.length === 0 ? '<div class="empty-state">No bank details added.</div>' : allBanks.map(b => `
+              <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+                ${vvCell('Bank', b.bank_name)}
+                ${vvCell('Account No.', b.account_number)}
+                ${vvCell('IFSC', b.ifsc)}
+                ${vvCell('Primary', b.is_primary ? 'Yes' : 'No')}
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="pill-section-label">Documents</span>
+            <button class="btn btn-sm" id="vendorAddDocBtn2">+ Add Doc</button>
+          </div>
+          <div style="margin-top:10px;">
+            ${(detail.documents || []).length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
+            <div class="vv-info-grid">
+              ${detail.documents.map(d => vvCell(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('')}
+            </div>`}
+          </div>
         </div>
 
         ${(detail.relatedVendors || []).length > 0 ? `
-        <h3 class="form-section-heading">Related Companies (Subsidiary / Sister Concern)</h3>
-        <p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:10px;">Cross-check pricing across these before issuing a PO to any one of them.</p>
-        <div class="form-grid">
-          ${detail.relatedVendors.map(r => `<div class="field"><label>${r.vendor_code}</label><div class="view-value"><a href="#" class="related-vendor-link" data-id="${r.id}" style="color:var(--steel);">${r.vendor_name}</a></div></div>`).join('')}
+        <div style="margin-top:22px;">
+          <span class="pill-section-label">Related Companies (Subsidiary / Sister Concern)</span>
+          <p style="font-size:12px; color:var(--muted); margin:6px 0 0;">Cross-check pricing across these before issuing a PO to any one of them.</p>
+          <div style="margin-top:10px;">
+            ${detail.relatedVendors.map(r => `<div style="padding:8px 0; border-bottom:1px solid var(--border);"><a href="#" class="related-vendor-link" data-id="${r.id}" style="color:var(--steel); font-weight:600;">${r.vendor_code} — ${r.vendor_name}</a></div>`).join('')}
+          </div>
         </div>` : ''}
+
+        <div style="margin-top:22px;"><span class="pill-section-label">Purchase Orders</span>
+          <div style="margin-top:10px;"><div class="empty-state">No purchase orders yet — the Purchase Order module hasn't been built yet.</div></div></div>
+        <div style="margin-top:22px;"><span class="pill-section-label">Quotations Received</span>
+          <div style="margin-top:10px;"><div class="empty-state">No quotations yet — the Quotations module hasn't been built yet.</div></div></div>
+        <div style="margin-top:22px;"><span class="pill-section-label">Challans Sent</span>
+          <div style="margin-top:10px;"><div class="empty-state">No outbound challans yet — the Challan module hasn't been built yet.</div></div></div>
+        <div style="margin-top:22px;"><span class="pill-section-label">Challans Received</span>
+          <div style="margin-top:10px;"><div class="empty-state">No inbound challans yet — the Challan module hasn't been built yet.</div></div></div>
+        <div style="margin-top:22px;"><span class="pill-section-label">Invoices</span>
+          <div style="margin-top:10px;"><div class="empty-state">No invoices yet — the Invoice module hasn't been built yet.</div></div></div>
+
       </div>
     </div>`;
 
     document.getElementById('vendorMasterContent').innerHTML = html;
     document.getElementById('vendorViewBackBtn').addEventListener('click', () => switchVendorView('list'));
+    document.getElementById('vendorEditBtn').addEventListener('click', () => openVendorEditForm(detail));
     document.getElementById('vendorAddBranchBtn')?.addEventListener('click', () => openAddBranchWizard(v.id, v.pan));
+    document.getElementById('vendorTransferContactBtn').addEventListener('click', () => alert('Transfer Contact is coming soon — let\'s discuss exactly how you want this to work before I build it.'));
+    document.getElementById('vendorQuickAddBankBtn').addEventListener('click', () => openQuickAddBank(v.id, primaryBranch?.id));
+    document.getElementById('vendorAddBankBtn2').addEventListener('click', () => openQuickAddBank(v.id, primaryBranch?.id));
+    document.getElementById('vendorQuickAddDocBtn').addEventListener('click', () => openQuickAddDoc(v.id));
+    document.getElementById('vendorAddDocBtn2').addEventListener('click', () => openQuickAddDoc(v.id));
+    document.getElementById('vendorDeactivateBtn').addEventListener('click', async () => {
+      const goingTo = v.status === 'suspended' ? 'approved' : 'suspended';
+      const label = goingTo === 'suspended' ? 'deactivate' : 'reactivate';
+      if (!confirm(`Are you sure you want to ${label} ${v.vendor_name}? This changes their status — nothing is ever deleted from the system.`)) return;
+      const res = await apiVendor({ action: 'update_vendor_status', vendor_id: v.id, new_status: goingTo });
+      if (!res.success) { alert(res.error); return; }
+      openVendorView(v.id);
+    });
     document.querySelectorAll('.related-vendor-link').forEach(l => l.addEventListener('click', (ev) => { ev.preventDefault(); switchVendorView('view', l.dataset.id); }));
   }
+
+  // ---------------- QUICK ADD: Document to existing vendor ----------------
+  function openQuickAddDoc(vendorId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,application/pdf';
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+      const slotName = prompt('What is this document? (e.g. "GST Certificate", "Agreement")', 'Other Document');
+      if (!slotName) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const res = await apiVendor({ action: 'upload_document', vendor_id: vendorId, slot: 'other', file_base64: base64, file_ext: ext, document_name: slotName });
+        if (!res.success) { alert(res.error); return; }
+        openVendorView(vendorId);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  // ---------------- QUICK ADD: Bank Account to existing vendor's primary branch ----------------
+  function openQuickAddBank(vendorId, branchId) {
+    const bankName = prompt('Bank Name:');
+    if (!bankName) return;
+    const accountNumber = prompt('Account Number:');
+    if (!accountNumber) return;
+    const ifsc = prompt('IFSC Code:');
+    if (!ifsc || !/^[A-Z]{4}0[0-9A-Z]{6}$/.test(ifsc.toUpperCase())) { alert('Invalid IFSC format (should be AAAA0999999).'); return; }
+    apiVendor({ action: 'quick_add_bank', vendor_id: vendorId, branch_id: branchId, bank: { bank_name: bankName, account_number: accountNumber, ifsc: ifsc.toUpperCase() } }).then(res => {
+      if (!res.success) { alert(res.error); return; }
+      openVendorView(vendorId);
+    });
+  }
+
+
 
   // ---------------- ADD BRANCH WIZARD (same/different GST) ----------------
   function openAddBranchWizard(vendorId, vendorPan) {
