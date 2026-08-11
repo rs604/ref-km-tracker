@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786442048';</script>
+<script>window.__BUILD_VERSION__ = '1786453478';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -4764,6 +4764,32 @@
         },
       ],
     },
+    {
+      id: 'roadmap',
+      label: 'Roadmap / Planned',
+      groups: [
+        {
+          title: 'Security Module — In Progress, Blocks Everything Else',
+          points: [
+            { t: 'Current session model is a real gap', d: 'Every action today just sends a plain employee ID with the request, and the server trusts it blindly — no expiry, no token. Anyone who ever learned or guessed an ID could act as that person indefinitely. This is being fixed before any other feature work continues.' },
+            { t: 'ERP login is being replaced entirely: email + password, not PIN', d: 'Only @refconveyors.com or @refconveyors.net email addresses can log into the ERP (admin.html). Password minimum 8 characters, must include a letter, a number, and a symbol.' },
+            { t: 'Km Tracker link (submit.html) keeps PIN login, completely unchanged', d: 'The two login systems are being deliberately kept separate — this decision only affects the actual ERP.' },
+            { t: 'Real session tokens replace the plain-ID trust model', d: 'A random, unguessable token is issued at login and validated on every subsequent action, with an idle-timeout duration configurable in Admin Panel (Owner-only) so it can be tuned as the system grows.' },
+            { t: 'Not every employee gets ERP login', d: 'A new "ERP Login Required?" toggle on Employee Master, defaulting to No. Blue-collar/field staff exist fully in HR records (and can still use Km Tracker via PIN if applicable) without ever having ERP access. Role field stays on the employee record either way, even when login isn\'t required.' },
+            { t: 'Location (IP) restriction — built, but left dormant', d: 'Per-branch allowed-IP list, with three per-employee exception types available when granting login (always-allow flag, per-request approval, or a time-limited exception). Not enforced yet because the office connections are currently on dynamic IPs; will be switched on once static IPs are in place.' },
+          ],
+        },
+        {
+          title: 'Home Tab — Personalized Hub (Future, After Security)',
+          points: [
+            { t: 'Vision: one place where any logged-in employee sees everything relevant to them', d: 'Their own score, today\'s tasks, delegated tasks, and a daily/weekly report submission — instead of hunting across separate sections of the system.' },
+            { t: 'Most of what feeds it doesn\'t exist yet', d: 'Checklist system, FMS, Projects & Production, and Inventory Management (with purchase-department action triggers) are all planned but not built — the Home tab\'s task feed depends on those existing first.' },
+            { t: 'What is realistically buildable now, standalone', d: 'Daily/weekly report submission, and a generic lightweight Task module (assign, view, mark done) that later modules (Projects, Production, Inventory) could feed into once they exist, rather than each building its own separate task system.' },
+            { t: '"Score" has no definition yet', d: 'What actually earns or loses an employee score hasn\'t been decided — needs its own design pass before it can be built.' },
+          ],
+        },
+      ],
+    },
   ];
 
   function renderDocPoints(points) {
@@ -4782,6 +4808,7 @@
       leaves: [{ id: 'vendor-master', label: 'Vendor Master' }],
     },
     { label: 'System', leaves: [{ id: 'roles-permissions', label: 'Roles & Permissions' }] },
+    { label: 'Roadmap', leaves: [{ id: 'roadmap', label: 'Roadmap / Planned' }] },
   ];
 
   let docActiveSection = DOC_SECTIONS[0].id;
