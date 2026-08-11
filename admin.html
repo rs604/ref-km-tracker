@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786435041';</script>
+<script>window.__BUILD_VERSION__ = '1786436101';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -234,6 +234,7 @@
     background: var(--danger-bg) !important;
     box-shadow: 0 0 0 3px rgba(165,69,58,0.15);
   }
+  .field-inline-error { color: var(--danger); font-size: 11px; margin-top: 4px; display: none; }
 
   .emp-dept-group { margin-bottom: 22px; }
   .emp-dept-header {
@@ -2365,6 +2366,60 @@
     return [...document.querySelectorAll(`#${id}-panel .msdd-checkbox:checked`)].map(c => c.dataset.value);
   }
 
+  // Reusable real-time field validation — validates on blur (as soon as focus leaves the field),
+  // shows red border + inline error message immediately, clears as soon as it's corrected.
+  const VALIDATORS = {
+    pan: { test: v => /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v), message: 'Invalid PAN format (should be AAAAA9999A)' },
+    gstin: { test: v => /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/.test(v), message: 'Invalid GSTIN format' },
+    aadhar: { test: v => /^[0-9]{12}$/.test(v.replace(/\s/g, '')), message: 'Aadhar must be exactly 12 digits' },
+    mobile: { test: v => /^[6-9][0-9]{9}$/.test(v), message: 'Invalid mobile number (10 digits, starting 6-9)' },
+    ifsc: { test: v => /^[A-Z]{4}0[0-9A-Z]{6}$/.test(v), message: 'Invalid IFSC format (should be AAAA0999999)' },
+    pincode: { test: v => /^[1-9][0-9]{5}$/.test(v), message: 'Invalid pincode (6 digits)' },
+    email: { test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), message: 'Invalid email address' },
+  };
+
+  function wireFieldValidation(fieldId, validatorKey, options = {}) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    const validator = VALIDATORS[validatorKey];
+    if (!validator) return;
+
+    let errorEl = document.getElementById(fieldId + '_inlineError');
+    if (!errorEl) {
+      errorEl = document.createElement('div');
+      errorEl.id = fieldId + '_inlineError';
+      errorEl.className = 'field-inline-error';
+      el.insertAdjacentElement('afterend', errorEl);
+    }
+
+    function check() {
+      const raw = el.value.trim();
+      const val = options.uppercase ? raw.toUpperCase() : raw;
+      if (options.uppercase && el.value !== val) el.value = val;
+      if (!val) { // empty is fine here — mandatory-ness is a separate, submit-time check
+        el.classList.remove('field-error-highlight');
+        errorEl.style.display = 'none';
+        return;
+      }
+      if (!validator.test(val)) {
+        el.classList.add('field-error-highlight');
+        errorEl.textContent = validator.message;
+        errorEl.style.display = 'block';
+      } else {
+        el.classList.remove('field-error-highlight');
+        errorEl.style.display = 'none';
+      }
+    }
+    el.addEventListener('blur', check);
+    el.addEventListener('input', () => {
+      // Clear the red state as soon as they start fixing it — full re-check happens again on next blur
+      if (el.classList.contains('field-error-highlight')) {
+        el.classList.remove('field-error-highlight');
+        errorEl.style.display = 'none';
+      }
+    });
+  }
+
   function docUploadField(slot, label, existingDoc) {
     return `<div class="field">
       <label style="visibility:hidden;">${label}</label>
@@ -3504,11 +3559,13 @@
   }
 
   // ---------------- ADD SCREEN (separate full screen, Employee Master style) ----------------
-  const CONTACT_FIELDS_V = [
-    { key: 'name', label: 'Name', required: true }, { key: 'mobile', label: 'Mobile', required: true },
-    { key: 'other_no', label: 'Other No.' }, { key: 'email', label: 'Email' },
-    { key: 'other_email', label: 'Other Email' }, { key: 'designation', label: 'Designation' },
-  ];
+  function getContactFields(isIndividual) {
+    return [
+      { key: 'name', label: 'Name', required: true }, { key: 'mobile', label: 'Mobile', required: true },
+      { key: 'other_no', label: 'Other No.' }, { key: 'email', label: 'Email' },
+      { key: 'other_email', label: 'Other Email' }, { key: 'designation', label: 'Designation', required: !isIndividual },
+    ];
+  }
 
   // Reusable "how many? -> Generate" table with per-row delete
   function renderGenerateRowsSection(containerId, fields) {
@@ -3545,6 +3602,22 @@
         ${fields.map(f => `<td><input data-key="${f.key}" placeholder="${f.label}${f.required ? ' *' : ''}" style="width:100%;" /></td>`).join('')}
         <td><button type="button" class="btn btn-sm btn-outline gen-row-delete" style="color:var(--danger); border-color:#efd2cf; padding:4px 8px;">✕</button></td>`;
       tr.querySelector('.gen-row-delete').addEventListener('click', () => { tr.remove(); renumberGenerateRows(containerId); if (!container.children.length) table.style.display = 'none'; });
+      const mobileInput = tr.querySelector('[data-key="mobile"]');
+      if (mobileInput) {
+        mobileInput.addEventListener('blur', () => {
+          const v = mobileInput.value.trim();
+          mobileInput.classList.toggle('field-error-highlight', !!v && !VALIDATORS.mobile.test(v));
+        });
+        mobileInput.addEventListener('input', () => mobileInput.classList.remove('field-error-highlight'));
+      }
+      const emailInputs = tr.querySelectorAll('[data-key="email"], [data-key="other_email"]');
+      emailInputs.forEach(emailInput => {
+        emailInput.addEventListener('blur', () => {
+          const v = emailInput.value.trim();
+          emailInput.classList.toggle('field-error-highlight', !!v && !VALIDATORS.email.test(v));
+        });
+        emailInput.addEventListener('input', () => emailInput.classList.remove('field-error-highlight'));
+      });
       container.appendChild(tr);
       renumberGenerateRows(containerId);
     }
@@ -3647,7 +3720,7 @@
         </div>
 
         <p class="section-label">${isIndividual ? 'People Working For This Contractor' : 'Contact Persons'} <span style="font-weight:400; color:var(--muted); font-size:11px;">(${isIndividual ? 'helpers, assistants, or others linked to this individual' : 'other people linked to this branch — helpers, staff, etc.'})</span></p>
-        ${renderGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V)}
+        ${renderGenerateRowsSection('vf_contacts', getContactFields(isIndividual))}
 
         <div style="margin-top:20px; display:flex; gap:10px;">
           <button class="btn" id="vendorSaveBtn">${isIndividual ? 'Save Individual' : 'Save Company'}</button>
@@ -3673,7 +3746,7 @@
     });
 
     wireMultiSelectDropdown('vf_vendor_tags');
-    wireGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V);
+    wireGenerateRowsSection('vf_contacts', getContactFields(isIndividual));
     document.getElementById('vf_has_bank_account')?.addEventListener('change', (ev) => {
       document.getElementById('vf_bank_fields').style.display = ev.target.checked ? 'grid' : 'none';
     });
@@ -3683,6 +3756,15 @@
     wireDocUploadTrigger('gst_certificate');
     wireDocUploadTrigger('msme_certificate');
     wireDocUploadTrigger('cancelled_cheque');
+
+    // Real-time validation — shows error immediately when focus leaves a field with an invalid value
+    wireFieldValidation('vf_pan', 'pan', { uppercase: true });
+    wireFieldValidation('vf_aadhar_number', 'aadhar');
+    wireFieldValidation('vf_gstin', 'gstin', { uppercase: true });
+    wireFieldValidation('vf_primary_contact_mobile', 'mobile');
+    wireFieldValidation('vf_primary_contact_email', 'email');
+    wireFieldValidation('vf_branch_pincode', 'pincode');
+    wireFieldValidation('vf_ifsc', 'ifsc', { uppercase: true });
 
     document.getElementById('vendorSaveBtn').addEventListener('click', () => saveVendorForm(isIndividual));
   }
@@ -3717,7 +3799,7 @@
       gstin: !isIndividual ? val('vf_gstin')?.toUpperCase() : null,
       address: val('vf_branch_address'), state_id: val('vf_branch_state_id'), city_id: val('vf_branch_city_id'),
       pincode: val('vf_branch_pincode'), location_url: val('vf_branch_location_url'),
-      contacts: collectGenerateRows('vf_contacts', CONTACT_FIELDS_V),
+      contacts: collectGenerateRows('vf_contacts', getContactFields(isIndividual)),
     };
     const bank = hasBankAccount
       ? { bank_name: val('vf_bank_name'), account_number: val('vf_account_number'), ifsc: val('vf_ifsc')?.toUpperCase(), branch: val('vf_bank_branch'), holder_name: core.vendor_name, has_bank_account: true }
@@ -3757,6 +3839,7 @@
       if (!c.name) err(`Contact ${i + 1}: Name is required`, 'vf_contacts');
       if (!c.mobile) err(`Contact ${i + 1}: Mobile is required`, 'vf_contacts');
       else if (!/^[6-9][0-9]{9}$/.test(c.mobile)) err(`Contact ${i + 1}: Mobile is invalid`, 'vf_contacts');
+      if (!isIndividual && !c.designation) err(`Contact ${i + 1}: Designation is required`, 'vf_contacts');
     });
 
     document.querySelectorAll('.field-error-highlight').forEach(el => el.classList.remove('field-error-highlight'));
