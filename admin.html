@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786439937';</script>
+<script>window.__BUILD_VERSION__ = '1786440804';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -306,6 +306,7 @@
   .vv-info-cell:nth-child(4n) { border-right:none; }
   .vv-info-label { font-size:11px; color:var(--muted); margin-bottom:3px; }
   .vv-info-value { font-size:13.5px; font-weight:600; color:var(--ink); }
+  .vv-subsection { margin-top:26px; padding-top:20px; border-top:1px solid var(--border); }
   .form-section-heading {
     font-size: 15.5px;
     font-weight: 700;
@@ -4004,9 +4005,6 @@
     const TABS = [
       { key: 'info', label: isIndividual ? 'Individual Information' : 'Company Information' },
       ...(!isIndividual ? [{ key: 'branches', label: 'Branches' }] : []),
-      { key: 'contacts', label: isIndividual ? 'Team Members' : 'Active Contact Persons' },
-      { key: 'bank', label: 'Bank Details' },
-      { key: 'docs', label: 'Documents' },
       ...((detail.relatedVendors || []).length > 0 ? [{ key: 'related', label: 'Related Companies' }] : []),
       { key: 'po', label: 'Purchase Orders' },
       { key: 'quotations', label: 'Quotations Received' },
@@ -4021,7 +4019,8 @@
     }
 
     const infoPane = `
-      <div class="vv-info-grid">
+      <span class="pill-section-label">${isIndividual ? 'Individual Information' : 'Company Information'}</span>
+      <div class="vv-info-grid" style="margin-top:10px;">
         ${vvCell('Code', v.vendor_code)}
         ${vvCell(isIndividual ? 'Individual Name' : 'Company Name', v.vendor_name)}
         ${vvCell('GST Number', primaryBranch?.gstin)}
@@ -4038,6 +4037,51 @@
         ${vvCell('Blacklisted', v.blacklist_status === 'blacklisted' ? 'Yes' : 'No')}
         ${vvCell('Status', v.status.replace('_',' '))}
         ${vvCell('Created', fmtDate(v.created_at))}
+      </div>
+
+      <div class="vv-subsection">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="pill-section-label">${isIndividual ? 'Team Members' : 'Active Contact Persons'}</span>
+          <button class="btn btn-sm" id="vendorTransferContactBtn" title="Move a contact to a different branch/vendor \u2014 coming soon">\u2194 Transfer Contact</button>
+        </div>
+        <div style="margin-top:10px;">
+          ${allContacts.length === 0 ? '<div class="empty-state">No active contacts linked.</div>' : allContacts.map(c => `
+            <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+              ${vvCell('Name', c.vendor_contacts?.name)}
+              ${vvCell('Mobile', c.vendor_contacts?.mobile)}
+              ${vvCell('Email', c.vendor_contacts?.email)}
+              ${vvCell('Designation', c.designation)}
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="pill-section-label">Bank Details</span>
+          <button class="btn btn-sm" id="vendorAddBankBtn2">+ Add Bank</button>
+        </div>
+        <div style="margin-top:10px;">
+          ${allBanks.length === 0 ? '<div class="empty-state">No bank details added.</div>' : allBanks.map(b => `
+            <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
+              ${vvCell('Bank', b.bank_name)}
+              ${vvCell('Account No.', b.account_number)}
+              ${vvCell('IFSC', b.ifsc)}
+              ${vvCell('Primary', b.is_primary ? 'Yes' : 'No')}
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="pill-section-label">Documents</span>
+          <button class="btn btn-sm" id="vendorAddDocBtn2">+ Add Doc</button>
+        </div>
+        <div style="margin-top:10px;">
+          ${(detail.documents || []).length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
+          <div class="vv-info-grid">
+            ${detail.documents.map(d => vvCell(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('')}
+          </div>`}
+        </div>
       </div>`;
 
     const branchesPane = !isIndividual ? `
@@ -4047,33 +4091,6 @@
           <div style="font-weight:600; font-size:13px; margin-bottom:6px;">${b.branch_name}${b.branch_alias ? ` <span style="font-weight:400; color:var(--muted);">(${b.branch_alias})</span>` : ''}</div>
           <div style="font-size:12.5px; color:var(--muted);">${b.gstin || '\u2014'} \u00b7 ${b.address}${b.location_url ? ` \u00b7 <a href="${b.location_url}" target="_blank" style="color:var(--steel);">Map</a>` : ''}</div>
         </div>`).join('') || '<div class="empty-state">No branches.</div>'}` : '';
-
-    const contactsPane = `
-      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorTransferContactBtn" title="Move a contact to a different branch/vendor \u2014 coming soon">\u2194 Transfer Contact</button></div>
-      ${allContacts.length === 0 ? '<div class="empty-state">No active contacts linked.</div>' : allContacts.map(c => `
-        <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
-          ${vvCell('Name', c.vendor_contacts?.name)}
-          ${vvCell('Mobile', c.vendor_contacts?.mobile)}
-          ${vvCell('Email', c.vendor_contacts?.email)}
-          ${vvCell('Designation', c.designation)}
-        </div>`).join('')}`;
-
-    const bankPane = `
-      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorAddBankBtn2">+ Add Bank</button></div>
-      ${allBanks.length === 0 ? '<div class="empty-state">No bank details added.</div>' : allBanks.map(b => `
-        <div class="vv-info-grid" style="grid-template-columns:repeat(4,1fr); margin-top:8px;">
-          ${vvCell('Bank', b.bank_name)}
-          ${vvCell('Account No.', b.account_number)}
-          ${vvCell('IFSC', b.ifsc)}
-          ${vvCell('Primary', b.is_primary ? 'Yes' : 'No')}
-        </div>`).join('')}`;
-
-    const docsPane = `
-      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><button class="btn btn-sm" id="vendorAddDocBtn2">+ Add Doc</button></div>
-      ${(detail.documents || []).length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
-      <div class="vv-info-grid">
-        ${detail.documents.map(d => vvCell(d.document_name || d.slot, `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">View</a>`)).join('')}
-      </div>`}`;
 
     const relatedPane = `
       <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Cross-check pricing across these before issuing a PO to any one of them.</p>
@@ -4108,9 +4125,6 @@
       <div class="panel-body">
         ${tabPane('info', infoPane)}
         ${tabPane('branches', branchesPane)}
-        ${tabPane('contacts', contactsPane)}
-        ${tabPane('bank', bankPane)}
-        ${tabPane('docs', docsPane)}
         ${tabPane('related', relatedPane)}
         ${tabPane('po', moduleEmpty('purchase orders', 'Purchase Order'))}
         ${tabPane('quotations', moduleEmpty('quotations', 'Quotations'))}
