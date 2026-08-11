@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786356282';</script>
+<script>window.__BUILD_VERSION__ = '1786429183';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3597,8 +3597,8 @@
           </div>
         </div>
 
-        <h3 class="form-section-heading">${isIndividual ? 'Location' : 'Branch 1 (initial branch)'}</h3>
-        <p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">${isIndividual ? 'Where this individual/contractor operates from.' : 'Every vendor location — including this first one — is a branch. You can add more branches later from the vendor\'s page.'}</p>
+        <h3 class="form-section-heading">${isIndividual ? 'Address' : 'Branch 1 (initial branch)'}</h3>
+        ${!isIndividual ? `<p style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:14px;">Every vendor location — including this first one — is a branch. You can add more branches later from the vendor's page.</p>` : ''}
         <div class="form-grid">
           <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Name *</label><input id="vf_branch_name" placeholder="e.g. Unit 1, Main Office" /></div>
           <div class="field" style="${isIndividual ? 'display:none' : ''}"><label>Branch Alias <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(optional, for search only)</span></label><input id="vf_branch_alias" placeholder="e.g. Samrala Chowk Unit" /></div>
@@ -3608,9 +3608,6 @@
           <div class="field"><label>Location URL <span style="font-weight:400; color:var(--muted); font-size:10.5px;">(map link, optional)</span></label><input id="vf_branch_location_url" placeholder="https://maps.google.com/..." /></div>
           <div class="field"><label>Address *</label><textarea id="vf_branch_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;"></textarea></div>
         </div>
-
-        <p class="section-label">Contact Persons ${isIndividual ? '' : '<span style="font-weight:400; color:var(--muted); font-size:11px;">(other people linked to this branch — helpers, staff, etc.)</span>'}</p>
-        ${renderGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V)}
 
         <p class="section-label">Bank Account</p>
         ${isIndividual ? `
@@ -3626,6 +3623,9 @@
           <div class="field"><label>Branch (bank)</label><input id="vf_bank_branch" /></div>
           <div>${docUploadField('cancelled_cheque', 'Cancelled Cheque')}</div>
         </div>
+
+        <p class="section-label">${isIndividual ? 'People Working For This Contractor' : 'Contact Persons'} <span style="font-weight:400; color:var(--muted); font-size:11px;">(${isIndividual ? 'helpers, assistants, or others linked to this individual' : 'other people linked to this branch — helpers, staff, etc.'})</span></p>
+        ${renderGenerateRowsSection('vf_contacts', CONTACT_FIELDS_V)}
 
         <div style="margin-top:20px; display:flex; gap:10px;">
           <button class="btn" id="vendorSaveBtn">${isIndividual ? 'Save Individual' : 'Save Company'}</button>
