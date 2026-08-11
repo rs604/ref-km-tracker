@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786441426';</script>
+<script>window.__BUILD_VERSION__ = '1786442048';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3898,13 +3898,14 @@
     const isIndividual = v.vendor_type === 'individual';
     const primaryBranch = (detail.branches || [])[0];
     const area = document.getElementById('vendorMasterContent');
+    const docsBySlot = {};
+    (detail.documents || []).forEach(d => { docsBySlot[d.slot] = d; });
 
     const html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Edit ${isIndividual ? 'Individual' : 'Company'} Details</span><button class="btn btn-sm btn-outline" id="editBackBtn">‹ Cancel</button></div>
       <div class="panel-body">
-        <p style="font-size:12px; color:var(--muted); margin-top:-4px;">Bank accounts and documents each have their own add actions on the View screen. Everything else — including PAN/GST/Address — is editable here.</p>
 
-        <h3 class="form-section-heading" style="margin-top:14px;">${isIndividual ? 'Individual Details' : 'Company Details'}</h3>
+        <h3 class="form-section-heading" style="margin-top:0;">${isIndividual ? 'Individual Details' : 'Company Details'}</h3>
         <div class="form-grid">
           <div class="field"><label>${isIndividual ? 'Individual Name' : 'Company Name'} *</label><input id="ef_vendor_name" value="${v.vendor_name || ''}" /></div>
           <div class="field"><label>Alias</label><input id="ef_vendor_alias" value="${v.vendor_alias || ''}" /></div>
@@ -3912,6 +3913,8 @@
           ${isIndividual
             ? `<div class="field"><label>Aadhar Number *</label><input id="ef_aadhar_number" value="${v.aadhar_number || ''}" maxlength="12" /></div>`
             : `<div class="field"><label>PAN Number *</label><input id="ef_pan" value="${v.pan || ''}" style="text-transform:uppercase;" maxlength="10" /></div>`}
+          <div>${docUploadField(isIndividual ? 'aadhar_card' : 'pan_card', isIndividual ? 'Aadhar Card' : 'PAN Card', docsBySlot[isIndividual ? 'aadhar_card' : 'pan_card'])}</div>
+          ${!isIndividual ? `<div>${docUploadField('gst_certificate', 'GST Certificate', docsBySlot['gst_certificate'])}</div>` : ''}
         </div>
 
         ${!isIndividual ? `
@@ -3919,6 +3922,7 @@
         <div class="form-grid" style="margin-top:14px;">
           <div class="field"><label>MSME Registered</label><select id="ef_msme_registered"><option value="yes" ${v.msme_registered ? 'selected' : ''}>Yes</option><option value="no" ${!v.msme_registered ? 'selected' : ''}>No</option></select></div>
           <div class="field" id="ef_msme_number_field" style="${v.msme_registered ? '' : 'display:none'}"><label>MSME Number</label><input id="ef_msme_number" value="${v.msme_number || ''}" /></div>
+          <div id="ef_msme_doc_field" style="${v.msme_registered ? '' : 'display:none'}">${docUploadField('msme_certificate', 'MSME Certificate', docsBySlot['msme_certificate'])}</div>
         </div>` : ''}
 
         <p class="section-label">Contact Details</p>
@@ -3942,6 +3946,16 @@
           <div class="field full"><label>Address *</label><textarea id="ef_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;">${primaryBranch?.address || ''}</textarea></div>
         </div>
 
+        <p class="section-label">Bank Accounts</p>
+        <div style="overflow-x:auto;">
+          <table class="ledger" id="ef_banks_table" style="${(detail.bankAccounts || []).length ? '' : 'display:none;'} min-width:700px;">
+            <thead><tr><th>Bank</th><th>Account No.</th><th>IFSC</th><th>Primary</th><th style="width:120px;"></th></tr></thead>
+            <tbody id="ef_banks_tbody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline" id="ef_addBankBtn" style="margin-top:8px;">+ Add Bank Account</button>
+        <div class="msg" id="ef_bankMsg" style="margin-top:8px;"></div>
+
         <div style="margin-top:20px; display:flex; gap:10px;">
           <button class="btn" id="editSaveBtn">Save Changes</button>
           <button class="btn btn-outline" id="editCancelBtn2" type="button">Cancel</button>
@@ -3951,6 +3965,76 @@
     </div>`;
 
     area.innerHTML = html;
+
+    // ---- Documents: reuse the same upload wiring/pending-uploads pattern as the create form ----
+    pendingUploads = {};
+    wireDocUploadTrigger(isIndividual ? 'aadhar_card' : 'pan_card', { documentName: isIndividual ? 'Aadhar Card' : 'PAN Card' });
+    if (!isIndividual) wireDocUploadTrigger('gst_certificate', { documentName: 'GST Certificate' });
+    if (!isIndividual) wireDocUploadTrigger('msme_certificate', { documentName: 'MSME Certificate' });
+
+    // ---- Bank accounts list: render, wire edit/delete per row, wire +Add ----
+    function renderBankRows() {
+      const tbody = document.getElementById('ef_banks_tbody');
+      const table = document.getElementById('ef_banks_table');
+      const banks = detail.bankAccounts || [];
+      table.style.display = banks.length ? '' : 'none';
+      tbody.innerHTML = banks.map(b => `
+        <tr data-bank-id="${b.id}">
+          <td>${b.bank_name}</td>
+          <td>${b.account_number}</td>
+          <td>${b.ifsc}</td>
+          <td>${b.is_primary ? 'Yes' : ''}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-outline ef-bank-edit" data-id="${b.id}" style="padding:4px 8px;">Edit</button>
+            <button type="button" class="btn btn-sm btn-outline ef-bank-remove" data-id="${b.id}" style="padding:4px 8px; color:var(--danger); border-color:#efd2cf;">Remove</button>
+          </td>
+        </tr>`).join('');
+      document.querySelectorAll('.ef-bank-edit').forEach(btn => btn.addEventListener('click', () => editBankRow(btn.dataset.id)));
+      document.querySelectorAll('.ef-bank-remove').forEach(btn => btn.addEventListener('click', () => removeBankRow(btn.dataset.id)));
+    }
+    async function editBankRow(bankId) {
+      const bankMsg = document.getElementById('ef_bankMsg');
+      const existing = (detail.bankAccounts || []).find(b => b.id === bankId);
+      if (!existing) return;
+      const bankName = prompt('Bank Name:', existing.bank_name);
+      if (!bankName) return;
+      const accountNumber = prompt('Account Number:', existing.account_number);
+      if (!accountNumber) return;
+      const ifsc = prompt('IFSC Code:', existing.ifsc);
+      if (!ifsc || !/^[A-Z]{4}0[0-9A-Z]{6}$/.test(ifsc.toUpperCase())) { bankMsg.className = 'msg error'; bankMsg.textContent = 'Invalid IFSC format.'; return; }
+      const res = await apiVendor({ action: 'update_bank_account', bank_account_id: bankId, bank: { bank_name: bankName, account_number: accountNumber, ifsc: ifsc.toUpperCase() } });
+      if (!res.success) { bankMsg.className = 'msg error'; bankMsg.textContent = res.error; return; }
+      existing.bank_name = bankName; existing.account_number = accountNumber; existing.ifsc = ifsc.toUpperCase();
+      renderBankRows();
+      bankMsg.className = 'msg success'; bankMsg.textContent = 'Bank account updated.';
+    }
+    async function removeBankRow(bankId) {
+      const bankMsg = document.getElementById('ef_bankMsg');
+      const existing = (detail.bankAccounts || []).find(b => b.id === bankId);
+      if (!existing) return;
+      if (!confirm(`Remove ${existing.bank_name} (${existing.account_number}) from this vendor? This can't be undone from here, but the record is kept for history, not deleted.`)) return;
+      const res = await apiVendor({ action: 'deactivate_bank_account', bank_account_id: bankId });
+      if (!res.success) { bankMsg.className = 'msg error'; bankMsg.textContent = res.error; return; }
+      detail.bankAccounts = (detail.bankAccounts || []).filter(b => b.id !== bankId);
+      renderBankRows();
+      bankMsg.className = 'msg success'; bankMsg.textContent = 'Bank account removed.';
+    }
+    document.getElementById('ef_addBankBtn').addEventListener('click', async () => {
+      const bankMsg = document.getElementById('ef_bankMsg');
+      const bankName = prompt('Bank Name:');
+      if (!bankName) return;
+      const accountNumber = prompt('Account Number:');
+      if (!accountNumber) return;
+      const ifsc = prompt('IFSC Code:');
+      if (!ifsc || !/^[A-Z]{4}0[0-9A-Z]{6}$/.test(ifsc.toUpperCase())) { bankMsg.className = 'msg error'; bankMsg.textContent = 'Invalid IFSC format.'; return; }
+      const res = await apiVendor({ action: 'add_bank_account', vendor_id: v.id, branch_id: primaryBranch?.id, bank: { bank_name: bankName, account_number: accountNumber, ifsc: ifsc.toUpperCase() } });
+      if (!res.success) { bankMsg.className = 'msg error'; bankMsg.textContent = res.error; return; }
+      detail.bankAccounts = detail.bankAccounts || [];
+      detail.bankAccounts.push(res.bank);
+      renderBankRows();
+      bankMsg.className = 'msg success'; bankMsg.textContent = 'Bank account added.';
+    });
+    renderBankRows();
 
     // Pre-select State/City correctly (find real IDs from the loaded dropdown data, matched by name)
     const matchedState = (dd.states || []).find(s => s.name === primaryBranch?.states?.name);
@@ -3970,7 +4054,10 @@
       document.getElementById('ef_vendor_tags_wrap').innerHTML = multiSelectDropdown('ef_vendor_tags', 'Vendor Is', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], selectedTags);
       wireMultiSelectDropdown('ef_vendor_tags');
       document.getElementById('ef_msme_registered').addEventListener('change', (ev) => {
-        document.getElementById('ef_msme_number_field').style.display = ev.target.value === 'yes' ? 'block' : 'none';
+        const showMsme = ev.target.value === 'yes';
+        document.getElementById('ef_msme_number_field').style.display = showMsme ? 'block' : 'none';
+        document.getElementById('ef_msme_doc_field').style.display = showMsme ? 'block' : 'none';
+        if (showMsme) wireDocUploadTrigger('msme_certificate', { documentName: 'MSME Certificate' });
       });
     }
     document.getElementById('editBackBtn').addEventListener('click', () => openVendorView(v.id));
@@ -4028,8 +4115,16 @@
 
       setButtonLoading(btn, true, 'Saving');
       const res = await apiVendor({ action: 'update_vendor', vendor_id: v.id, core, branch });
+      if (!res.success) { setButtonLoading(btn, false); msg.className = 'msg error'; msg.textContent = res.error; return; }
+
+      // Flush any newly-selected document replacements
+      for (const slot of Object.keys(pendingUploads)) {
+        const p = pendingUploads[slot];
+        const uploadRes = await apiVendor({ action: 'upload_document', vendor_id: v.id, slot, file_base64: p.base64, file_ext: p.ext, document_name: p.document_name });
+        if (!uploadRes.success) { setButtonLoading(btn, false); msg.className = 'msg error'; msg.textContent = `Saved details, but ${p.document_name} upload failed: ` + uploadRes.error; return; }
+      }
+
       setButtonLoading(btn, false);
-      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
       msg.className = 'msg success';
       msg.textContent = 'Saved.';
       setTimeout(() => openVendorView(v.id), 800);
