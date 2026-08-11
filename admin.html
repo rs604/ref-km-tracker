@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786440804';</script>
+<script>window.__BUILD_VERSION__ = '1786441426';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3894,28 +3894,54 @@
   // ---------------- VIEW SCREEN ----------------
   async function openVendorEditForm(detail) {
     const v = detail.vendor;
+    const dd = vendorDropdowns;
     const isIndividual = v.vendor_type === 'individual';
+    const primaryBranch = (detail.branches || [])[0];
     const area = document.getElementById('vendorMasterContent');
 
     const html = `<div class="panel panel-no-clip">
       <div class="panel-header"><span class="panel-title">Edit ${isIndividual ? 'Individual' : 'Company'} Details</span><button class="btn btn-sm btn-outline" id="editBackBtn">‹ Cancel</button></div>
       <div class="panel-body">
-        <p style="font-size:12px; color:var(--muted); margin-top:-4px;">This edits the core profile only. Branches, bank accounts, and documents each have their own add actions on the View screen.</p>
-        <div class="form-grid" style="margin-top:14px;">
+        <p style="font-size:12px; color:var(--muted); margin-top:-4px;">Bank accounts and documents each have their own add actions on the View screen. Everything else — including PAN/GST/Address — is editable here.</p>
+
+        <h3 class="form-section-heading" style="margin-top:14px;">${isIndividual ? 'Individual Details' : 'Company Details'}</h3>
+        <div class="form-grid">
           <div class="field"><label>${isIndividual ? 'Individual Name' : 'Company Name'} *</label><input id="ef_vendor_name" value="${v.vendor_name || ''}" /></div>
           <div class="field"><label>Alias</label><input id="ef_vendor_alias" value="${v.vendor_alias || ''}" /></div>
-          <div class="field"><label>Deals In *</label><input id="ef_deals_in" value="${v.deals_in || ''}" /></div>
-          <div class="field"><label>Primary Mobile *</label><input id="ef_primary_contact_mobile" value="${v.primary_contact_mobile || ''}" maxlength="10" /></div>
-          <div class="field"><label>Primary Email</label><input id="ef_primary_contact_email" value="${v.primary_contact_email || ''}" /></div>
-          <div class="field"><label>Other Numbers</label><input id="ef_other_numbers" value="${v.other_numbers || ''}" /></div>
-          ${!isIndividual ? `<div class="field"><label>Primary Contact Name *</label><input id="ef_primary_contact_name" value="${v.primary_contact_name || ''}" /></div>` : ''}
+          <div class="field"><label>Deals In${isIndividual ? ' / Type of Work' : ''} *</label><input id="ef_deals_in" value="${v.deals_in || ''}" /></div>
+          ${isIndividual
+            ? `<div class="field"><label>Aadhar Number *</label><input id="ef_aadhar_number" value="${v.aadhar_number || ''}" maxlength="12" /></div>`
+            : `<div class="field"><label>PAN Number *</label><input id="ef_pan" value="${v.pan || ''}" style="text-transform:uppercase;" maxlength="10" /></div>`}
         </div>
+
         ${!isIndividual ? `
         <div id="ef_vendor_tags_wrap" style="margin-top:10px; max-width:340px;"></div>
         <div class="form-grid" style="margin-top:14px;">
           <div class="field"><label>MSME Registered</label><select id="ef_msme_registered"><option value="yes" ${v.msme_registered ? 'selected' : ''}>Yes</option><option value="no" ${!v.msme_registered ? 'selected' : ''}>No</option></select></div>
           <div class="field" id="ef_msme_number_field" style="${v.msme_registered ? '' : 'display:none'}"><label>MSME Number</label><input id="ef_msme_number" value="${v.msme_number || ''}" /></div>
         </div>` : ''}
+
+        <p class="section-label">Contact Details</p>
+        <div class="form-grid">
+          ${!isIndividual ? `<div class="field"><label>Primary Contact Name *</label><input id="ef_primary_contact_name" value="${v.primary_contact_name || ''}" /></div>` : ''}
+          <div class="field"><label>Primary Mobile *</label><input id="ef_primary_contact_mobile" value="${v.primary_contact_mobile || ''}" maxlength="10" /></div>
+          <div class="field"><label>Primary Email</label><input id="ef_primary_contact_email" value="${v.primary_contact_email || ''}" /></div>
+          <div class="field"><label>Other Numbers</label><input id="ef_other_numbers" value="${v.other_numbers || ''}" /></div>
+        </div>
+
+        <p class="section-label">${isIndividual ? 'Address' : 'Branch Details'}</p>
+        <div class="form-grid">
+          ${!isIndividual ? `
+          <div class="field"><label>Branch Name *</label><input id="ef_branch_name" value="${primaryBranch?.branch_name || ''}" /></div>
+          <div class="field"><label>Branch Alias</label><input id="ef_branch_alias" value="${primaryBranch?.branch_alias || ''}" /></div>
+          <div class="field"><label>GST Number *</label><input id="ef_gstin" value="${primaryBranch?.gstin || ''}" style="text-transform:uppercase;" maxlength="15" /></div>` : ''}
+          <div class="field"><label>State *</label><select id="ef_state_id">${opt(dd.states, null)}</select></div>
+          <div class="field"><label>City</label><select id="ef_city_id"></select></div>
+          <div class="field"><label>Pincode</label><input id="ef_pincode" value="${primaryBranch?.pincode || ''}" maxlength="6" /></div>
+          <div class="field"><label>Location URL</label><input id="ef_location_url" value="${primaryBranch?.location_url || ''}" /></div>
+          <div class="field full"><label>Address *</label><textarea id="ef_address" rows="3" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 11px; font-size:14px; font-family:inherit; background:var(--surface-sunken); resize:vertical;">${primaryBranch?.address || ''}</textarea></div>
+        </div>
+
         <div style="margin-top:20px; display:flex; gap:10px;">
           <button class="btn" id="editSaveBtn">Save Changes</button>
           <button class="btn btn-outline" id="editCancelBtn2" type="button">Cancel</button>
@@ -3925,6 +3951,20 @@
     </div>`;
 
     area.innerHTML = html;
+
+    // Pre-select State/City correctly (find real IDs from the loaded dropdown data, matched by name)
+    const matchedState = (dd.states || []).find(s => s.name === primaryBranch?.states?.name);
+    if (matchedState) document.getElementById('ef_state_id').value = matchedState.id;
+    function refreshCities(selectedStateId, selectedCityName) {
+      const stateId = selectedStateId || document.getElementById('ef_state_id').value;
+      const cities = (dd.cities || []).filter(c => c.state_id === stateId);
+      document.getElementById('ef_city_id').innerHTML = opt(cities, null);
+      const matchedCity = cities.find(c => c.name === selectedCityName);
+      if (matchedCity) document.getElementById('ef_city_id').value = matchedCity.id;
+    }
+    refreshCities(matchedState?.id, primaryBranch?.cities?.name);
+    document.getElementById('ef_state_id').addEventListener('change', () => refreshCities());
+
     if (!isIndividual) {
       const selectedTags = [v.is_trader && 'Trader', v.is_manufacturer && 'Manufacturer', v.is_exporter && 'Exporter', v.is_service_provider && 'Service Provider'].filter(Boolean);
       document.getElementById('ef_vendor_tags_wrap').innerHTML = multiSelectDropdown('ef_vendor_tags', 'Vendor Is', ['Trader', 'Manufacturer', 'Exporter', 'Service Provider'], selectedTags);
@@ -3955,16 +3995,39 @@
         is_exporter: vendorTags.includes('Exporter'), is_service_provider: vendorTags.includes('Service Provider'),
         msme_registered: !isIndividual && document.getElementById('ef_msme_registered')?.value === 'yes',
         msme_number: val('ef_msme_number'),
+        pan: !isIndividual ? val('ef_pan')?.toUpperCase() : null,
+        aadhar_number: isIndividual ? val('ef_aadhar_number') : null,
+      };
+      const branch = {
+        branch_name: !isIndividual ? val('ef_branch_name') : undefined,
+        branch_alias: !isIndividual ? val('ef_branch_alias') : undefined,
+        gstin: !isIndividual ? val('ef_gstin')?.toUpperCase() : undefined,
+        address: val('ef_address'),
+        state_id: val('ef_state_id'),
+        city_id: val('ef_city_id'),
+        pincode: val('ef_pincode'),
+        location_url: val('ef_location_url'),
       };
 
-      if (!core.vendor_name || !core.deals_in || !core.primary_contact_mobile || !/^[6-9][0-9]{9}$/.test(core.primary_contact_mobile)) {
+      const errors = [];
+      if (!core.vendor_name) errors.push('Name');
+      if (!core.deals_in) errors.push('Deals In');
+      if (!core.primary_contact_mobile || !/^[6-9][0-9]{9}$/.test(core.primary_contact_mobile)) errors.push('a valid Primary Mobile');
+      if (!isIndividual && !core.pan) errors.push('PAN');
+      if (isIndividual && !core.aadhar_number) errors.push('Aadhar Number');
+      if (!branch.address) errors.push('Address');
+      if (!branch.state_id) errors.push('State');
+      if (!isIndividual && !branch.branch_name) errors.push('Branch Name');
+      if (!isIndividual && !branch.gstin) errors.push('GST Number');
+
+      if (errors.length > 0) {
         msg.className = 'msg error';
-        msg.textContent = 'Please fill Name, Deals In, and a valid Primary Mobile.';
+        msg.textContent = 'Please fill: ' + errors.join(', ');
         return;
       }
 
       setButtonLoading(btn, true, 'Saving');
-      const res = await apiVendor({ action: 'update_vendor', vendor_id: v.id, core });
+      const res = await apiVendor({ action: 'update_vendor', vendor_id: v.id, core, branch });
       setButtonLoading(btn, false);
       if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
       msg.className = 'msg success';
