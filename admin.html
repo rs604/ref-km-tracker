@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786533879';</script>
+<script>window.__BUILD_VERSION__ = '1786538386';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -927,6 +927,45 @@
     });
   }
 
+  const VIEW_PERMISSION_MAP = {
+    'km-tracker': 'km_tracker.view',
+    'employee-master': 'employee_master.view',
+    'hr-dropdowns': 'employee_master.view',
+    'vendor-master': 'vendor_master.view',
+  };
+
+  async function applyNavVisibility() {
+    const isOwner = currentUser.role === 'owner';
+    let myKeys = [];
+    if (!isOwner) {
+      const data = await apiPermissions({ action: 'get_my_permissions' });
+      if (data.success) myKeys = data.permission_keys || [];
+    }
+    document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+      const view = btn.dataset.view;
+      if (view === 'admin-panel') {
+        btn.style.display = isOwner ? '' : 'none';
+        return;
+      }
+      if (view === 'documentation') return; // always visible to any logged-in ERP user
+      const requiredKey = VIEW_PERMISSION_MAP[view];
+      if (!requiredKey) return; // no mapping — leave as-is
+      const hasAccess = isOwner || myKeys.includes(requiredKey);
+      btn.style.display = hasAccess ? '' : 'none';
+    });
+    // Hide any expandable parent group whose children are now all hidden — avoids an empty, pointless section
+    document.querySelectorAll('.nav-children').forEach(childrenEl => {
+      const visibleChildren = Array.from(childrenEl.children).filter(c => c.style.display !== 'none');
+      const toggleBtn = document.querySelector(`.nav-parent[data-toggle="${childrenEl.id}"]`);
+      if (toggleBtn) {
+        const wrapper = toggleBtn.parentElement;
+        const hideGroup = childrenEl.id && visibleChildren.length === 0;
+        toggleBtn.style.display = hideGroup ? 'none' : '';
+        if (hideGroup) childrenEl.style.display = 'none';
+      }
+    });
+  }
+
   function completeLogin(employee, token) {
     currentUser = employee;
     sessionToken = token;
@@ -936,6 +975,7 @@
     appShell.style.display = 'flex';
     document.getElementById('userName').textContent = currentUser.name;
     document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
+    applyNavVisibility();
     loadDashboard();
   }
 
@@ -2636,6 +2676,18 @@
               </div>
             </div>
           </div>
+
+          ${currentUser.role === 'owner' && employeeId ? `
+          <p class="section-label">ERP Access <span style="font-weight:400; color:var(--muted); font-size:11px;">(Owner only)</span></p>
+          <div class="field"><label><input type="checkbox" id="f_erp_login_enabled" ${e.erp_login_enabled ? 'checked' : ''} style="width:auto; margin-right:6px;" />ERP Login Required</label></div>
+          <div id="erpAccessField" class="form-grid" style="${e.erp_login_enabled ? '' : 'display:none'}; margin-top:10px;">
+            <div class="field"><label>Email *</label><input id="f_erp_email" value="${e.email || ''}" placeholder="name@refconveyors.com" /></div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="button" class="btn btn-outline" id="grantErpAccessBtn" style="width:100%;">${e.erp_login_enabled ? 'Reset Password' : 'Save & Generate Password'}</button>
+            </div>
+          </div>
+          <div class="msg" id="erpAccessMsg" style="margin-top:6px;"></div>` : (currentUser.role === 'owner' ? `<p style="font-size:11.5px; color:var(--muted); margin-top:14px;">Save this employee first to grant ERP access.</p>` : '')}
         </div>
 
         <div id="etab-personal" class="etab-content">
@@ -2830,6 +2882,33 @@
       b.textContent = 'Copied!';
       setTimeout(() => b.textContent = 'Copy', 1500);
     });
+
+    // ERP Access (Owner only, existing employee only)
+    if (currentUser.role === 'owner' && employeeId) {
+      document.getElementById('f_erp_login_enabled')?.addEventListener('change', (ev) => {
+        document.getElementById('erpAccessField').style.display = ev.target.checked ? 'grid' : 'none';
+        if (!ev.target.checked) {
+          apiHR({ action: 'set_employee_erp_access', employee_id: employeeId, erp_login_enabled: false }).then(res => {
+            const msg = document.getElementById('erpAccessMsg');
+            if (res.success) { msg.className = 'msg success'; msg.textContent = 'ERP access revoked.'; }
+            else { msg.className = 'msg error'; msg.textContent = res.error; }
+          });
+        }
+      });
+      document.getElementById('grantErpAccessBtn')?.addEventListener('click', async () => {
+        const email = document.getElementById('f_erp_email').value.trim();
+        const msg = document.getElementById('erpAccessMsg');
+        msg.className = 'msg';
+        if (!email) { msg.className = 'msg error'; msg.textContent = 'Please enter an email.'; return; }
+        const btn = document.getElementById('grantErpAccessBtn');
+        setButtonLoading(btn, true, 'Saving');
+        const res = await apiHR({ action: 'set_employee_erp_access', employee_id: employeeId, erp_login_enabled: true, email });
+        setButtonLoading(btn, false);
+        if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+        msg.className = 'msg success';
+        msg.textContent = `ERP access enabled. Temporary password: ${res.temp_password} — share this with the employee. They'll be required to set their own password on first login.`;
+      });
+    }
 
     // Father/Husband relation prefix changes the field label dynamically
     function updateRelationLabel() {
@@ -3432,6 +3511,16 @@
               </div>` : ''}
             </div>
 
+            ${selectedEmp.role !== 'owner' && selectedEmp.erp_login_enabled ? `
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); margin-bottom:12px;">
+              <span style="font-size:12.5px; font-weight:600; color:var(--ink);">Login Mode:</span>
+              <select id="permLoginModeSelect" style="font-size:12.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
+                <option value="single" ${selectedEmp.login_mode === 'single' ? 'selected' : ''}>Single device only</option>
+                <option value="multiple" ${selectedEmp.login_mode === 'multiple' ? 'selected' : ''}>Multiple devices allowed</option>
+              </select>
+              <span style="font-size:11px; color:var(--muted);">Logging in on a new device will sign out the old one if set to single.</span>
+            </div>` : ''}
+
             ${selectedEmp.role === 'owner' ? `
               <div class="empty-state">
                 <strong>${selectedEmp.name}</strong> is the Owner — automatic full access to everything, cannot be restricted. No permissions to manage here.
@@ -3538,6 +3627,15 @@
         permDirty = true;
         renderAdminPanel();
       });
+    });
+
+    document.getElementById('permLoginModeSelect')?.addEventListener('change', async (ev) => {
+      const res = await apiPermissions({ action: 'set_login_mode', employee_id: selectedPermEmployeeId, login_mode: ev.target.value });
+      if (res.success) {
+        selectedEmp.login_mode = ev.target.value;
+        const empInList = permissionsData.employees.find(e => e.id === selectedPermEmployeeId);
+        if (empInList) empInList.login_mode = ev.target.value;
+      }
     });
 
     document.getElementById('permGrantAllBtn')?.addEventListener('click', () => {
@@ -4654,6 +4752,7 @@
       appShell.style.display = 'flex';
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
+      applyNavVisibility();
       loadDashboard();
       const savedView = sessionStorage.getItem('admin_active_view');
       if (savedView) switchMainView(savedView);
