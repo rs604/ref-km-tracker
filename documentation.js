@@ -279,13 +279,23 @@
       label: 'Roadmap / Planned',
       groups: [
         {
+          title: 'Core Architecture Principle — Delegation + Visibility + Deliberate Approval Routing',
+          points: [
+            { t: 'The Owner should not need to be involved in everything', d: 'Day-to-day operational work happens without requiring the Owner personally in the loop for each action.' },
+            { t: 'The Owner retains a 360° view into every department, always', d: 'Read-only visibility — dashboards, summaries, activity — into what\'s happening across the whole company, independent of whether the Owner is actively involved in any given piece of it.' },
+            { t: '"360° view" and "Approvals" are two different things, not one', d: '360° view is always-available oversight with no action required. Approvals are a specific, deliberately-routed subset of things that genuinely need the Owner\'s decision.' },
+            { t: 'What lands on the Owner\'s table is a deliberate, per-feature decision — never a blanket rule', d: 'Not "everything needs approval" and not "nothing does." Each time a new feature is built, whether it routes to the Owner for approval is explicitly decided as part of designing that feature, based on its actual sensitivity/frequency — not applied automatically.' },
+            { t: 'Example already applying this: ERP login requests', d: 'Employees with employee_master.create permission can tick "ERP Login Required" for someone — but this only creates a pending request, not immediate access. It shows under a department-wise Approvals view (HRMS section) on the Owner\'s Home tab. Only once approved does the system actually generate the login email and temporary password. Chosen because login access is security-sensitive and low-frequency — a reasonable case for deliberate Owner sign-off, not a default applied to every action in the system.' },
+          ],
+        },
+        {
           title: 'Security Module — In Progress, Blocks Everything Else',
           points: [
             { t: 'Current session model is a real gap', d: 'Every action today just sends a plain employee ID with the request, and the server trusts it blindly — no expiry, no token. Anyone who ever learned or guessed an ID could act as that person indefinitely. This is being fixed before any other feature work continues.' },
             { t: 'ERP login is being replaced entirely: email + password, not PIN', d: 'Only @refconveyors.com or @refconveyors.net email addresses can log into the ERP (admin.html). Password minimum 8 characters, must include a letter, a number, and a symbol.' },
             { t: 'Km Tracker link (submit.html) keeps PIN login, completely unchanged', d: 'The two login systems are being deliberately kept separate — this decision only affects the actual ERP.' },
             { t: 'Real session tokens replace the plain-ID trust model', d: 'A random, unguessable token is issued at login and validated on every subsequent action, with an idle-timeout duration configurable in Admin Panel (Owner-only) so it can be tuned as the system grows.' },
-            { t: 'Not every employee gets ERP login', d: 'A new "ERP Login Required?" toggle on Employee Master, defaulting to No. Blue-collar/field staff exist fully in HR records (and can still use Km Tracker via PIN if applicable) without ever having ERP access. Role field stays on the employee record either way, even when login isn\'t required.' },
+            { t: 'Not every employee gets ERP login, and granting it is now an approval-routed request, not a direct Owner-only toggle', d: 'Anyone with employee_master.create permission can request ERP login for an employee; the Owner approves it from the Home tab before access is actually created. Blue-collar/field staff exist fully in HR records (and can still use Km Tracker via PIN if applicable) without ever having ERP access. Role field stays on the employee record either way, even when login isn\'t required.' },
             { t: 'Location (IP) restriction — built, but left dormant', d: 'Per-branch allowed-IP list, with three per-employee exception types available when granting login (always-allow flag, per-request approval, or a time-limited exception). Not enforced yet because the office connections are currently on dynamic IPs; will be switched on once static IPs are in place.' },
           ],
         },
@@ -293,6 +303,7 @@
           title: 'Home Tab — Personalized Hub (Future, After Security)',
           points: [
             { t: 'Vision: one place where any logged-in employee sees everything relevant to them', d: 'Their own score, today\'s tasks, delegated tasks, and a daily/weekly report submission — instead of hunting across separate sections of the system.' },
+            { t: 'For the Owner specifically: department-wise pending approvals, plus the 360° view', d: 'A dedicated Approvals area (organized by department/category, e.g. an HRMS section for login requests) sits alongside always-available oversight into every department — not the same thing, see the Core Architecture Principle above.' },
             { t: 'Most of what feeds it doesn\'t exist yet', d: 'Checklist system, FMS, Projects & Production, and Inventory Management (with purchase-department action triggers) are all planned but not built — the Home tab\'s task feed depends on those existing first.' },
             { t: 'What is realistically buildable now, standalone', d: 'Daily/weekly report submission, and a generic lightweight Task module (assign, view, mark done) that later modules (Projects, Production, Inventory) could feed into once they exist, rather than each building its own separate task system.' },
             { t: '"Score" has no definition yet', d: 'What actually earns or loses an employee score hasn\'t been decided — needs its own design pass before it can be built.' },
