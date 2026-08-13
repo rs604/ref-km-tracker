@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786602469';</script>
+<script>window.__BUILD_VERSION__ = '1786607627';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2222,170 +2222,277 @@
     return `<div class="field"><label>${label}</label><div class="view-value">${value || '—'}</div></div>`;
   }
 
+  let employeeViewActiveTab = 'overview';
+
   function renderEmployeeView(detail) {
     const e = detail.employee;
     const dd = dropdownsData || {};
     const docs = detail.documents || [];
     const findDoc = (slot) => docs.find(d => d.slot === slot);
     const findName = (list, id) => (list || []).find(i => i.id === id)?.name || '—';
+    const docLink = (slot, label) => { const d = findDoc(slot); return d ? `<a href="${d.signed_url}" target="_blank" style="color:var(--steel);">${label || 'View'}</a>` : '—'; };
+
+    const EMP_TABS = [
+      { key: 'overview', label: 'Overview' },
+      { key: 'employment', label: 'Employment' },
+      { key: 'personal', label: 'Personal' },
+      { key: 'family', label: 'Family' },
+      { key: 'education', label: 'Education' },
+      { key: 'work', label: 'Work Experience' },
+      { key: 'nominee', label: 'Reference & Nominee' },
+      { key: 'bank', label: 'Bank & Statutory' },
+      { key: 'documents', label: 'Documents' },
+    ];
+    if (!EMP_TABS.find(t => t.key === employeeViewActiveTab)) employeeViewActiveTab = 'overview';
+    function tabPane(key, contentHtml) {
+      return `<div class="vv-tab-pane" data-pane="${key}" style="${employeeViewActiveTab === key ? '' : 'display:none;'}">${contentHtml}</div>`;
+    }
+
+    // ---- OVERVIEW: concise snapshot only, per spec — not every field ----
+    const overviewPane = `
+      <div style="display:flex; gap:24px; align-items:flex-start; margin-bottom:6px;">
+        <div style="flex:1;">
+          <span class="pill-section-label">Employment Information</span>
+          <div class="vv-info-grid" style="margin-top:10px;">
+            ${vvCell('Employee Code', e.employee_code)}
+            ${vvCell('Employee Name', e.name)}
+            ${vvCell('Branch', findName(dd.branches, e.branch_id))}
+            ${vvCell('Department', findName(dd.departments, e.department_id))}
+            ${vvCell('Designation', findName(dd.designations, e.designation_id))}
+            ${vvCell('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
+            ${vvCell('Employee Status', e.status)}
+            ${vvCell('Date of Joining', fmtDate ? fmtDate(e.date_of_joining) : e.date_of_joining)}
+          </div>
+        </div>
+        <div style="flex-shrink:0;">
+          ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:96px; height:96px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:96px; height:96px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center;">No photo</div>`}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
+        <span class="pill-section-label">Contact Information</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Mobile', e.mobile_number)}
+          ${vvCell('Email', e.email)}
+          ${vvCell('Current Address', [e.present_address, findName(dd.cities, e.present_city_id), findName(dd.states, e.present_state_id)].filter(Boolean).join(', '))}
+          ${vvCell('Permanent Address', [e.permanent_address, findName(dd.cities, e.permanent_city_id), findName(dd.states, e.permanent_state_id)].filter(Boolean).join(', '))}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
+        <span class="pill-section-label">Personal Summary</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Date of Birth', fmtDate ? fmtDate(e.date_of_birth) : e.date_of_birth)}
+          ${vvCell('Gender', e.gender)}
+          ${vvCell('Marital Status', e.marital_status)}
+          ${vvCell('Blood Group', e.blood_group)}
+        </div>
+      </div>`;
+
+    // ---- EMPLOYMENT: everything employment-related not already summarized on Overview ----
+    const employmentPane = `
+      <span class="pill-section-label">Employment Details</span>
+      <div class="vv-info-grid" style="margin-top:10px;">
+        ${vvCell('Role', e.role)}
+        ${vvCell('Wage Type', e.wage_type)}
+        ${vvCell('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Vehicle KM Payable</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
+          ${e.vehicle_km_applicable ? vvCell('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
+          ${e.vehicle_km_applicable ? vvCell('Driving License No.', e.driving_license_number) : ''}
+          ${e.vehicle_km_applicable ? vvCell('License Category', e.driving_license_category) : ''}
+          ${e.vehicle_km_applicable ? vvCell('License Validity', fmtDate ? fmtDate(e.driving_license_validity) : e.driving_license_validity) : ''}
+        </div>
+      </div>`;
+
+    // ---- PERSONAL: full existing Personal Details section, unchanged content ----
+    const personalPane = `
+      <span class="pill-section-label">Personal Details</span>
+      <div class="vv-info-grid" style="margin-top:10px;">
+        ${vvCell(e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)', e.father_husband_name)}
+        ${vvCell('Marital Status', e.marital_status)}
+        ${vvCell('Religion', e.religion)}
+        ${vvCell('Gender', e.gender)}
+        ${vvCell('Date of Birth', fmtDate ? fmtDate(e.date_of_birth) : e.date_of_birth)}
+        ${vvCell('Blood Group', e.blood_group)}
+        ${vvCell('Place of Birth', e.place_of_birth)}
+        ${vvCell('Aadhar No.', e.aadhar_no)}
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Present Address</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Address', e.present_address)}
+          ${vvCell('State', findName(dd.states, e.present_state_id))}
+          ${vvCell('City', findName(dd.cities, e.present_city_id))}
+          ${vvCell('Pincode', e.present_pincode)}
+        </div>
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Permanent Address</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Address', e.permanent_address)}
+          ${vvCell('State', findName(dd.states, e.permanent_state_id))}
+          ${vvCell('City', findName(dd.cities, e.permanent_city_id))}
+          ${vvCell('Pincode', e.permanent_pincode)}
+        </div>
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Emergency Contact</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Name', e.emergency_contact_name)}
+          ${vvCell('Relation', e.emergency_contact_relation)}
+          ${vvCell('Mobile', e.emergency_contact_mobile)}
+          ${vvCell('Address', e.emergency_contact_address)}
+        </div>
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Other</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Tel (Home)', e.tel_home)}
+        </div>
+      </div>`;
+
+    const familyPane = renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']]);
+    const educationPane = renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']]);
+    const workPane = renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']]);
+    const nomineePane = `
+      <span class="pill-section-label">Reference</span>
+      <div class="vv-info-grid" style="margin-top:10px;">
+        ${vvCell('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
+        ${vvCell('Reference Name', e.ref_employee_name)}
+        ${vvCell('Reference Contact', e.ref_employee_contact)}
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Nominees</span>
+        <div style="margin-top:10px;">${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}</div>
+      </div>`;
+
+    // ---- BANK & STATUTORY: sensitive section, structured for future permission-gating —
+    // currently rendered for anyone who can already open Employee View (no regression versus
+    // the previous version), but isolated into its own function/tab so a permission check can
+    // wrap this specific render call later without restructuring anything.
+    function renderBankStatutoryPane() {
+      return `
+        <span class="pill-section-label">Bank & Statutory</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Salary Payment Method', e.salary_payment_method === 'bank' ? 'Bank' : 'Cash')}
+          ${vvCell('Bank Name', e.bank_name)}
+          ${vvCell('Account Number', e.bank_account_number)}
+          ${vvCell('IFSC Code', e.bank_ifsc)}
+          ${vvCell('Branch', e.bank_branch)}
+          ${vvCell('Account Holder Name', e.bank_account_holder_name)}
+          ${vvCell('PAN Number', e.pan_number)}
+          ${vvCell('UAN Number', e.uan_number)}
+          ${vvCell('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
+          ${vvCell('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
+        </div>
+        <div class="vv-subsection">
+          <span class="pill-section-label">Salary Break-up (Monthly, ₹)</span>
+          <div class="vv-info-grid" style="margin-top:10px;">
+            ${vvCell('Basic', e.salary_basic)}
+            ${vvCell('HRA', e.salary_hra)}
+            ${vvCell('DA', e.salary_da)}
+            ${vvCell('TA', e.salary_ta)}
+            ${vvCell('ESI Deduction', e.salary_esi ? 'Yes' : 'No')}
+          </div>
+        </div>`;
+    }
+    const bankPane = renderBankStatutoryPane();
+
+    // ---- DOCUMENTS: consolidated view of everything uploaded, mirroring Vendor View's Documents tab ----
+    const allDocSlots = [
+      ['photo', 'Photo'], ['aadhar', 'Aadhar Card'], ['driving_license', 'Driving License'],
+      ['pf_certificate', 'PF Certificate'], ['esi_certificate', 'ESI Certificate'],
+    ];
+    const uploadedDocs = allDocSlots.filter(([slot]) => slot === 'photo' ? e.photo_signed_url : findDoc(slot));
+    const documentsPane = uploadedDocs.length === 0 ? '<div class="empty-state">No documents uploaded.</div>' : `
+      <div class="vv-info-grid">
+        ${uploadedDocs.map(([slot, label]) => vvCell(label, slot === 'photo' ? `<a href="${e.photo_signed_url}" target="_blank" style="color:var(--steel);">View</a>` : docLink(slot))).join('')}
+      </div>`;
+
+    const statusTagClass = e.status === 'active' ? 'approved' : (e.status === 'suspended' ? 'calculated' : 'pending_evening');
 
     const html = `<div class="panel panel-no-clip">
-      <div class="panel-header">
-        <span class="panel-title">${e.name}<span class="role-tag">${e.role}</span> <span class="status-tag ${e.status === 'active' ? 'approved' : e.status === 'suspended' ? 'calculated' : 'pending_evening'}" style="margin-left:8px;">${e.status}</span></span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-sm btn-outline" id="backToListBtn">‹ Back to List</button>
-          <button class="btn btn-sm" id="viewEditBtn">Edit</button>
-          ${e.status === 'active' ? `<button class="btn btn-sm btn-danger" id="viewSuspendBtn">Suspend</button>` : ''}
-          ${e.status === 'suspended' ? `<button class="btn btn-sm" id="viewResumeBtn">Resume</button>` : ''}
-          ${e.status !== 'left' ? `<button class="btn btn-sm btn-outline" id="viewMarkLeftBtn">Mark Left</button>` : `<button class="btn btn-sm" id="viewReinstateBtn">Reinstate</button>`}
-          <button class="btn btn-sm btn-outline" id="viewResetPinBtn">Reset PIN</button>
-          <button class="btn btn-sm btn-outline" id="viewDownloadPdfBtn">Download PDF</button>
+      <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+        <div>
+          <span class="panel-title">Employee Profile</span>
+          <div style="font-size:13px; margin-top:2px;">
+            <strong>${e.name}</strong> <span style="color:var(--muted);">(${e.employee_code || '—'})</span>
+            <span class="status-tag ${statusTagClass}" style="margin-left:6px;">${e.status}</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; position:relative;">
+          <button class="btn btn-sm btn-outline" id="empViewBackBtn">‹ Back</button>
+          <button class="btn btn-sm" id="empViewEditBtn">Edit</button>
+          <div style="position:relative;">
+            <button class="btn btn-sm btn-outline" id="empMoreActionsBtn">More Actions ▾</button>
+            <div id="empMoreActionsMenu" style="display:none; position:absolute; right:0; top:calc(100% + 4px); background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.1); min-width:180px; z-index:30;">
+              ${e.status === 'active' ? `<button type="button" class="emp-menu-item" data-action="suspend" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer;">Suspend</button>` : ''}
+              ${e.status === 'suspended' ? `<button type="button" class="emp-menu-item" data-action="resume" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer;">Resume</button>` : ''}
+              ${e.status !== 'left' ? `<button type="button" class="emp-menu-item" data-action="mark_left" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer; border-top:1px solid var(--border);">Mark Left</button>` : `<button type="button" class="emp-menu-item" data-action="reinstate" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer;">Reinstate</button>`}
+              <button type="button" class="emp-menu-item" data-action="reset_pin" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer; border-top:1px solid var(--border);">Reset PIN</button>
+              <button type="button" class="emp-menu-item" data-action="download_pdf" style="display:block; width:100%; text-align:left; padding:9px 14px; border:none; background:none; font-size:13px; cursor:pointer;">Download PDF</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="subtabs form-subnav-sticky" id="viewFormSubtabs" style="padding-left:18px; background:var(--surface);">
-        <button class="subtab-item active" data-etab="basic">Basic</button>
-        <button class="subtab-item" data-etab="personal">Personal</button>
-        <button class="subtab-item" data-etab="bank">Bank &amp; Statutory</button>
-        <button class="subtab-item" data-etab="family">Family</button>
-        <button class="subtab-item" data-etab="education">Education</button>
-        <button class="subtab-item" data-etab="work">Work Experience</button>
-        <button class="subtab-item" data-etab="nominee">Reference &amp; Nominee</button>
+
+      <div class="subtabs" id="employeeViewTabs">
+        ${EMP_TABS.map(t => `<button type="button" class="subtab-item vv-tab-btn emp-vv-tab-btn ${employeeViewActiveTab === t.key ? 'active' : ''}" data-tab="${t.key}">${t.label}</button>`).join('')}
       </div>
+
       <div class="panel-body">
-        <div id="etab-basic" class="etab-content">
-          <h3 class="form-section-heading">Basic Details</h3>
-          <div style="display:flex; gap:24px; align-items:flex-start;">
-            <div class="form-grid" style="flex:1;">
-              ${viewField('Employee Code', e.employee_code)}
-              ${viewField('Full Name', e.name)}
-              ${viewField('Mobile Number', e.mobile_number)}
-              ${viewField('Role', e.role)}
-              ${viewField('Branch', findName(dd.branches, e.branch_id))}
-              ${viewField('Department', findName(dd.departments, e.department_id))}
-              ${viewField('Designation', findName(dd.designations, e.designation_id))}
-              ${viewField('Employee Category', findName(dd.employee_categories, e.employee_category_id))}
-              ${viewField('Date of Joining', e.date_of_joining)}
-              ${viewField('Wage Type', e.wage_type)}
-              ${viewField('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
-            </div>
-            <div style="flex-shrink:0;">
-              ${e.photo_signed_url ? `<img src="${e.photo_signed_url}" style="width:110px; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />` : `<div style="width:110px; height:110px; border-radius:8px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px; text-align:center;">No photo</div>`}
-            </div>
-          </div>
-          <p class="section-label">Vehicle KM Payable</p>
-          <div class="form-grid">
-            ${viewField('Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
-            ${e.vehicle_km_applicable ? viewField('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
-          </div>
-        </div>
-        <div id="etab-personal" class="etab-content">
-          <h3 class="form-section-heading">Personal Details</h3>
-          <div class="form-grid">
-            ${viewField(e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)', e.father_husband_name)}
-            ${viewField('Marital Status', e.marital_status)}
-            ${viewField('Religion', e.religion)}
-            ${viewField('Gender', e.gender)}
-            ${viewField('Date of Birth', e.date_of_birth)}
-            ${viewField('Blood Group', e.blood_group)}
-            ${viewField('Place of Birth', e.place_of_birth)}
-            ${viewField('Aadhar No', e.aadhar_no)}
-            ${viewField('Aadhar Card', findDoc('aadhar') ? `<a href="${findDoc('aadhar').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : null)}
-          </div>
-          <p class="section-label">Present Address</p>
-          <div class="form-grid">
-            ${viewField('Address', e.present_address)}
-            ${viewField('State', findName(dd.states, e.present_state_id))}
-            ${viewField('City', findName(dd.cities, e.present_city_id))}
-            ${viewField('Pincode', e.present_pincode)}
-          </div>
-          <p class="section-label">Permanent Address</p>
-          <div class="form-grid">
-            ${viewField('Address', e.permanent_address)}
-            ${viewField('State', findName(dd.states, e.permanent_state_id))}
-            ${viewField('City', findName(dd.cities, e.permanent_city_id))}
-            ${viewField('Pincode', e.permanent_pincode)}
-          </div>
-          <p class="section-label">Other</p>
-          <div class="form-grid">
-            ${viewField('Tel (Home)', e.tel_home)}
-            ${viewField('Driving License No', e.driving_license_number)}
-            ${viewField('License Category', e.driving_license_category)}
-            ${viewField('License Validity', e.driving_license_validity)}
-            ${viewField('Driving License File', findDoc('driving_license') ? `<a href="${findDoc('driving_license').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : null)}
-          </div>
-          <p class="section-label">Emergency Contact</p>
-          <div class="form-grid">
-            ${viewField('Name', e.emergency_contact_name)}
-            ${viewField('Relation', e.emergency_contact_relation)}
-            ${viewField('Mobile', e.emergency_contact_mobile)}
-            ${viewField('Address', e.emergency_contact_address)}
-          </div>
-        </div>
-        <div id="etab-bank" class="etab-content">
-          <h3 class="form-section-heading">Bank &amp; Statutory</h3>
-          <div class="form-grid">
-            ${viewField('Salary Payment Method', e.salary_payment_method === 'bank' ? 'Bank' : 'Cash')}
-            ${viewField('Bank Name', e.bank_name)}
-            ${viewField('Account Number', e.bank_account_number)}
-            ${viewField('IFSC Code', e.bank_ifsc)}
-            ${viewField('Branch', e.bank_branch)}
-            ${viewField('Account Holder Name', e.bank_account_holder_name)}
-            ${viewField('PAN Number', e.pan_number)}
-            ${viewField('UAN Number', e.uan_number)}
-            ${viewField('PF Applicable', e.pf_applicable ? 'Yes — ' + (e.pf_number || '') : 'No')}
-            ${e.pf_applicable ? viewField('PF Certificate', findDoc('pf_certificate') ? `<a href="${findDoc('pf_certificate').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : 'Not uploaded') : ''}
-            ${viewField('ESI Applicable', e.esi_applicable ? 'Yes — ' + (e.esi_number || '') : 'No')}
-            ${e.esi_applicable ? viewField('ESI Certificate', findDoc('esi_certificate') ? `<a href="${findDoc('esi_certificate').signed_url}" target="_blank" style="color:var(--steel);">View</a>` : 'Not uploaded') : ''}
-          </div>
-          <p class="section-label">Salary Break-up (Monthly, ₹)</p>
-          <div class="form-grid">
-            ${viewField('Basic', e.salary_basic)}
-            ${viewField('HRA', e.salary_hra)}
-            ${viewField('DA', e.salary_da)}
-            ${viewField('TA', e.salary_ta)}
-            ${viewField('ESI Deduction', e.salary_esi ? 'Yes' : 'No')}
-          </div>
-        </div>
-        <div id="etab-family" class="etab-content"><h3 class="form-section-heading">Family</h3>${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
-        <div id="etab-education" class="etab-content"><h3 class="form-section-heading">Education</h3>${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
-        <div id="etab-work" class="etab-content"><h3 class="form-section-heading">Work Experience</h3>${renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']])}</div>
-        <div id="etab-nominee" class="etab-content">
-          <h3 class="form-section-heading">Reference &amp; Nominee</h3>
-          <p class="section-label">Reference</p>
-          <div class="form-grid">
-            ${viewField('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
-            ${viewField('Reference Name', e.ref_employee_name)}
-            ${viewField('Reference Contact', e.ref_employee_contact)}
-          </div>
-          <p class="section-label">Nominees</p>
-          ${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}
-        </div>
+        ${tabPane('overview', overviewPane)}
+        ${tabPane('employment', employmentPane)}
+        ${tabPane('personal', personalPane)}
+        ${tabPane('family', familyPane)}
+        ${tabPane('education', educationPane)}
+        ${tabPane('work', workPane)}
+        ${tabPane('nominee', nomineePane)}
+        ${tabPane('bank', bankPane)}
+        ${tabPane('documents', documentsPane)}
       </div>
     </div>`;
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
 
-    document.querySelectorAll('#viewFormSubtabs .subtab-item').forEach(btn => {
+    document.querySelectorAll('.emp-vv-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.getElementById('etab-' + btn.dataset.etab).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        employeeViewActiveTab = btn.dataset.tab;
+        document.querySelectorAll('.emp-vv-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === employeeViewActiveTab));
+        document.querySelectorAll('#hrtab-employee-master .vv-tab-pane').forEach(p => { p.style.display = p.dataset.pane === employeeViewActiveTab ? '' : 'none'; });
       });
     });
 
-    document.getElementById('backToListBtn').addEventListener('click', () => renderEmployeeMasterList());
-    document.getElementById('viewEditBtn').addEventListener('click', () => openEmployeeForm(e.id));
-    document.getElementById('viewSuspendBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'suspended', 'suspend'));
-    document.getElementById('viewResumeBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reactivate'));
-    document.getElementById('viewMarkLeftBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'left', 'mark as left'));
-    document.getElementById('viewReinstateBtn')?.addEventListener('click', () => quickStatusChange(e.id, 'active', 'reinstate'));
-    document.getElementById('viewResetPinBtn').addEventListener('click', async () => {
-      const newPin = prompt('Enter new PIN (4-6 digits) for ' + e.name + ':');
-      if (!newPin) return;
-      const res = await apiHR({ action: 'reset_pin', employee_id: e.id, new_pin: newPin });
-      if (res.success) alert('PIN updated successfully.');
-      else alert(res.error || 'Failed to reset PIN.');
-    });
+    document.getElementById('empViewBackBtn').addEventListener('click', () => renderEmployeeMasterList());
+    document.getElementById('empViewEditBtn').addEventListener('click', () => openEmployeeForm(e.id));
 
-    document.getElementById('viewDownloadPdfBtn').addEventListener('click', () => printEmployeeBioData(detail, dd));
+    const menuBtn = document.getElementById('empMoreActionsBtn');
+    const menu = document.getElementById('empMoreActionsMenu');
+    menuBtn.addEventListener('click', (ev) => { ev.stopPropagation(); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; });
+    document.addEventListener('click', () => { menu.style.display = 'none'; }, { once: true });
+
+    document.querySelectorAll('.emp-menu-item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        menu.style.display = 'none';
+        const action = btn.dataset.action;
+        if (action === 'suspend') quickStatusChange(e.id, 'suspended', 'suspend');
+        else if (action === 'resume') quickStatusChange(e.id, 'active', 'reactivate');
+        else if (action === 'mark_left') quickStatusChange(e.id, 'left', 'mark as left');
+        else if (action === 'reinstate') quickStatusChange(e.id, 'active', 'reinstate');
+        else if (action === 'reset_pin') {
+          const newPin = prompt('Enter new PIN (4-6 digits) for ' + e.name + ':');
+          if (!newPin) return;
+          const res = await apiHR({ action: 'reset_pin', employee_id: e.id, new_pin: newPin });
+          if (res.success) alert('PIN updated successfully.');
+          else alert(res.error || 'Failed to reset PIN.');
+        }
+        else if (action === 'download_pdf') printEmployeeBioData(detail, dd);
+      });
+    });
   }
 
   function printEmployeeBioData(detail, dd) {
