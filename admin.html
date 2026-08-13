@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786636426';</script>
+<script>window.__BUILD_VERSION__ = '1786636665';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2414,15 +2414,17 @@
 
     const html = `<div class="panel panel-no-clip">
       <div class="panel-header" id="empViewHeader" style="flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:25; background:#fff;">
-        <div>
-          <span class="panel-title">Employee Profile</span>
-          <div style="font-size:13px; margin-top:2px;">
-            <strong>${e.name}</strong> <span style="color:var(--muted);">(${e.employee_code || '—'})</span>
-            <span class="status-tag ${statusTagClass}" style="margin-left:6px;">${e.status}</span>
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <button class="btn btn-sm btn-outline" id="empViewBackBtn" style="flex-shrink:0;">‹ Back</button>
+          <div>
+            <span class="panel-title">Employee Profile</span>
+            <div style="font-size:13px; margin-top:2px;">
+              <strong>${e.name}</strong> <span style="color:var(--muted);">(${e.employee_code || '—'})</span>
+              <span class="status-tag ${statusTagClass}" style="margin-left:6px;">${e.status}</span>
+            </div>
           </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; position:relative;">
-          <button class="btn btn-sm btn-outline" id="empViewBackBtn">‹ Back</button>
           <button class="btn btn-sm" id="empViewEditBtn">Edit</button>
           <div style="position:relative;">
             <button class="btn btn-sm btn-outline" id="empMoreActionsBtn">More Actions ▾</button>
