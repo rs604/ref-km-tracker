@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786607627';</script>
+<script>window.__BUILD_VERSION__ = '1786609596';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2236,10 +2236,7 @@
       { key: 'overview', label: 'Overview' },
       { key: 'employment', label: 'Employment' },
       { key: 'personal', label: 'Personal' },
-      { key: 'family', label: 'Family' },
-      { key: 'education', label: 'Education' },
-      { key: 'work', label: 'Work Experience' },
-      { key: 'nominee', label: 'Reference & Nominee' },
+      { key: 'experience_reference', label: 'Experience & Reference' },
       { key: 'bank', label: 'Bank & Statutory' },
       { key: 'documents', label: 'Documents' },
     ];
@@ -2310,7 +2307,7 @@
 
     // ---- PERSONAL: full existing Personal Details section, unchanged content ----
     const personalPane = `
-      <span class="pill-section-label">Personal Details</span>
+      <span class="pill-section-label">Personal Information</span>
       <div class="vv-info-grid" style="margin-top:10px;">
         ${vvCell(e.father_husband_relation === 'W/o' ? 'W/o (Husband Name)' : (e.father_husband_relation || 'S/o') + ' (Father Name)', e.father_husband_name)}
         ${vvCell('Marital Status', e.marital_status)}
@@ -2353,21 +2350,31 @@
         <div class="vv-info-grid" style="margin-top:10px;">
           ${vvCell('Tel (Home)', e.tel_home)}
         </div>
-      </div>`;
-
-    const familyPane = renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']]);
-    const educationPane = renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']]);
-    const workPane = renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']]);
-    const nomineePane = `
-      <span class="pill-section-label">Reference</span>
-      <div class="vv-info-grid" style="margin-top:10px;">
-        ${vvCell('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
-        ${vvCell('Reference Name', e.ref_employee_name)}
-        ${vvCell('Reference Contact', e.ref_employee_contact)}
       </div>
       <div class="vv-subsection">
-        <span class="pill-section-label">Nominees</span>
+        <span class="pill-section-label">Family</span>
+        <div style="margin-top:10px;">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Education</span>
+        <div style="margin-top:10px;">${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
+      </div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">Nominee Details</span>
         <div style="margin-top:10px;">${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}</div>
+      </div>`;
+
+    const workPane = renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']]);
+    const experienceReferencePane = `
+      <span class="pill-section-label">Work Experience</span>
+      <div style="margin-top:10px;">${workPane}</div>
+      <div class="vv-subsection">
+        <span class="pill-section-label">References</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Has Reference', e.has_ref_employee ? 'Yes' : 'No')}
+          ${vvCell('Reference Name', e.ref_employee_name)}
+          ${vvCell('Reference Contact', e.ref_employee_contact)}
+        </div>
       </div>`;
 
     // ---- BANK & STATUTORY: sensitive section, structured for future permission-gating —
@@ -2448,10 +2455,7 @@
         ${tabPane('overview', overviewPane)}
         ${tabPane('employment', employmentPane)}
         ${tabPane('personal', personalPane)}
-        ${tabPane('family', familyPane)}
-        ${tabPane('education', educationPane)}
-        ${tabPane('work', workPane)}
-        ${tabPane('nominee', nomineePane)}
+        ${tabPane('experience_reference', experienceReferencePane)}
         ${tabPane('bank', bankPane)}
         ${tabPane('documents', documentsPane)}
       </div>
