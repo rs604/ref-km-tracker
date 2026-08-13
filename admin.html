@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786539037';</script>
+<script>window.__BUILD_VERSION__ = '1786602469';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -644,7 +644,11 @@
       <div class="tag">ERP</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
-      <button class="nav-item active" data-view="km-tracker">
+      <button class="nav-item" data-view="home">
+        <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" data-view="km-tracker">
         <svg class="ic-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
         <span class="nav-label">Km Tracker</span>
       </button>
@@ -706,7 +710,7 @@
     </div>
 
     <!-- Km Tracker view -->
-    <div id="view-km-tracker" class="view-content">
+    <div id="view-km-tracker" class="view-content" style="display:none">
       <div class="subtabs" id="subtabsNav">
         <button class="subtab-item active" data-tab="approvals">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
@@ -764,6 +768,12 @@
     <div id="view-documentation" class="view-content" style="display:none">
       <div class="content">
         <div id="documentationContent"></div>
+      </div>
+    </div>
+
+    <div id="view-home" class="view-content">
+      <div class="content">
+        <div id="homeContent"></div>
       </div>
     </div>
 
@@ -898,6 +908,7 @@
   let controlPanelLoaded = false;
   let adminPanelLoaded = false;
   let vendorMasterLoaded = false;
+  let kmTrackerLoaded = false;
   let documentationLoaded = false;
   let vendorDropdowns = null;
   let vendorListData = null;
@@ -934,23 +945,26 @@
     'vendor-master': 'vendor_master.view',
   };
 
+  let isOwnerUser = false;
+  let myPermissionKeys = [];
+
   async function applyNavVisibility() {
-    const isOwner = currentUser.role === 'owner';
-    let myKeys = [];
-    if (!isOwner) {
+    isOwnerUser = currentUser.role === 'owner';
+    myPermissionKeys = [];
+    if (!isOwnerUser) {
       const data = await apiPermissions({ action: 'get_my_permissions' });
-      if (data.success) myKeys = data.permission_keys || [];
+      if (data.success) myPermissionKeys = data.permission_keys || [];
     }
     document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
       const view = btn.dataset.view;
       if (view === 'admin-panel') {
-        btn.style.display = isOwner ? '' : 'none';
+        btn.style.display = isOwnerUser ? '' : 'none';
         return;
       }
-      if (view === 'documentation') return; // always visible to any logged-in ERP user
+      if (view === 'documentation' || view === 'home') return; // always visible to any logged-in ERP user
       const requiredKey = VIEW_PERMISSION_MAP[view];
       if (!requiredKey) return; // no mapping — leave as-is
-      const hasAccess = isOwner || myKeys.includes(requiredKey);
+      const hasAccess = isOwnerUser || myPermissionKeys.includes(requiredKey);
       btn.style.display = hasAccess ? '' : 'none';
     });
     // Hide any expandable parent group whose children are now all hidden — avoids an empty, pointless section
@@ -976,7 +990,7 @@
     document.getElementById('userName').textContent = currentUser.name;
     document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
     applyNavVisibility();
-    loadDashboard();
+    switchMainView('home');
   }
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -1075,6 +1089,7 @@
 
   // --- Sidebar tree: leaf items (Km Tracker, Employee Master, HR Dropdowns, Admin Panel) ---
   const viewTitles = {
+    'home': ['Home', 'Your approvals and requests'],
     'km-tracker': ['Km Tracker', 'Daily odometer tracking, approvals, and payments'],
     'employee-master': ['Employee Master', 'Add and manage employee records'],
     'hr-dropdowns': ['HR Dropdowns', 'Supporting master data used across HR'],
@@ -1084,7 +1099,7 @@
   };
 
   function switchMainView(viewKey) {
-    if (!viewTitles[viewKey]) viewKey = 'km-tracker';
+    if (!viewTitles[viewKey]) viewKey = 'home';
     document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === viewKey));
     document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
     document.getElementById('view-' + viewKey).style.display = 'block';
@@ -1112,6 +1127,13 @@
         document.getElementById('documentationContent').innerHTML = '<div class="msg error" style="display:block">Failed to load the Documentation module. Please refresh and try again.</div>';
       };
       document.head.appendChild(script);
+    }
+    if (viewKey === 'home') {
+      loadHome(); // always refresh — approvals/requests change frequently, unlike static master data
+    }
+    if (viewKey === 'km-tracker' && !kmTrackerLoaded) {
+      kmTrackerLoaded = true;
+      loadDashboard();
     }
 
     // Every view's full ancestor tree path — including nested sub-trees like "HR" inside "Masters" —
@@ -1153,6 +1175,84 @@
   }
   document.getElementById('lightboxClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('open'));
   document.getElementById('lightbox').addEventListener('click', (e) => { if (e.target.id === 'lightbox') e.currentTarget.classList.remove('open'); });
+
+  async function loadHome() {
+    showSpinner('homeContent');
+    const isOwner = currentUser.role === 'owner';
+
+    const [pendingRes, myRes] = await Promise.all([
+      isOwner ? apiHR({ action: 'get_pending_erp_requests' }) : Promise.resolve({ success: true, requests: [] }),
+      apiHR({ action: 'get_my_erp_requests' }),
+    ]);
+
+    const pending = pendingRes.success ? pendingRes.requests : [];
+    const myRequests = myRes.success ? myRes.requests : [];
+
+    const html = `
+      <div class="panel panel-no-clip">
+        <div class="panel-header"><span class="panel-title">Home</span></div>
+        <div class="panel-body">
+
+          ${isOwner ? `
+          <span class="pill-section-label">Pending Approvals</span>
+          <p style="font-size:12px; color:var(--muted); margin:6px 0 14px;">Things that need your decision — organized by department/category.</p>
+          ${pending.length === 0 ? '<div class="empty-state">Nothing pending right now.</div>' : `
+            <p class="section-label" style="margin-top:0;">HRMS</p>
+            <div id="homeApprovalsList">
+              ${pending.map(r => `
+                <div class="home-approval-row" data-request-id="${r.id}" style="border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <div style="font-size:13.5px; font-weight:600;">ERP Login Request — ${r.employee?.name || 'Unknown'} <span style="font-weight:400; color:var(--muted);">(${r.employee?.employee_code || '—'})</span></div>
+                    <div style="font-size:12px; color:var(--muted); margin-top:2px;">Requested email: ${r.requested_email} · Department: ${r.employee?.departments?.name || '—'} · Requested by ${r.requester?.name || 'Unknown'} on ${fmtDate ? fmtDate(r.created_at) : new Date(r.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn btn-sm home-approve-btn" data-id="${r.id}">Approve</button>
+                    <button type="button" class="btn btn-sm btn-outline home-reject-btn" data-id="${r.id}" style="color:var(--danger); border-color:#efd2cf;">Reject</button>
+                  </div>
+                </div>`).join('')}
+            </div>`}
+          ` : ''}
+
+          <span class="pill-section-label" style="${isOwner ? 'margin-top:26px; display:inline-block; padding-top:20px; border-top:1px solid var(--border);' : ''}">My Requests</span>
+          <p style="font-size:12px; color:var(--muted); margin:6px 0 14px;">Status of ERP access requests you've submitted for others.</p>
+          ${myRequests.length === 0 ? `<div class="empty-state">You haven't submitted any requests.</div>` : `
+            ${myRequests.map(r => `
+              <div style="border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                  <div style="font-size:13.5px; font-weight:600;">${r.employee?.name || 'Unknown'} <span style="font-weight:400; color:var(--muted);">(${r.employee?.employee_code || '—'})</span></div>
+                  <span class="status-tag ${r.status === 'approved' ? 'approved' : (r.status === 'rejected' ? 'rejected' : 'pending_evening')}">${r.status}</span>
+                </div>
+                <div style="font-size:12px; color:var(--muted); margin-top:4px;">${r.requested_email}</div>
+                ${r.status === 'approved' && r.temp_password ? `<div style="margin-top:8px; padding:8px 10px; background:var(--green-bg); border-radius:6px; font-size:12.5px;">Temporary password: <strong>${r.temp_password}</strong> — share this with the employee. They'll be required to set their own on first login.</div>` : ''}
+                ${r.status === 'rejected' && r.rejection_reason ? `<div style="margin-top:8px; padding:8px 10px; background:var(--danger-bg); border-radius:6px; font-size:12.5px;">Reason: ${r.rejection_reason}</div>` : ''}
+              </div>`).join('')}
+          `}
+        </div>
+      </div>`;
+
+    document.getElementById('homeContent').innerHTML = html;
+
+    document.querySelectorAll('.home-approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        setButtonLoading(btn, true, 'Approving');
+        const res = await apiHR({ action: 'approve_erp_login_request', request_id: btn.dataset.id });
+        setButtonLoading(btn, false);
+        if (!res.success) { alert(res.error); return; }
+        loadHome();
+      });
+    });
+    document.querySelectorAll('.home-reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const reason = prompt('Reason for rejecting this ERP access request:');
+        if (!reason || !reason.trim()) return;
+        setButtonLoading(btn, true, 'Rejecting');
+        const res = await apiHR({ action: 'reject_erp_login_request', request_id: btn.dataset.id, reason });
+        setButtonLoading(btn, false);
+        if (!res.success) { alert(res.error); return; }
+        loadHome();
+      });
+    });
+  }
 
   async function loadDashboard() {
     showSpinner('tab-approvals');
@@ -2677,17 +2777,22 @@
             </div>
           </div>
 
-          ${currentUser.role === 'owner' && employeeId ? `
-          <p class="section-label">ERP Access <span style="font-weight:400; color:var(--muted); font-size:11px;">(Owner only)</span></p>
-          <div class="field"><label><input type="checkbox" id="f_erp_login_enabled" ${e.erp_login_enabled ? 'checked' : ''} style="width:auto; margin-right:6px;" />ERP Login Required</label></div>
-          <div id="erpAccessField" class="form-grid" style="${e.erp_login_enabled ? '' : 'display:none'}; margin-top:10px;">
-            <div class="field"><label>Email *</label><input id="f_erp_email" value="${e.email || ''}" placeholder="name@refconveyors.com" /></div>
-            <div class="field">
-              <label>&nbsp;</label>
-              <button type="button" class="btn btn-outline" id="grantErpAccessBtn" style="width:100%;">${e.erp_login_enabled ? 'Reset Password' : 'Save & Generate Password'}</button>
+          ${(isOwnerUser || myPermissionKeys.includes('employee_master.create') || myPermissionKeys.includes('employee_master.edit')) && employeeId ? `
+          <p class="section-label">ERP Access</p>
+          ${e.erp_login_enabled ? `
+            <div class="field"><label>Status</label><div class="view-value" style="color:var(--green); font-weight:600;">Active — ${e.email || ''}</div></div>
+            ${(isOwnerUser || myPermissionKeys.includes('employee_master.edit')) ? `<button type="button" class="btn btn-outline" id="revokeErpAccessBtn" style="color:var(--danger); border-color:#efd2cf; margin-top:6px;">Revoke ERP Access</button>` : ''}
+          ` : `
+            <div class="field"><label><input type="checkbox" id="f_erp_login_enabled" style="width:auto; margin-right:6px;" />Request ERP Login</label></div>
+            <div id="erpAccessField" class="form-grid" style="display:none; margin-top:10px;">
+              <div class="field"><label>Email *</label><input id="f_erp_email" placeholder="name@refconveyors.com" /></div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <button type="button" class="btn btn-outline" id="requestErpAccessBtn" style="width:100%;">Submit for Owner Approval</button>
+              </div>
             </div>
-          </div>
-          <div class="msg" id="erpAccessMsg" style="margin-top:6px;"></div>` : (currentUser.role === 'owner' ? `<p style="font-size:11.5px; color:var(--muted); margin-top:14px;">Save this employee first to grant ERP access.</p>` : '')}
+          `}
+          <div class="msg" id="erpAccessMsg" style="margin-top:6px;"></div>` : ((isOwnerUser || myPermissionKeys.includes('employee_master.create')) ? `<p style="font-size:11.5px; color:var(--muted); margin-top:14px;">Save this employee first to request ERP access.</p>` : '')}
         </div>
 
         <div id="etab-personal" class="etab-content">
@@ -2883,30 +2988,35 @@
       setTimeout(() => b.textContent = 'Copy', 1500);
     });
 
-    // ERP Access (Owner only, existing employee only)
-    if (currentUser.role === 'owner' && employeeId) {
+    // ERP Access (permission-gated request/revoke flow, existing employee only)
+    if ((isOwnerUser || myPermissionKeys.includes('employee_master.create') || myPermissionKeys.includes('employee_master.edit')) && employeeId) {
       document.getElementById('f_erp_login_enabled')?.addEventListener('change', (ev) => {
         document.getElementById('erpAccessField').style.display = ev.target.checked ? 'grid' : 'none';
-        if (!ev.target.checked) {
-          apiHR({ action: 'set_employee_erp_access', employee_id: employeeId, erp_login_enabled: false }).then(res => {
-            const msg = document.getElementById('erpAccessMsg');
-            if (res.success) { msg.className = 'msg success'; msg.textContent = 'ERP access revoked.'; }
-            else { msg.className = 'msg error'; msg.textContent = res.error; }
-          });
-        }
       });
-      document.getElementById('grantErpAccessBtn')?.addEventListener('click', async () => {
+      document.getElementById('requestErpAccessBtn')?.addEventListener('click', async () => {
         const email = document.getElementById('f_erp_email').value.trim();
         const msg = document.getElementById('erpAccessMsg');
         msg.className = 'msg';
         if (!email) { msg.className = 'msg error'; msg.textContent = 'Please enter an email.'; return; }
-        const btn = document.getElementById('grantErpAccessBtn');
-        setButtonLoading(btn, true, 'Saving');
-        const res = await apiHR({ action: 'set_employee_erp_access', employee_id: employeeId, erp_login_enabled: true, email });
+        const btn = document.getElementById('requestErpAccessBtn');
+        setButtonLoading(btn, true, 'Submitting');
+        const res = await apiHR({ action: 'request_employee_erp_access', employee_id: employeeId, email });
         setButtonLoading(btn, false);
         if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
         msg.className = 'msg success';
-        msg.textContent = `ERP access enabled. Temporary password: ${res.temp_password} — share this with the employee. They'll be required to set their own password on first login.`;
+        msg.textContent = res.message || 'Request submitted — waiting for Owner approval.';
+      });
+      document.getElementById('revokeErpAccessBtn')?.addEventListener('click', async () => {
+        if (!confirm('Revoke this employee\'s ERP access? They will be signed out and unable to log in until access is requested and approved again.')) return;
+        const msg = document.getElementById('erpAccessMsg');
+        const btn = document.getElementById('revokeErpAccessBtn');
+        setButtonLoading(btn, true, 'Revoking');
+        const res = await apiHR({ action: 'revoke_employee_erp_access', employee_id: employeeId });
+        setButtonLoading(btn, false);
+        if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+        msg.className = 'msg success';
+        msg.textContent = 'ERP access revoked.';
+        setTimeout(() => openEmployeeForm(employeeId), 800);
       });
     }
 
@@ -4753,9 +4863,8 @@
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
       applyNavVisibility();
-      loadDashboard();
       const savedView = sessionStorage.getItem('admin_active_view');
-      if (savedView) switchMainView(savedView);
+      switchMainView(savedView || 'home');
     } catch (e) {
       sessionStorage.removeItem('admin_session');
       sessionStorage.removeItem('admin_session_token');
