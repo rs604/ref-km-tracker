@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786636147';</script>
+<script>window.__BUILD_VERSION__ = '1786636426';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2246,10 +2246,10 @@
 
     // ---- OVERVIEW: concise snapshot only, per spec — not every field ----
     const overviewPane = `
-      <div style="display:flex; gap:24px; align-items:flex-start; margin-bottom:6px;">
+      <span class="pill-section-label">Employment Information</span>
+      <div style="display:flex; gap:24px; align-items:flex-start; margin-top:10px; margin-bottom:6px;">
         <div style="flex:1;">
-          <span class="pill-section-label">Employment Information</span>
-          <div class="vv-info-grid" style="margin-top:10px;">
+          <div class="vv-info-grid">
             ${vvCell('Employee Code', e.employee_code)}
             ${vvCell('Employee Name', e.name)}
             ${vvCell('Branch', findName(dd.branches, e.branch_id))}
