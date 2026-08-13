@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786609820';</script>
+<script>window.__BUILD_VERSION__ = '1786636147';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2293,16 +2293,6 @@
           ${vvCell('Current Address', [e.present_address, findName(dd.cities, e.present_city_id), findName(dd.states, e.present_state_id)].filter(Boolean).join(', '))}
           ${vvCell('Permanent Address', [e.permanent_address, findName(dd.cities, e.permanent_city_id), findName(dd.states, e.permanent_state_id)].filter(Boolean).join(', '))}
         </div>
-      </div>
-
-      <div class="vv-subsection">
-        <span class="pill-section-label">Personal Summary</span>
-        <div class="vv-info-grid" style="margin-top:10px;">
-          ${vvCell('Date of Birth', fmtDate ? fmtDate(e.date_of_birth) : e.date_of_birth)}
-          ${vvCell('Gender', e.gender)}
-          ${vvCell('Marital Status', e.marital_status)}
-          ${vvCell('Blood Group', e.blood_group)}
-        </div>
       </div>`;
 
     // ---- PERSONAL: full existing Personal Details section, unchanged content ----
@@ -2353,18 +2343,18 @@
       </div>
       <div class="vv-subsection">
         <span class="pill-section-label">Family</span>
-        <div style="margin-top:10px;">${renderViewRepeatable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
+        <div style="margin-top:10px;">${renderViewTable(detail.family, [['member_name','Name'],['relationships.name','Relationship'],['age','Age'],['occupation','Occupation']])}</div>
       </div>
       <div class="vv-subsection">
         <span class="pill-section-label">Education</span>
-        <div style="margin-top:10px;">${renderViewRepeatable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
+        <div style="margin-top:10px;">${renderViewTable(detail.education, [['qualification','Qualification'],['institute_name','Institute'],['board_university','Board/University'],['passing_year','Year'],['percentage','Percentage']])}</div>
       </div>
       <div class="vv-subsection">
         <span class="pill-section-label">Nominee Details</span>
-        <div style="margin-top:10px;">${renderViewRepeatable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}</div>
+        <div style="margin-top:10px;">${renderViewTable(detail.nominees, [['name','Name'],['relation','Relation'],['dob_or_age','DOB/Age'],['mobile','Mobile']])}</div>
       </div>`;
 
-    const workPane = renderViewRepeatable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']]);
+    const workPane = renderViewTable(detail.workExperience, [['company_name','Company'],['duration','Duration'],['position','Position'],['reason_for_leaving','Reason for Leaving']]);
     const experienceReferencePane = `
       <span class="pill-section-label">Work Experience</span>
       <div style="margin-top:10px;">${workPane}</div>
@@ -2423,7 +2413,7 @@
     const statusTagClass = e.status === 'active' ? 'approved' : (e.status === 'suspended' ? 'calculated' : 'pending_evening');
 
     const html = `<div class="panel panel-no-clip">
-      <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+      <div class="panel-header" id="empViewHeader" style="flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:25; background:#fff;">
         <div>
           <span class="panel-title">Employee Profile</span>
           <div style="font-size:13px; margin-top:2px;">
@@ -2447,7 +2437,7 @@
         </div>
       </div>
 
-      <div class="subtabs" id="employeeViewTabs">
+      <div class="subtabs" id="employeeViewTabs" style="position:sticky; z-index:24; background:#fff;">
         ${EMP_TABS.map(t => `<button type="button" class="subtab-item vv-tab-btn emp-vv-tab-btn ${employeeViewActiveTab === t.key ? 'active' : ''}" data-tab="${t.key}">${t.label}</button>`).join('')}
       </div>
 
@@ -2461,6 +2451,17 @@
     </div>`;
 
     document.getElementById('hrtab-employee-master').innerHTML = html;
+
+    const empHeader = document.getElementById('empViewHeader');
+    if (empHeader) {
+      const applyEmpOffset = () => {
+        const tabs = document.getElementById('employeeViewTabs');
+        if (tabs && empHeader) tabs.style.top = empHeader.offsetHeight + 'px';
+      };
+      applyEmpOffset();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(applyEmpOffset);
+      setTimeout(applyEmpOffset, 300);
+    }
 
     document.querySelectorAll('.emp-vv-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2677,6 +2678,21 @@
           return viewField(label, val);
         }).join('')}
       </div>`).join('');
+  }
+
+  function renderViewTable(rows, fieldPairs) {
+    if (!rows || rows.length === 0) return '<div class="empty-state">None recorded.</div>';
+    return `<div style="overflow-x:auto;">
+      <table class="ledger" style="min-width:500px;">
+        <thead><tr>${fieldPairs.map(([key, label]) => `<th>${label}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map(row => `<tr>${fieldPairs.map(([key]) => {
+            const val = key.includes('.') ? row[key.split('.')[0]]?.[key.split('.')[1]] : row[key];
+            return `<td>${val || '—'}</td>`;
+          }).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
   }
 
   async function quickStatusChange(employeeId, newStatus, label) {
