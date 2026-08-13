@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786609596';</script>
+<script>window.__BUILD_VERSION__ = '1786609820';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2234,7 +2234,6 @@
 
     const EMP_TABS = [
       { key: 'overview', label: 'Overview' },
-      { key: 'employment', label: 'Employment' },
       { key: 'personal', label: 'Personal' },
       { key: 'experience_reference', label: 'Experience & Reference' },
       { key: 'bank', label: 'Bank & Statutory' },
@@ -2267,6 +2266,26 @@
       </div>
 
       <div class="vv-subsection">
+        <span class="pill-section-label">Employment Details</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Role', e.role)}
+          ${vvCell('Wage Type', e.wage_type)}
+          ${vvCell('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
+        <span class="pill-section-label">Vehicle KM Payable</span>
+        <div class="vv-info-grid" style="margin-top:10px;">
+          ${vvCell('Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
+          ${e.vehicle_km_applicable ? vvCell('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
+          ${e.vehicle_km_applicable ? vvCell('Driving License No.', e.driving_license_number) : ''}
+          ${e.vehicle_km_applicable ? vvCell('License Category', e.driving_license_category) : ''}
+          ${e.vehicle_km_applicable ? vvCell('License Validity', fmtDate ? fmtDate(e.driving_license_validity) : e.driving_license_validity) : ''}
+        </div>
+      </div>
+
+      <div class="vv-subsection">
         <span class="pill-section-label">Contact Information</span>
         <div class="vv-info-grid" style="margin-top:10px;">
           ${vvCell('Mobile', e.mobile_number)}
@@ -2283,25 +2302,6 @@
           ${vvCell('Gender', e.gender)}
           ${vvCell('Marital Status', e.marital_status)}
           ${vvCell('Blood Group', e.blood_group)}
-        </div>
-      </div>`;
-
-    // ---- EMPLOYMENT: everything employment-related not already summarized on Overview ----
-    const employmentPane = `
-      <span class="pill-section-label">Employment Details</span>
-      <div class="vv-info-grid" style="margin-top:10px;">
-        ${vvCell('Role', e.role)}
-        ${vvCell('Wage Type', e.wage_type)}
-        ${vvCell('Source of Employee', e.source_of_employee ? e.source_of_employee.replace('_',' ').replace(/\b\w/g, c => c.toUpperCase()) : null)}
-      </div>
-      <div class="vv-subsection">
-        <span class="pill-section-label">Vehicle KM Payable</span>
-        <div class="vv-info-grid" style="margin-top:10px;">
-          ${vvCell('Applicable', e.vehicle_km_applicable ? 'Yes' : 'No')}
-          ${e.vehicle_km_applicable ? vvCell('Rate per KM', e.rate_per_km ? '₹' + e.rate_per_km : '—') : ''}
-          ${e.vehicle_km_applicable ? vvCell('Driving License No.', e.driving_license_number) : ''}
-          ${e.vehicle_km_applicable ? vvCell('License Category', e.driving_license_category) : ''}
-          ${e.vehicle_km_applicable ? vvCell('License Validity', fmtDate ? fmtDate(e.driving_license_validity) : e.driving_license_validity) : ''}
         </div>
       </div>`;
 
@@ -2453,7 +2453,6 @@
 
       <div class="panel-body">
         ${tabPane('overview', overviewPane)}
-        ${tabPane('employment', employmentPane)}
         ${tabPane('personal', personalPane)}
         ${tabPane('experience_reference', experienceReferencePane)}
         ${tabPane('bank', bankPane)}
