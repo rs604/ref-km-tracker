@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1786636665';</script>
+<script>window.__BUILD_VERSION__ = '1787139166';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -3229,6 +3229,15 @@
     ], 'Add Nominee');
 
     setupDocumentUploadTriggers(detail?.documents || []);
+
+    // Real-time validation — matches the same pattern already used on Vendor Master
+    wireFieldValidation('f_mobile_number', 'mobile');
+    wireFieldValidation('f_aadhar_no', 'aadhar');
+    wireFieldValidation('f_present_pincode', 'pincode');
+    wireFieldValidation('f_permanent_pincode', 'pincode');
+    wireFieldValidation('f_emergency_contact_mobile', 'mobile');
+    wireFieldValidation('f_bank_ifsc', 'ifsc', { uppercase: true });
+    wireFieldValidation('f_pan_number', 'pan', { uppercase: true });
 
     document.getElementById('formBackBtn').addEventListener('click', () => renderEmployeeMasterList());
 
