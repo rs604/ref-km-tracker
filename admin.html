@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787590309';</script>
+<script>window.__BUILD_VERSION__ = '1787591082';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -1994,18 +1994,30 @@
   function renderHolidays() {
     const { holidays, holidayTypes, branches } = holidaysData;
     const fyList = [...new Set(holidays.map(h => h.financial_year))].sort().reverse();
+    // Rows still awaiting a date sort to the top \u2014 they need action
+    holidays.sort((a, b) => {
+      if (!a.holiday_date && b.holiday_date) return -1;
+      if (a.holiday_date && !b.holiday_date) return 1;
+      return (a.holiday_date || '').localeCompare(b.holiday_date || '');
+    });
     const filtered = holidayFyFilter === 'all' ? holidays : holidays.filter(h => h.financial_year === holidayFyFilter);
+    const pendingCount = filtered.filter(h => !h.holiday_date && h.is_active).length;
+    const hasPendingDiwali = filtered.some(h => h.template_key === 'diwali' && !h.holiday_date);
     const editing = editingHolidayId ? holidays.find(h => h.id === editingHolidayId) : null;
 
     const html = `<div class="panel">
       <div class="panel-header">
         <span class="panel-title">Holiday Calendar<span class="count-chip">${filtered.length}</span></span>
-        <select id="holFyFilter" style="font-size:12.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
-          <option value="all" ${holidayFyFilter === 'all' ? 'selected' : ''}>All Financial Years</option>
-          ${fyList.map(fy => `<option value="${fy}" ${holidayFyFilter === fy ? 'selected' : ''}>FY ${fy}</option>`).join('')}
-        </select>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <select id="holFyFilter" style="font-size:12.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
+            <option value="all" ${holidayFyFilter === 'all' ? 'selected' : ''}>All Financial Years</option>
+            ${fyList.map(fy => `<option value="${fy}" ${holidayFyFilter === fy ? 'selected' : ''}>FY ${fy}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm btn-outline" id="holGenerateBtn">+ Generate Standard Holidays</button>
+        </div>
       </div>
       <div class="panel-body">
+        ${pendingCount > 0 ? `<div class="msg error" style="display:block; margin-bottom:14px;">${pendingCount} holiday${pendingCount === 1 ? '' : 's'} still need${pendingCount === 1 ? 's' : ''} a date \u2014 festival dates follow the lunar calendar and must be set manually. Click Edit on any row marked "Date pending".${hasPendingDiwali ? ' Setting Diwali\'s date will auto-fill Vishwakarma Day.' : ''}</div>` : ''}
         <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">${editing ? 'Edit Holiday' : 'Add Holiday'}</p>
         <div class="form-grid" style="align-items:end;">
           <div class="field"><label>Date *</label><input type="date" id="hol_date" value="${editing?.holiday_date || ''}" /></div>
@@ -2042,8 +2054,8 @@
           </tr></thead><tbody>
             ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:16px;">No holidays recorded${holidayFyFilter !== 'all' ? ' for FY ' + holidayFyFilter : ''}.</td></tr>` : filtered.map(h => `
               <tr class="${h.is_active ? 'row-approved' : 'row-open'}">
-                <td>${new Date(h.holiday_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                <td>${new Date(h.holiday_date).toLocaleDateString('en-GB', { weekday: 'short' })}</td>
+                <td>${h.holiday_date ? new Date(h.holiday_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '<span style="color:var(--danger); font-weight:600;">Date pending</span>'}</td>
+                <td>${h.holiday_date ? new Date(h.holiday_date).toLocaleDateString('en-GB', { weekday: 'short' }) : '\u2014'}</td>
                 <td><strong>${h.holiday_name}</strong></td>
                 <td>${h.holiday_types?.name || '—'}</td>
                 <td>${h.branches?.name || 'All Branches'}</td>
@@ -2080,6 +2092,19 @@
       renderHolidays();
     });
 
+    document.getElementById('holGenerateBtn').addEventListener('click', async () => {
+      const fy = holidayFyFilter !== 'all' ? holidayFyFilter : currentFinancialYear();
+      if (!confirm(`Generate the standard 9 company holidays for FY ${fy}?\n\nThe 4 fixed-date holidays (Guru Gobind Singh Jayanti, Republic Day, Independence Day, Gandhi Jayanti) will get their real dates automatically.\n\nThe 5 festival holidays (Holi, Dussehra, Diwali, Vishwakarma Day, Guru Nanak Dev Jayanti) follow the lunar calendar, so they'll be created with blank dates for you to fill in.\n\nAnything already created for this year will be skipped.`)) return;
+      const btn = document.getElementById('holGenerateBtn');
+      setButtonLoading(btn, true, 'Generating');
+      const res = await apiHRMS({ action: 'generate_yearly_holidays', financial_year: fy });
+      setButtonLoading(btn, false);
+      if (!res.success) { alert(res.error); return; }
+      holidayFyFilter = fy;
+      alert(res.message);
+      loadHolidays();
+    });
+
     document.getElementById('holSaveBtn').addEventListener('click', async () => {
       const msg = document.getElementById('holMsg');
       msg.className = 'msg';
@@ -2101,6 +2126,9 @@
         : await apiHRMS({ action: 'create_holiday', holiday });
       setButtonLoading(btn, false);
       if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      if (res.auto_filled) {
+        alert(`${res.auto_filled.name} was automatically set to ${res.auto_filled.date} (the day after Diwali).`);
+      }
       editingHolidayId = null;
       loadHolidays();
     });
