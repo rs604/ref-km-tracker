@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787591784';</script>
+<script>window.__BUILD_VERSION__ = '1787592182';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2071,16 +2071,6 @@
               </tr>`).join('')}
           </tbody></table>
         </div>
-
-        <p class="section-label">Holiday Types</p>
-        <div class="form-grid" style="align-items:end;">
-          <div class="field"><label>New Type Name</label><input type="text" id="holTypeName" placeholder="e.g. Regional Holiday" /></div>
-          <div class="field"><button class="btn" id="holTypeAddBtn">Add Type</button></div>
-        </div>
-        <div class="msg" id="holTypeMsg"></div>
-        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
-          ${holidayTypes.map(t => `<span class="role-tag" style="font-size:12px;">${t.name}</span>`).join('') || '<span style="color:var(--muted); font-size:12.5px;">No types defined.</span>'}
-        </div>
       </div>
     </div>`;
 
@@ -2157,19 +2147,6 @@
         if (!res.success) { alert(res.error); return; }
         loadHolidays();
       });
-    });
-
-    document.getElementById('holTypeAddBtn').addEventListener('click', async () => {
-      const name = document.getElementById('holTypeName').value.trim();
-      const msg = document.getElementById('holTypeMsg');
-      msg.className = 'msg';
-      if (!name) { msg.className = 'msg error'; msg.textContent = 'Type name is required.'; return; }
-      const btn = document.getElementById('holTypeAddBtn');
-      setButtonLoading(btn, true, 'Adding');
-      const res = await apiHRMS({ action: 'add_holiday_type', name });
-      setButtonLoading(btn, false);
-      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
-      loadHolidays();
     });
   }
 
