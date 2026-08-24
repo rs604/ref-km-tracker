@@ -300,6 +300,23 @@
           ],
         },
         {
+          title: 'HRMS — Holidays, Loans & Advances, Payroll Rules (Partly Built)',
+          points: [
+            { t: 'Holiday Calendar is built and live', d: 'Its own table (not a simple dropdown master) because each holiday carries 8 properties: date, name, type, financial year, branch scope, holiday duration, attendance rule, and active status. Holiday Type is itself an editable dropdown master.' },
+            { t: 'Financial year follows the Indian Apr-Mar convention, formatted 2026-27', d: 'Auto-derived from the holiday date. Note that January/February/March dates belong to the SECOND calendar year of the FY \u2014 e.g. Republic Day for FY 2026-27 is 26 Jan 2027.' },
+            { t: 'Nine standard company holidays can be generated per year', d: 'Four are fixed-date and auto-filled: Guru Gobind Singh Jayanti (5 Jan), Republic Day (26 Jan), Independence Day (15 Aug), Gandhi Jayanti (2 Oct). Five follow the lunar calendar and are created with blank dates for manual entry: Holi, Dussehra, Diwali, Vishwakarma Day, Guru Nanak Dev Jayanti.' },
+            { t: 'Festival dates are deliberately NOT auto-fetched from the internet', d: 'No reliable free API exists for Indian lunar-calendar festival dates. Since attendance and payroll will depend on these dates, a source that is only usually correct would be worse than a clearly-marked five-minute manual step once a year.' },
+            { t: 'Vishwakarma Day auto-fills as the day after Diwali', d: 'A company-specific rule, so it can be automated safely. Setting Diwali\'s date automatically fills Vishwakarma Day (handling month-end rollover), but only if it has not already been set manually.' },
+            { t: 'COMPANY RULE \u2014 working on a holiday earns salary PLUS overtime', d: 'The holiday is paid regardless of whether the employee works. If they do work, every hour worked additionally counts as overtime \u2014 unlike a normal working day, where only hours beyond the standard day become OT. Not yet implemented; recorded here so Payroll is built correctly.' },
+            { t: 'Attendance field wording reflects that rule', d: 'The two options are "No Work At All" and "Overtime If Worked", replacing the generic Compulsory/Optional language, which described a leave-consuming model this company does not use.' },
+            { t: 'Loan & Advance ledger is built and live', d: 'Replaces a paper notebook. Two tables: the loan/advance itself, and every repayment transaction. The running balance is DERIVED from transaction history rather than stored as a mutable number, so it can always be re-verified \u2014 this is the core fix for the notebook problem. Supports both fixed-monthly-amount and installment-count repayment, blocks overpayment, and auto-closes when fully repaid. Accessible both as a standalone HR view and as a tab on each Employee Profile.' },
+            { t: 'ESI ceiling and rate are Owner-configurable', d: 'Currently 21,000 ceiling at 0.75%. A future statutory change (e.g. to 25,000) requires only a settings change, no code.' },
+            { t: 'PF is reserved but deliberately not built', d: 'PF Applicable, PF Number, and UAN already exist on Employee Master, and placeholder columns exist in settings. The actual deduction calculation is intentionally not built while PF is not applicable at this company \u2014 building it against a rule that is not live, with nothing real to validate against, risks subtle errors.' },
+            { t: 'Salary Calculator is blocked on Attendance', d: 'Roughly half its columns (Working Days, Absent Days, Paid Leave, OT Hours) have no data source until an Attendance module exists. The agreed UI spec, when built: spreadsheet-style grid matching the existing Google Sheet layout, where the first Enter enters edit mode, subsequent Enter moves to the cell on the right, and Enter on the last cell wraps to the next row.' },
+            { t: 'Legacy payroll data import is planned, not built', d: 'The existing Google Sheet holds real formulas already extracted: salary prorated by working days, OT hours converted to OT-days by dividing by 8, OT paid at the same per-day rate (not a premium), ESI at 0.75% with the wage-ceiling exemption applied. Import will happen only after the system is otherwise finalised, and imported rows will be tagged as legacy.' },
+          ],
+        },
+        {
           title: 'Home Tab — Personalized Hub (Future, After Security)',
           points: [
             { t: 'Vision: one place where any logged-in employee sees everything relevant to them', d: 'Their own score, today\'s tasks, delegated tasks, and a daily/weekly report submission — instead of hunting across separate sections of the system.' },

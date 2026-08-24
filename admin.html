@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787591160';</script>
+<script>window.__BUILD_VERSION__ = '1787591784';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2029,13 +2029,13 @@
             <option value="">All Branches</option>
             ${branches.map(b => `<option value="${b.id}" ${editing?.branch_id === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
           </select></div>
-          <div class="field"><label>Duration</label><select id="hol_fullday">
+          <div class="field"><label>Holiday Duration</label><select id="hol_fullday">
             <option value="full" ${!editing || editing.is_full_day ? 'selected' : ''}>Full Day</option>
             <option value="half" ${editing && !editing.is_full_day ? 'selected' : ''}>Half Day</option>
           </select></div>
           <div class="field"><label>Attendance</label><select id="hol_optional">
-            <option value="compulsory" ${!editing || !editing.is_optional ? 'selected' : ''}>Compulsory</option>
-            <option value="optional" ${editing && editing.is_optional ? 'selected' : ''}>Optional</option>
+            <option value="compulsory" ${!editing || !editing.is_optional ? 'selected' : ''}>No Work At All</option>
+            <option value="optional" ${editing && editing.is_optional ? 'selected' : ''}>Overtime If Worked</option>
           </select></div>
           <div class="field">
             <label>&nbsp;</label>
@@ -2049,7 +2049,7 @@
 
         <div class="table-scroll" style="margin-top:16px;">
           <table class="ledger"><thead><tr>
-            <th>Date</th><th>Day</th><th>Holiday Name</th><th>Type</th><th>Applies To</th><th>Duration</th><th>Attendance</th><th>FY</th><th>Status</th><th>Action</th>
+            <th>Date</th><th>Day</th><th>Holiday Name</th><th>Type</th><th>Applies To</th><th>Holiday Duration</th><th>Attendance</th><th>FY</th><th>Status</th><th>Action</th>
           </tr></thead><tbody>
             ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:16px;">No holidays recorded${holidayFyFilter !== 'all' ? ' for FY ' + holidayFyFilter : ''}.</td></tr>` : filtered.map(h => `
               <tr class="${h.is_active ? 'row-approved' : 'row-open'}">
@@ -2059,7 +2059,7 @@
                 <td>${h.holiday_types?.name || '—'}</td>
                 <td>${h.branches?.name || 'All Branches'}</td>
                 <td>${h.is_full_day ? 'Full Day' : 'Half Day'}</td>
-                <td><span class="status-tag ${h.is_optional ? 'calculated' : 'approved'}">${h.is_optional ? 'Optional' : 'Compulsory'}</span></td>
+                <td><span class="status-tag ${h.is_optional ? 'calculated' : 'approved'}">${h.is_optional ? 'Overtime If Worked' : 'No Work At All'}</span></td>
                 <td>${h.financial_year}</td>
                 <td><span class="status-tag ${h.is_active ? 'approved' : 'pending_evening'}">${h.is_active ? 'Active' : 'Inactive'}</span></td>
                 <td class="action-cell">
