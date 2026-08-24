@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787593369';</script>
+<script>window.__BUILD_VERSION__ = '1787594015';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -229,6 +229,34 @@
     overflow: hidden;
   }
   .panel.panel-no-clip { overflow: visible; }
+
+  /* Modal — used for create/edit forms so the list view stays clean and separate */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+    display: flex; align-items: flex-start; justify-content: center;
+    z-index: 200; padding: 40px 20px; overflow-y: auto;
+  }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18); width: 100%; max-width: 640px;
+    animation: modalIn 0.14s ease-out;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .modal-close {
+    background: none; border: none; font-size: 20px; line-height: 1; color: var(--muted);
+    cursor: pointer; padding: 0 4px;
+  }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 18px; }
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 14px 18px; border-top: 1px solid var(--border);
+  }
   .field-error-highlight {
     border-color: var(--danger) !important;
     background: var(--danger-bg) !important;
@@ -830,6 +858,36 @@
   function spinnerHtml(label) {
     return `<div class="spinner-wrap"><div class="spinner"></div><div style="margin-top:12px; font-size:12.5px;">${label || 'Loading...'}</div></div>`;
   }
+  // Reusable modal — keeps create/edit forms separate from list views
+  function openModal(title, bodyHtml, footerHtml) {
+    closeModal();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'appModalOverlay';
+    overlay.innerHTML = `<div class="modal-box" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span class="modal-title">${title}</span>
+        <button type="button" class="modal-close" id="appModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">${bodyHtml}</div>
+      ${footerHtml ? `<div class="modal-footer">${footerHtml}</div>` : ''}
+    </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('appModalClose').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) closeModal(); });
+    document.addEventListener('keydown', modalEscHandler);
+    return overlay;
+  }
+
+  function modalEscHandler(ev) {
+    if (ev.key === 'Escape') closeModal();
+  }
+
+  function closeModal() {
+    document.getElementById('appModalOverlay')?.remove();
+    document.removeEventListener('keydown', modalEscHandler);
+  }
+
   function showSpinner(containerId, label) {
     const el = document.getElementById(containerId);
     if (el) el.innerHTML = spinnerHtml(label);
@@ -1969,7 +2027,6 @@
   // ============ HOLIDAYS (tab inside HR Dropdowns) ============
   let holidaysData = null;
   let holidayYearFilter = 'all';
-  let editingHolidayId = null;
 
   function currentCalendarYear() {
     return new Date().getFullYear();
@@ -2000,7 +2057,6 @@
     const filtered = holidayYearFilter === 'all' ? holidays : holidays.filter(h => String(h.calendar_year) === String(holidayYearFilter));
     const pendingCount = filtered.filter(h => !h.holiday_date && h.is_active).length;
     const hasPendingDiwali = filtered.some(h => h.template_key === 'diwali' && !h.holiday_date);
-    const editing = editingHolidayId ? holidays.find(h => h.id === editingHolidayId) : null;
 
     const html = `<div class="panel">
       <div class="panel-header">
@@ -2011,40 +2067,11 @@
             ${yearList.map(y => `<option value="${y}" ${String(holidayYearFilter) === String(y) ? 'selected' : ''}>${y}</option>`).join('')}
           </select>
           <button class="btn btn-sm btn-outline" id="holGenerateBtn">+ Generate Standard Holidays</button>
+          <button class="btn btn-sm" id="holAddBtn">+ Add Holiday</button>
         </div>
       </div>
       <div class="panel-body">
         ${pendingCount > 0 ? `<div class="msg error" style="display:block; margin-bottom:14px;">${pendingCount} holiday${pendingCount === 1 ? '' : 's'} still need${pendingCount === 1 ? 's' : ''} a date \u2014 festival dates follow the lunar calendar and must be set manually. Click Edit on any row marked "Date pending".${hasPendingDiwali ? ' Setting Diwali\'s date will auto-fill Vishwakarma Day.' : ''}</div>` : ''}
-        <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">${editing ? 'Edit Holiday' : 'Add Holiday'}</p>
-        <div class="form-grid" style="align-items:end;">
-          <div class="field"><label>Date *</label><input type="date" id="hol_date" value="${editing?.holiday_date || ''}" /></div>
-          <div class="field"><label>Holiday Name *</label><input type="text" id="hol_name" value="${editing?.holiday_name || ''}" placeholder="e.g. Diwali" /></div>
-          <div class="field"><label>Type</label><select id="hol_type">
-            <option value="">— Select —</option>
-            ${holidayTypes.map(t => `<option value="${t.id}" ${editing?.holiday_type_id === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
-          </select></div>
-          <div class="field"><label>Applies To</label><select id="hol_branch">
-            <option value="">All Branches</option>
-            ${branches.map(b => `<option value="${b.id}" ${editing?.branch_id === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
-          </select></div>
-          <div class="field"><label>Holiday Duration</label><select id="hol_fullday">
-            <option value="full" ${!editing || editing.is_full_day ? 'selected' : ''}>Full Day</option>
-            <option value="half" ${editing && !editing.is_full_day ? 'selected' : ''}>Half Day</option>
-          </select></div>
-          <div class="field"><label>Attendance</label><select id="hol_optional">
-            <option value="compulsory" ${!editing || !editing.is_optional ? 'selected' : ''}>No Work At All</option>
-            <option value="optional" ${editing && editing.is_optional ? 'selected' : ''}>Overtime If Worked</option>
-          </select></div>
-          <div class="field">
-            <label>&nbsp;</label>
-            <div style="display:flex; gap:8px;">
-              <button class="btn" id="holSaveBtn" style="flex:1;">${editing ? 'Update' : 'Add'}</button>
-              ${editing ? `<button class="btn btn-outline" id="holCancelEditBtn">Cancel</button>` : ''}
-            </div>
-          </div>
-        </div>
-        <div class="msg" id="holMsg"></div>
-
         <div class="table-scroll" style="margin-top:16px;">
           <table class="ledger"><thead><tr>
             <th>Date</th><th>Day</th><th>Holiday Name</th><th>Type</th><th>Applies To</th><th>Holiday Duration</th><th>Attendance</th><th>Year</th><th>Status</th><th>Action</th>
@@ -2092,6 +2119,57 @@
       loadHolidays();
     });
 
+    document.getElementById('holAddBtn').addEventListener('click', () => openHolidayModal(null));
+
+    document.querySelectorAll('.hol-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openHolidayModal(btn.dataset.id));
+    });
+
+    document.querySelectorAll('.hol-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const isActive = btn.dataset.active === 'true';
+        setButtonLoading(btn, true, '…');
+        const res = await apiHRMS({ action: 'toggle_holiday_status', holiday_id: btn.dataset.id, is_active: !isActive });
+        setButtonLoading(btn, false);
+        if (!res.success) { alert(res.error); return; }
+        loadHolidays();
+      });
+    });
+  }
+
+
+  function openHolidayModal(holidayId) {
+    const { holidayTypes, branches, holidays } = holidaysData;
+    const editing = holidayId ? holidays.find(h => h.id === holidayId) : null;
+
+    openModal(editing ? 'Edit Holiday' : 'Add Holiday', `
+      <div class="form-grid">
+        <div class="field"><label>Date *</label><input type="date" id="hol_date" value="${editing?.holiday_date || ''}" /></div>
+        <div class="field"><label>Holiday Name *</label><input type="text" id="hol_name" value="${editing?.holiday_name || ''}" placeholder="e.g. Diwali" /></div>
+        <div class="field"><label>Type</label><select id="hol_type">
+          <option value="">— Select —</option>
+          ${holidayTypes.map(t => `<option value="${t.id}" ${editing?.holiday_type_id === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>Applies To</label><select id="hol_branch">
+          <option value="">All Branches</option>
+          ${branches.map(b => `<option value="${b.id}" ${editing?.branch_id === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>Holiday Duration</label><select id="hol_fullday">
+          <option value="full" ${!editing || editing.is_full_day ? 'selected' : ''}>Full Day</option>
+          <option value="half" ${editing && !editing.is_full_day ? 'selected' : ''}>Half Day</option>
+        </select></div>
+        <div class="field"><label>Attendance</label><select id="hol_optional">
+          <option value="compulsory" ${!editing || !editing.is_optional ? 'selected' : ''}>No Work At All</option>
+          <option value="optional" ${editing && editing.is_optional ? 'selected' : ''}>Overtime If Worked</option>
+        </select></div>
+      </div>
+      <div class="msg" id="holMsg"></div>
+    `, `
+      <button class="btn btn-outline" id="holCancelBtn">Cancel</button>
+      <button class="btn" id="holSaveBtn">${editing ? 'Update Holiday' : 'Add Holiday'}</button>
+    `);
+
+    document.getElementById('holCancelBtn').addEventListener('click', closeModal);
     document.getElementById('holSaveBtn').addEventListener('click', async () => {
       const msg = document.getElementById('holMsg');
       msg.className = 'msg';
@@ -2107,47 +2185,19 @@
       if (!holiday.holiday_name) { msg.className = 'msg error'; msg.textContent = 'Holiday Name is required.'; return; }
 
       const btn = document.getElementById('holSaveBtn');
-      setButtonLoading(btn, true, editingHolidayId ? 'Updating' : 'Adding');
-      const res = editingHolidayId
-        ? await apiHRMS({ action: 'update_holiday', holiday_id: editingHolidayId, holiday })
+      setButtonLoading(btn, true, holidayId ? 'Updating' : 'Adding');
+      const res = holidayId
+        ? await apiHRMS({ action: 'update_holiday', holiday_id: holidayId, holiday })
         : await apiHRMS({ action: 'create_holiday', holiday });
       setButtonLoading(btn, false);
       if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
       if (res.auto_filled) {
         alert(`${res.auto_filled.name} was automatically set to ${res.auto_filled.date} (the day after Diwali).`);
       }
-      editingHolidayId = null;
       loadHolidays();
     });
-
-    document.getElementById('holCancelEditBtn')?.addEventListener('click', () => {
-      editingHolidayId = null;
-      renderHolidays();
-    });
-
-    document.querySelectorAll('.hol-edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        editingHolidayId = btn.dataset.id;
-        renderHolidays();
-        const dateField = document.getElementById('hol_date');
-        if (dateField && typeof dateField.scrollIntoView === 'function') {
-          dateField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    });
-
-    document.querySelectorAll('.hol-toggle-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const isActive = btn.dataset.active === 'true';
-        setButtonLoading(btn, true, '…');
-        const res = await apiHRMS({ action: 'toggle_holiday_status', holiday_id: btn.dataset.id, is_active: !isActive });
-        setButtonLoading(btn, false);
-        if (!res.success) { alert(res.error); return; }
-        loadHolidays();
-      });
-    });
   }
-
 
   // ============ LOANS & ADVANCES ============
   // Two genuinely different things, shown as two tabs under one sidebar item:
@@ -2183,10 +2233,16 @@
   async function loadLoansAdvances(employeeId, containerId) {
     const target = containerId || 'loansAdvancesContent';
     showSpinner(target);
-    const [loansRes, advRes] = await Promise.all([
+    // employeeListData is normally populated by loadControlPanel(), but this screen can be
+    // opened directly from the sidebar without ever visiting Employee Master — in which case
+    // it would still be null and the employee dropdown would render empty.
+    const needEmployees = !employeeId && !employeeListData;
+    const [loansRes, advRes, empRes] = await Promise.all([
       apiHRMS({ action: 'get_loans_data', employee_id: employeeId || null }),
       apiHRMS({ action: 'get_advances_data', employee_id: employeeId || null }),
+      needEmployees ? apiHR({ action: 'get_employee_list' }) : Promise.resolve(null),
     ]);
+    if (empRes && empRes.success) employeeListData = empRes.employees;
     if (!loansRes.success) {
       document.getElementById(target).innerHTML = `<div class="msg error" style="display:block">${loansRes.error}</div>`;
       return;
@@ -2263,7 +2319,6 @@
         </div>
       </div>
       ${loanStatusFilter === 'active' && rows.length > 0 ? `<div style="padding:10px 14px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; font-size:13px;">Total outstanding: <strong>${fmtMoney(totalOutstanding)}</strong></div>` : ''}
-      <div id="loanFormArea"></div>
       <div class="table-scroll">
         <table class="ledger"><thead><tr>
           ${!scoped ? '<th>Employee</th>' : ''}
@@ -2317,114 +2372,6 @@
     });
   }
 
-  function renderLoanForm(employeeId, target) {
-    const area = document.getElementById('loanFormArea');
-    const employeeOptions = employeeId ? '' : (employeeListData || []).filter(e => e.status === 'active').map(e => `<option value="${e.id}">${e.name} (${e.employee_code})</option>`).join('');
-
-    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
-      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">New Loan</p>
-      <div class="form-grid" style="align-items:end;">
-        ${employeeId ? '' : `<div class="field"><label>Employee *</label><select id="ln_employee"><option value="">— Select —</option>${employeeOptions}</select></div>`}
-        <div class="field"><label>Loan Amount (₹) *</label><input type="number" id="ln_amount" min="1" step="0.01" /></div>
-        <div class="field"><label>Disbursed On *</label><input type="date" id="ln_date" value="${new Date().toISOString().split('T')[0]}" /></div>
-        <div class="field"><label>Repayment Method *</label><select id="ln_method">
-          <option value="monthly">Fixed monthly amount</option>
-          <option value="installments">Number of installments</option>
-        </select></div>
-        <div class="field" id="ln_monthly_field"><label>Monthly Deduction (₹)</label><input type="number" id="ln_monthly" min="1" step="0.01" /></div>
-        <div class="field" id="ln_inst_field" style="display:none;"><label>Total Installments</label><input type="number" id="ln_installments" min="1" step="1" /></div>
-        <div class="field full"><label>Reason</label><input type="text" id="ln_reason" placeholder="Optional" /></div>
-      </div>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="btn" id="lnSaveBtn">Save Loan</button>
-        <button class="btn btn-outline" id="lnCancelBtn">Cancel</button>
-      </div>
-      <div class="msg" id="lnMsg"></div>
-    </div>`;
-
-    document.getElementById('ln_method').addEventListener('change', (ev) => {
-      const monthly = ev.target.value === 'monthly';
-      document.getElementById('ln_monthly_field').style.display = monthly ? 'block' : 'none';
-      document.getElementById('ln_inst_field').style.display = monthly ? 'none' : 'block';
-    });
-    document.getElementById('lnCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
-
-    document.getElementById('lnSaveBtn').addEventListener('click', async () => {
-      const msg = document.getElementById('lnMsg');
-      msg.className = 'msg';
-      const method = document.getElementById('ln_method').value;
-      const loan = {
-        employee_id: employeeId || document.getElementById('ln_employee').value,
-        principal_amount: document.getElementById('ln_amount').value,
-        disbursed_on: document.getElementById('ln_date').value,
-        monthly_deduction: method === 'monthly' ? document.getElementById('ln_monthly').value : null,
-        total_installments: method === 'installments' ? document.getElementById('ln_installments').value : null,
-        reason: document.getElementById('ln_reason').value.trim() || null,
-      };
-      if (!loan.employee_id) { msg.className = 'msg error'; msg.textContent = 'Please select an employee.'; return; }
-      if (!loan.principal_amount || Number(loan.principal_amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
-      if (method === 'monthly' && !loan.monthly_deduction) { msg.className = 'msg error'; msg.textContent = 'Enter the monthly deduction amount.'; return; }
-      if (method === 'installments' && !loan.total_installments) { msg.className = 'msg error'; msg.textContent = 'Enter the number of installments.'; return; }
-
-      const btn = document.getElementById('lnSaveBtn');
-      setButtonLoading(btn, true, 'Saving');
-      const res = await apiHRMS({ action: 'create_loan', loan });
-      setButtonLoading(btn, false);
-      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
-      loadLoansAdvances(employeeId, target);
-    });
-  }
-
-  function renderRepaymentForm(loanId, employeeId, target) {
-    const loan = (loansData || []).find(l => l.id === loanId);
-    if (!loan) return;
-    const area = document.getElementById('loanFormArea');
-    const suggested = loan.monthly_deduction ? Math.min(Number(loan.monthly_deduction), Number(loan.balance)) : '';
-
-    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
-      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">Record Repayment — ${loan.employees?.name || ''} · Outstanding ${fmtMoney(loan.balance)}</p>
-      <div class="form-grid" style="align-items:end;">
-        <div class="field"><label>Date *</label><input type="date" id="rp_date" value="${new Date().toISOString().split('T')[0]}" /></div>
-        <div class="field"><label>Amount (₹) *</label><input type="number" id="rp_amount" min="0.01" step="0.01" value="${suggested}" /></div>
-        <div class="field"><label>Type</label><select id="rp_type">
-          <option value="deduction">Salary Deduction</option>
-          <option value="adjustment">Adjustment</option>
-          <option value="waiver">Waiver</option>
-        </select></div>
-        <div class="field"><label>Payroll Month</label><input type="month" id="rp_period" value="${new Date().toISOString().slice(0,7)}" /></div>
-        <div class="field full"><label>Notes</label><input type="text" id="rp_notes" placeholder="Optional" /></div>
-      </div>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="btn" id="rpSaveBtn">Record</button>
-        <button class="btn btn-outline" id="rpCancelBtn">Cancel</button>
-      </div>
-      <div class="msg" id="rpMsg"></div>
-    </div>`;
-
-    document.getElementById('rpCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
-    document.getElementById('rpSaveBtn').addEventListener('click', async () => {
-      const msg = document.getElementById('rpMsg');
-      msg.className = 'msg';
-      const txn = {
-        txn_date: document.getElementById('rp_date').value,
-        amount: document.getElementById('rp_amount').value,
-        txn_type: document.getElementById('rp_type').value,
-        payroll_period: document.getElementById('rp_period').value || null,
-        notes: document.getElementById('rp_notes').value.trim() || null,
-      };
-      if (!txn.txn_date) { msg.className = 'msg error'; msg.textContent = 'Date is required.'; return; }
-      if (!txn.amount || Number(txn.amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
-
-      const btn = document.getElementById('rpSaveBtn');
-      setButtonLoading(btn, true, 'Recording');
-      const res = await apiHRMS({ action: 'add_loan_transaction', loan_id: loanId, txn });
-      setButtonLoading(btn, false);
-      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
-      if (res.fully_repaid) alert('Fully repaid — this loan has been closed automatically.');
-      loadLoansAdvances(employeeId, target);
-    });
-  }
-
   // ---------------- ADVANCES PANE ----------------
   function renderAdvancesPane(employeeId, scoped, canCreate, canEdit) {
     let rows = advancesData || [];
@@ -2449,11 +2396,10 @@
         </div>
       </div>
       ${advanceStatusFilter === 'outstanding' && rows.length > 0 ? `<div style="padding:10px 14px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; font-size:13px;">Total outstanding: <strong>${fmtMoney(totalOutstanding)}</strong></div>` : ''}
-      <div id="advFormArea"></div>
       <div class="table-scroll">
         <table class="ledger"><thead><tr>
           ${!scoped ? '<th>Employee</th>' : ''}
-          <th>Amount</th><th>Recovered</th><th>Outstanding</th><th>Given On</th><th>Recover From</th><th>Status</th><th>Action</th>
+          <th>Amount</th><th>Recovered</th><th>Outstanding</th><th>Given On</th><th>Against Salary Of</th><th>Status</th><th>Action</th>
         </tr></thead><tbody>
           ${rows.length === 0 ? `<tr><td colspan="${scoped ? 7 : 8}" style="text-align:center; color:var(--muted); padding:16px;">No ${advanceStatusFilter === 'all' ? '' : advanceStatusFilter + ' '}advances.</td></tr>` : rows.map(a => `
             <tr class="${a.status === 'outstanding' ? 'row-open' : 'row-approved'}">
@@ -2484,29 +2430,134 @@
     });
   }
 
+  function renderLoanForm(employeeId, target) {
+    const employeeOptions = employeeId ? '' : (employeeListData || []).filter(e => e.status === 'active').map(e => `<option value="${e.id}">${e.name} (${e.employee_code})</option>`).join('');
+
+    openModal('New Loan', `
+      <div class="form-grid">
+        ${employeeId ? '' : `<div class="field full"><label>Employee *</label><select id="ln_employee"><option value="">— Select —</option>${employeeOptions}</select></div>`}
+        <div class="field"><label>Loan Amount (₹) *</label><input type="number" id="ln_amount" min="1" step="0.01" /></div>
+        <div class="field"><label>Disbursed On *</label><input type="date" id="ln_date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="field"><label>Repayment Method *</label><select id="ln_method">
+          <option value="monthly">Fixed monthly amount</option>
+          <option value="installments">Number of installments</option>
+        </select></div>
+        <div class="field" id="ln_monthly_field"><label>Monthly Deduction (₹) *</label><input type="number" id="ln_monthly" min="1" step="0.01" /></div>
+        <div class="field" id="ln_inst_field" style="display:none;"><label>Total Installments *</label><input type="number" id="ln_installments" min="1" step="1" /></div>
+        <div class="field full"><label>Reason</label><input type="text" id="ln_reason" placeholder="Optional" /></div>
+      </div>
+      <div class="msg" id="lnMsg"></div>
+    `, `
+      <button class="btn btn-outline" id="lnCancelBtn">Cancel</button>
+      <button class="btn" id="lnSaveBtn">Save Loan</button>
+    `);
+
+    document.getElementById('ln_method').addEventListener('change', (ev) => {
+      const monthly = ev.target.value === 'monthly';
+      document.getElementById('ln_monthly_field').style.display = monthly ? 'block' : 'none';
+      document.getElementById('ln_inst_field').style.display = monthly ? 'none' : 'block';
+    });
+    document.getElementById('lnCancelBtn').addEventListener('click', closeModal);
+
+    document.getElementById('lnSaveBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('lnMsg');
+      msg.className = 'msg';
+      const method = document.getElementById('ln_method').value;
+      const loan = {
+        employee_id: employeeId || document.getElementById('ln_employee').value,
+        principal_amount: document.getElementById('ln_amount').value,
+        disbursed_on: document.getElementById('ln_date').value,
+        monthly_deduction: method === 'monthly' ? document.getElementById('ln_monthly').value : null,
+        total_installments: method === 'installments' ? document.getElementById('ln_installments').value : null,
+        reason: document.getElementById('ln_reason').value.trim() || null,
+      };
+      if (!loan.employee_id) { msg.className = 'msg error'; msg.textContent = 'Please select an employee.'; return; }
+      if (!loan.principal_amount || Number(loan.principal_amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
+      if (!loan.disbursed_on) { msg.className = 'msg error'; msg.textContent = 'Disbursed On date is required.'; return; }
+      if (method === 'monthly' && !loan.monthly_deduction) { msg.className = 'msg error'; msg.textContent = 'Enter the monthly deduction amount.'; return; }
+      if (method === 'installments' && !loan.total_installments) { msg.className = 'msg error'; msg.textContent = 'Enter the number of installments.'; return; }
+
+      const btn = document.getElementById('lnSaveBtn');
+      setButtonLoading(btn, true, 'Saving');
+      const res = await apiHRMS({ action: 'create_loan', loan });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
+      loadLoansAdvances(employeeId, target);
+    });
+  }
+
+  function renderRepaymentForm(loanId, employeeId, target) {
+    const loan = (loansData || []).find(l => l.id === loanId);
+    if (!loan) return;
+    const suggested = loan.monthly_deduction ? Math.min(Number(loan.monthly_deduction), Number(loan.balance)) : '';
+
+    openModal(`Record Repayment — ${loan.employees?.name || ''}`, `
+      <div style="padding:10px 12px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; font-size:13px;">
+        Outstanding balance: <strong>${fmtMoney(loan.balance)}</strong>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Date *</label><input type="date" id="rp_date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="field"><label>Amount (₹) *</label><input type="number" id="rp_amount" min="0.01" step="0.01" value="${suggested}" /></div>
+        <div class="field"><label>Type</label><select id="rp_type">
+          <option value="deduction">Salary Deduction</option>
+          <option value="adjustment">Adjustment</option>
+          <option value="waiver">Waiver</option>
+        </select></div>
+        <div class="field"><label>Payroll Month</label><input type="month" id="rp_period" value="${new Date().toISOString().slice(0,7)}" /></div>
+        <div class="field full"><label>Notes</label><input type="text" id="rp_notes" placeholder="Optional" /></div>
+      </div>
+      <div class="msg" id="rpMsg"></div>
+    `, `
+      <button class="btn btn-outline" id="rpCancelBtn">Cancel</button>
+      <button class="btn" id="rpSaveBtn">Record Repayment</button>
+    `);
+
+    document.getElementById('rpCancelBtn').addEventListener('click', closeModal);
+    document.getElementById('rpSaveBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('rpMsg');
+      msg.className = 'msg';
+      const txn = {
+        txn_date: document.getElementById('rp_date').value,
+        amount: document.getElementById('rp_amount').value,
+        txn_type: document.getElementById('rp_type').value,
+        payroll_period: document.getElementById('rp_period').value || null,
+        notes: document.getElementById('rp_notes').value.trim() || null,
+      };
+      if (!txn.txn_date) { msg.className = 'msg error'; msg.textContent = 'Date is required.'; return; }
+      if (!txn.amount || Number(txn.amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
+
+      const btn = document.getElementById('rpSaveBtn');
+      setButtonLoading(btn, true, 'Recording');
+      const res = await apiHRMS({ action: 'add_loan_transaction', loan_id: loanId, txn });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
+      if (res.fully_repaid) alert('Fully repaid — this loan has been closed automatically.');
+      loadLoansAdvances(employeeId, target);
+    });
+  }
+
   function renderAdvanceForm(employeeId, target) {
-    const area = document.getElementById('advFormArea');
     const employeeOptions = employeeId ? '' : (employeeListData || []).filter(e => e.status === 'active').map(e => `<option value="${e.id}">${e.name} (${e.employee_code})</option>`).join('');
     const today = new Date().toISOString().split('T')[0];
     const thisMonth = new Date().toISOString().slice(0, 7);
 
-    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
-      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">New Advance</p>
-      <div class="form-grid" style="align-items:end;">
-        ${employeeId ? '' : `<div class="field"><label>Employee *</label><select id="adv_employee"><option value="">— Select —</option>${employeeOptions}</select></div>`}
+    openModal('New Advance', `
+      <div class="form-grid">
+        ${employeeId ? '' : `<div class="field full"><label>Employee *</label><select id="adv_employee"><option value="">— Select —</option>${employeeOptions}</select></div>`}
         <div class="field"><label>Advance Amount (₹) *</label><input type="number" id="adv_amount" min="1" step="0.01" /></div>
         <div class="field"><label>Given On *</label><input type="date" id="adv_date" value="${today}" /></div>
-        <div class="field"><label>Recover From Salary Of *</label><input type="month" id="adv_period" value="${thisMonth}" /></div>
+        <div class="field full"><label>Advance Against Salary Of *</label><input type="month" id="adv_period" value="${thisMonth}" /></div>
         <div class="field full"><label>Notes</label><input type="text" id="adv_notes" placeholder="Optional" /></div>
       </div>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="btn" id="advSaveBtn">Save Advance</button>
-        <button class="btn btn-outline" id="advCancelBtn">Cancel</button>
-      </div>
       <div class="msg" id="advMsg"></div>
-    </div>`;
+    `, `
+      <button class="btn btn-outline" id="advCancelBtn">Cancel</button>
+      <button class="btn" id="advSaveBtn">Save Advance</button>
+    `);
 
-    document.getElementById('advCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
+    document.getElementById('advCancelBtn').addEventListener('click', closeModal);
     document.getElementById('advSaveBtn').addEventListener('click', async () => {
       const msg = document.getElementById('advMsg');
       msg.className = 'msg';
@@ -2520,13 +2571,14 @@
       if (!advance.employee_id) { msg.className = 'msg error'; msg.textContent = 'Please select an employee.'; return; }
       if (!advance.amount || Number(advance.amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
       if (!advance.advance_date) { msg.className = 'msg error'; msg.textContent = 'Given On date is required.'; return; }
-      if (!advance.payroll_period) { msg.className = 'msg error'; msg.textContent = 'Please choose which month\'s salary this is recovered from.'; return; }
+      if (!advance.payroll_period) { msg.className = 'msg error'; msg.textContent = 'Please choose which month\'s salary this advance is against.'; return; }
 
       const btn = document.getElementById('advSaveBtn');
       setButtonLoading(btn, true, 'Saving');
       const res = await apiHRMS({ action: 'create_advance', advance });
       setButtonLoading(btn, false);
       if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
       loadLoansAdvances(employeeId, target);
     });
   }
@@ -2534,30 +2586,30 @@
   function renderAdvanceRecoveryForm(advanceId, employeeId, target) {
     const adv = (advancesData || []).find(a => a.id === advanceId);
     if (!adv) return;
-    const area = document.getElementById('advFormArea');
-    // Default to recovering the whole outstanding amount — the normal case is full recovery
-    // from that month's salary; a partial amount means a shortfall that carries forward.
+    // Default to recovering the whole outstanding amount — full recovery from that month's
+    // salary is the normal case; a partial amount means a shortfall that carries forward.
     const nextMonth = (() => {
       const [y, m] = (adv.payroll_period || new Date().toISOString().slice(0,7)).split('-').map(Number);
       const d = new Date(y, m, 1); // m is already 1-based, so this lands on the next month
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     })();
 
-    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
-      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">Record Recovery — ${adv.employees?.name || ''} · Outstanding ${fmtMoney(adv.outstanding)}</p>
-      <div class="form-grid" style="align-items:end;">
+    openModal(`Record Recovery — ${adv.employees?.name || ''}`, `
+      <div style="padding:10px 12px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; font-size:13px;">
+        Outstanding: <strong>${fmtMoney(adv.outstanding)}</strong> · Advance against salary of <strong>${fmtPeriod(adv.payroll_period)}</strong>
+      </div>
+      <div class="form-grid">
         <div class="field"><label>Amount Recovered (₹) *</label><input type="number" id="rec_amount" min="0.01" step="0.01" value="${adv.outstanding}" /></div>
         <div class="field"><label>If Short, Carry To</label><input type="month" id="rec_carry" value="${nextMonth}" /></div>
       </div>
-      <p style="font-size:11.5px; color:var(--muted); margin:8px 0 0;">Recovering the full outstanding amount closes this advance. Recovering less leaves the remainder outstanding and moves it to the month above.</p>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="btn" id="recSaveBtn">Record</button>
-        <button class="btn btn-outline" id="recCancelBtn">Cancel</button>
-      </div>
+      <p style="font-size:11.5px; color:var(--muted); margin:10px 0 0;">Recovering the full outstanding amount closes this advance. Recovering less leaves the remainder outstanding and moves it to the month above.</p>
       <div class="msg" id="recMsg"></div>
-    </div>`;
+    `, `
+      <button class="btn btn-outline" id="recCancelBtn">Cancel</button>
+      <button class="btn" id="recSaveBtn">Record Recovery</button>
+    `);
 
-    document.getElementById('recCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
+    document.getElementById('recCancelBtn').addEventListener('click', closeModal);
     document.getElementById('recSaveBtn').addEventListener('click', async () => {
       const msg = document.getElementById('recMsg');
       msg.className = 'msg';
@@ -2574,6 +2626,7 @@
       });
       setButtonLoading(btn, false);
       if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
       if (res.fully_recovered) alert('Fully recovered — this advance is now closed.');
       loadLoansAdvances(employeeId, target);
     });
