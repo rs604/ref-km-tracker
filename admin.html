@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787589317';</script>
+<script>window.__BUILD_VERSION__ = '1787590309';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -675,6 +675,10 @@
             <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
             <span class="nav-label">HR Dropdowns</span>
           </button>
+          <button class="nav-item level-3" data-view="loans-advances">
+            <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="nav-label">Loans &amp; Advances</span>
+          </button>
         </div>
         <button class="nav-item level-2" data-view="vendor-master">
           <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
@@ -768,6 +772,12 @@
     <div id="view-documentation" class="view-content" style="display:none">
       <div class="content">
         <div id="documentationContent"></div>
+      </div>
+    </div>
+
+    <div id="view-loans-advances" class="view-content" style="display:none">
+      <div class="content">
+        <div id="loansAdvancesContent"></div>
       </div>
     </div>
 
@@ -951,6 +961,7 @@
     'km-tracker': 'km_tracker.view',
     'employee-master': 'employee_master.view',
     'hr-dropdowns': 'employee_master.view',
+    'loans-advances': 'loans_advances.view',
     'vendor-master': 'vendor_master.view',
   };
 
@@ -1102,6 +1113,7 @@
     'km-tracker': ['Km Tracker', 'Daily odometer tracking, approvals, and payments'],
     'employee-master': ['Employee Master', 'Add and manage employee records'],
     'hr-dropdowns': ['HR Dropdowns', 'Supporting master data used across HR'],
+    'loans-advances': ['Loans & Advances', 'Employee loan and advance ledger'],
     'vendor-master': ['Vendor', 'Register and manage vendors, GST registrations, and bank accounts'],
     'admin-panel': ['Admin Panel', 'Role-based permissions and administration'],
     'documentation': ['Documentation', 'Every design decision made across this ERP, and why'],
@@ -1137,6 +1149,9 @@
       };
       document.head.appendChild(script);
     }
+    if (viewKey === 'loans-advances') {
+      loadLoansAdvances(); // always refresh — balances change as repayments are recorded
+    }
     if (viewKey === 'home') {
       loadHome(); // always refresh — approvals/requests change frequently, unlike static master data
     }
@@ -1150,6 +1165,7 @@
     const VIEW_ANCESTOR_TREES = {
       'employee-master': ['tree-control-panel', 'tree-hr'],
       'hr-dropdowns': ['tree-control-panel', 'tree-hr'],
+      'loans-advances': ['tree-control-panel', 'tree-hr'],
       'vendor-master': ['tree-control-panel'],
       'admin-panel': ['tree-control-panel'],
       'documentation': ['tree-control-panel'],
@@ -2130,6 +2146,248 @@
     });
   }
 
+  // ============ LOANS & ADVANCES ============
+  // One shared renderer serves two entry points:
+  //   - standalone sidebar view (all employees)
+  //   - Employee Profile tab (single employee, scoped)
+  let loansData = null;
+  let loanStatusFilter = 'active';
+  let loanSearchQuery = '';
+
+  function fmtMoney(n) {
+    const v = Number(n || 0);
+    return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  async function loadLoansAdvances(employeeId, containerId) {
+    const target = containerId || 'loansAdvancesContent';
+    showSpinner(target);
+    const res = await apiHRMS({ action: 'get_loans_data', employee_id: employeeId || null });
+    if (!res.success) {
+      document.getElementById(target).innerHTML = `<div class="msg error" style="display:block">${res.error}</div>`;
+      return;
+    }
+    loansData = res.loans;
+    renderLoansAdvances(employeeId, target);
+  }
+
+  function renderLoansAdvances(employeeId, containerId) {
+    const target = containerId || 'loansAdvancesContent';
+    const scoped = !!employeeId; // true = inside an Employee Profile tab
+    let rows = loansData || [];
+    if (loanStatusFilter !== 'all') rows = rows.filter(l => l.status === loanStatusFilter);
+    if (!scoped && loanSearchQuery) {
+      const q = loanSearchQuery.toLowerCase();
+      rows = rows.filter(l => (l.employees?.name || '').toLowerCase().includes(q) || (l.employees?.employee_code || '').toLowerCase().includes(q));
+    }
+
+    const totalOutstanding = rows.filter(l => l.status === 'active').reduce((s, l) => s + Number(l.balance), 0);
+    const canCreate = isOwnerUser || myPermissionKeys.includes('loans_advances.create');
+    const canEdit = isOwnerUser || myPermissionKeys.includes('loans_advances.edit');
+
+    const html = `<div class="panel panel-no-clip">
+      <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+        <span class="panel-title">${scoped ? 'Loans & Advances' : 'Loans & Advances'}<span class="count-chip">${rows.length}</span></span>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          ${!scoped ? `<input type="text" id="loanSearch" placeholder="Search employee…" value="${loanSearchQuery}" style="font-size:12.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); min-width:180px;" />` : ''}
+          <select id="loanStatusFilter" style="font-size:12.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
+            <option value="active" ${loanStatusFilter === 'active' ? 'selected' : ''}>Active</option>
+            <option value="closed" ${loanStatusFilter === 'closed' ? 'selected' : ''}>Closed</option>
+            <option value="cancelled" ${loanStatusFilter === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            <option value="all" ${loanStatusFilter === 'all' ? 'selected' : ''}>All</option>
+          </select>
+          ${canCreate ? `<button class="btn btn-sm" id="loanAddBtn">+ New ${scoped ? '' : 'Loan / Advance'}</button>` : ''}
+        </div>
+      </div>
+      <div class="panel-body">
+        ${loanStatusFilter === 'active' && rows.length > 0 ? `<div style="padding:10px 14px; background:var(--surface-sunken); border:1px solid var(--border); border-radius:6px; margin-bottom:14px; font-size:13px;">
+          Total outstanding${scoped ? '' : ' across ' + rows.length + ' ledger' + (rows.length === 1 ? '' : 's')}: <strong>${fmtMoney(totalOutstanding)}</strong>
+        </div>` : ''}
+
+        <div id="loanFormArea"></div>
+
+        <div class="table-scroll">
+          <table class="ledger"><thead><tr>
+            ${!scoped ? '<th>Employee</th>' : ''}
+            <th>Type</th><th>Amount</th><th>Repaid</th><th>Balance</th><th>Disbursed</th><th>Schedule</th><th>Status</th><th>Action</th>
+          </tr></thead><tbody>
+            ${rows.length === 0 ? `<tr><td colspan="${scoped ? 8 : 9}" style="text-align:center; color:var(--muted); padding:16px;">No ${loanStatusFilter === 'all' ? '' : loanStatusFilter + ' '}loans or advances.</td></tr>` : rows.map(l => `
+              <tr class="${l.status === 'active' ? 'row-open' : 'row-approved'}">
+                ${!scoped ? `<td><strong>${l.employees?.name || '—'}</strong><div style="font-size:11px; color:var(--muted);">${l.employees?.employee_code || ''}</div></td>` : ''}
+                <td><span class="status-tag ${l.ledger_type === 'loan' ? 'calculated' : 'pending_evening'}">${l.ledger_type === 'loan' ? 'Loan' : 'Advance'}</span></td>
+                <td>${fmtMoney(l.principal_amount)}</td>
+                <td>${fmtMoney(l.total_repaid)}</td>
+                <td><strong style="color:${Number(l.balance) > 0 ? 'var(--danger)' : 'var(--green)'};">${fmtMoney(l.balance)}</strong></td>
+                <td>${new Date(l.disbursed_on).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                <td style="font-size:12px;">${l.monthly_deduction ? fmtMoney(l.monthly_deduction) + '/mo' : (l.total_installments ? l.total_installments + ' installments' : '—')}</td>
+                <td><span class="status-tag ${l.status === 'active' ? 'calculated' : (l.status === 'closed' ? 'approved' : 'rejected')}">${l.status}</span></td>
+                <td class="action-cell">
+                  <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <button class="btn btn-sm btn-outline loan-history-btn" data-id="${l.id}">History</button>
+                    ${l.status === 'active' && canEdit ? `<button class="btn btn-sm loan-repay-btn" data-id="${l.id}">+ Repayment</button>` : ''}
+                  </div>
+                </td>
+              </tr>
+              <tr class="loan-history-row" data-history-for="${l.id}" style="display:none;">
+                <td colspan="${scoped ? 8 : 9}" style="background:var(--surface-sunken); padding:12px 16px;">
+                  ${l.reason ? `<div style="font-size:12.5px; margin-bottom:8px;"><strong>Reason:</strong> ${l.reason}</div>` : ''}
+                  ${l.transactions.length === 0 ? '<div style="font-size:12.5px; color:var(--muted);">No repayments recorded yet.</div>' : `
+                    <table class="ledger" style="background:#fff;"><thead><tr><th>Date</th><th>Amount</th><th>Type</th><th>Payroll Period</th><th>Notes</th></tr></thead><tbody>
+                      ${l.transactions.map(t => `<tr>
+                        <td>${new Date(t.txn_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                        <td>${fmtMoney(t.amount)}</td>
+                        <td>${t.txn_type}</td>
+                        <td>${t.payroll_period || '—'}</td>
+                        <td>${t.notes || '—'}</td>
+                      </tr>`).join('')}
+                    </tbody></table>`}
+                </td>
+              </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById(target).innerHTML = html;
+
+    document.getElementById('loanStatusFilter').addEventListener('change', (ev) => {
+      loanStatusFilter = ev.target.value;
+      renderLoansAdvances(employeeId, target);
+    });
+    document.getElementById('loanSearch')?.addEventListener('input', (ev) => {
+      loanSearchQuery = ev.target.value;
+      renderLoansAdvances(employeeId, target);
+    });
+
+    document.querySelectorAll('.loan-history-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = document.querySelector(`.loan-history-row[data-history-for="${btn.dataset.id}"]`);
+        const showing = row.style.display !== 'none';
+        row.style.display = showing ? 'none' : 'table-row';
+        btn.textContent = showing ? 'History' : 'Hide';
+      });
+    });
+
+    document.getElementById('loanAddBtn')?.addEventListener('click', () => renderLoanForm(employeeId, target));
+    document.querySelectorAll('.loan-repay-btn').forEach(btn => {
+      btn.addEventListener('click', () => renderRepaymentForm(btn.dataset.id, employeeId, target));
+    });
+  }
+
+  function renderLoanForm(employeeId, target) {
+    const area = document.getElementById('loanFormArea');
+    const employeeOptions = employeeId
+      ? ''
+      : (employeeListData || []).filter(e => e.status === 'active').map(e => `<option value="${e.id}">${e.name} (${e.employee_code})</option>`).join('');
+
+    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
+      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">New Loan / Advance</p>
+      <div class="form-grid" style="align-items:end;">
+        ${employeeId ? '' : `<div class="field"><label>Employee *</label><select id="ln_employee"><option value="">— Select —</option>${employeeOptions}</select></div>`}
+        <div class="field"><label>Type *</label><select id="ln_type"><option value="loan">Loan</option><option value="advance">Advance</option></select></div>
+        <div class="field"><label>Amount (₹) *</label><input type="number" id="ln_amount" min="1" step="0.01" /></div>
+        <div class="field"><label>Disbursed On *</label><input type="date" id="ln_date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="field"><label>Repayment Method *</label><select id="ln_method">
+          <option value="monthly">Fixed monthly amount</option>
+          <option value="installments">Number of installments</option>
+        </select></div>
+        <div class="field" id="ln_monthly_field"><label>Monthly Deduction (₹)</label><input type="number" id="ln_monthly" min="1" step="0.01" /></div>
+        <div class="field" id="ln_inst_field" style="display:none;"><label>Total Installments</label><input type="number" id="ln_installments" min="1" step="1" /></div>
+        <div class="field full"><label>Reason</label><input type="text" id="ln_reason" placeholder="Optional" /></div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn" id="lnSaveBtn">Save</button>
+        <button class="btn btn-outline" id="lnCancelBtn">Cancel</button>
+      </div>
+      <div class="msg" id="lnMsg"></div>
+    </div>`;
+
+    document.getElementById('ln_method').addEventListener('change', (ev) => {
+      const monthly = ev.target.value === 'monthly';
+      document.getElementById('ln_monthly_field').style.display = monthly ? 'block' : 'none';
+      document.getElementById('ln_inst_field').style.display = monthly ? 'none' : 'block';
+    });
+
+    document.getElementById('lnCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
+
+    document.getElementById('lnSaveBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('lnMsg');
+      msg.className = 'msg';
+      const method = document.getElementById('ln_method').value;
+      const loan = {
+        employee_id: employeeId || document.getElementById('ln_employee').value,
+        ledger_type: document.getElementById('ln_type').value,
+        principal_amount: document.getElementById('ln_amount').value,
+        disbursed_on: document.getElementById('ln_date').value,
+        monthly_deduction: method === 'monthly' ? document.getElementById('ln_monthly').value : null,
+        total_installments: method === 'installments' ? document.getElementById('ln_installments').value : null,
+        reason: document.getElementById('ln_reason').value.trim() || null,
+      };
+      if (!loan.employee_id) { msg.className = 'msg error'; msg.textContent = 'Please select an employee.'; return; }
+      if (!loan.principal_amount || Number(loan.principal_amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
+      if (method === 'monthly' && !loan.monthly_deduction) { msg.className = 'msg error'; msg.textContent = 'Enter the monthly deduction amount.'; return; }
+      if (method === 'installments' && !loan.total_installments) { msg.className = 'msg error'; msg.textContent = 'Enter the number of installments.'; return; }
+
+      const btn = document.getElementById('lnSaveBtn');
+      setButtonLoading(btn, true, 'Saving');
+      const res = await apiHRMS({ action: 'create_loan', loan });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      loadLoansAdvances(employeeId, target);
+    });
+  }
+
+  function renderRepaymentForm(loanId, employeeId, target) {
+    const loan = (loansData || []).find(l => l.id === loanId);
+    if (!loan) return;
+    const area = document.getElementById('loanFormArea');
+    const suggested = loan.monthly_deduction ? Math.min(Number(loan.monthly_deduction), Number(loan.balance)) : '';
+
+    area.innerHTML = `<div style="border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; background:var(--surface-sunken);">
+      <p class="section-label" style="margin-top:0; padding-top:0; border-top:none;">Record Repayment — ${loan.employees?.name || ''} · Outstanding ${fmtMoney(loan.balance)}</p>
+      <div class="form-grid" style="align-items:end;">
+        <div class="field"><label>Date *</label><input type="date" id="rp_date" value="${new Date().toISOString().split('T')[0]}" /></div>
+        <div class="field"><label>Amount (₹) *</label><input type="number" id="rp_amount" min="0.01" step="0.01" value="${suggested}" /></div>
+        <div class="field"><label>Type</label><select id="rp_type">
+          <option value="deduction">Salary Deduction</option>
+          <option value="adjustment">Adjustment</option>
+          <option value="waiver">Waiver</option>
+        </select></div>
+        <div class="field"><label>Payroll Period</label><input type="month" id="rp_period" value="${new Date().toISOString().slice(0,7)}" /></div>
+        <div class="field full"><label>Notes</label><input type="text" id="rp_notes" placeholder="Optional" /></div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn" id="rpSaveBtn">Record</button>
+        <button class="btn btn-outline" id="rpCancelBtn">Cancel</button>
+      </div>
+      <div class="msg" id="rpMsg"></div>
+    </div>`;
+
+    document.getElementById('rpCancelBtn').addEventListener('click', () => { area.innerHTML = ''; });
+
+    document.getElementById('rpSaveBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('rpMsg');
+      msg.className = 'msg';
+      const txn = {
+        txn_date: document.getElementById('rp_date').value,
+        amount: document.getElementById('rp_amount').value,
+        txn_type: document.getElementById('rp_type').value,
+        payroll_period: document.getElementById('rp_period').value || null,
+        notes: document.getElementById('rp_notes').value.trim() || null,
+      };
+      if (!txn.txn_date) { msg.className = 'msg error'; msg.textContent = 'Date is required.'; return; }
+      if (!txn.amount || Number(txn.amount) <= 0) { msg.className = 'msg error'; msg.textContent = 'Amount must be greater than zero.'; return; }
+
+      const btn = document.getElementById('rpSaveBtn');
+      setButtonLoading(btn, true, 'Recording');
+      const res = await apiHRMS({ action: 'add_loan_transaction', loan_id: loanId, txn });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      if (res.fully_repaid) alert('Fully repaid — this ledger has been closed automatically.');
+      loadLoansAdvances(employeeId, target);
+    });
+  }
+
   function renderEmployeeMasterList() {
     if (!employeeListData) {
       document.getElementById('hrtab-employee-master').innerHTML = '<div class="empty-state">Loading...</div>';
@@ -2428,6 +2686,7 @@
       { key: 'personal', label: 'Personal' },
       { key: 'experience_reference', label: 'Experience & Reference' },
       { key: 'bank', label: 'Bank & Statutory' },
+      { key: 'loans', label: 'Loans & Advances' },
       { key: 'documents', label: 'Documents' },
     ];
     if (!EMP_TABS.find(t => t.key === employeeViewActiveTab)) employeeViewActiveTab = 'overview';
@@ -2639,6 +2898,7 @@
         ${tabPane('personal', personalPane)}
         ${tabPane('experience_reference', experienceReferencePane)}
         ${tabPane('bank', bankPane)}
+        ${tabPane('loans', '<div id="empLoansPanel"><div class="empty-state">Loading…</div></div>')}
         ${tabPane('documents', documentsPane)}
       </div>
     </div>`;
@@ -2661,8 +2921,10 @@
         employeeViewActiveTab = btn.dataset.tab;
         document.querySelectorAll('.emp-vv-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === employeeViewActiveTab));
         document.querySelectorAll('#hrtab-employee-master .vv-tab-pane').forEach(p => { p.style.display = p.dataset.pane === employeeViewActiveTab ? '' : 'none'; });
+        if (employeeViewActiveTab === 'loans') loadLoansAdvances(e.id, 'empLoansPanel');
       });
     });
+    if (employeeViewActiveTab === 'loans') loadLoansAdvances(e.id, 'empLoansPanel');
 
     document.getElementById('empViewBackBtn').addEventListener('click', () => renderEmployeeMasterList());
     document.getElementById('empViewEditBtn').addEventListener('click', () => openEmployeeForm(e.id));
