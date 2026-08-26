@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787766674';</script>
+<script>window.__BUILD_VERSION__ = '1787769899';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -240,57 +240,74 @@
   .app-shell.nav-collapsed .sidebar .nav-children { display: none !important; }
   .app-shell.nav-collapsed .sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
   .app-shell.nav-collapsed .sidebar .sidebar-brand { justify-content: center; }
+  /* When collapsed, hovering an icon shows a tooltip with the item's name. */
+  .app-shell.nav-collapsed .sidebar .nav-item { position: relative; }
+  .app-shell.nav-collapsed .sidebar .nav-item::after {
+    content: attr(data-tip);
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+    margin-left: 8px; background: #24313d; color: #fff; font-size: 11.5px;
+    padding: 5px 9px; border-radius: 5px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 0.12s; z-index: 300;
+  }
+  .app-shell.nav-collapsed .sidebar .nav-item:hover::after { opacity: 1; }
+
   .nav-toggle-btn {
     background: none; border: none; cursor: pointer; color: var(--muted);
     padding: 4px 6px; border-radius: 5px; display: flex; align-items: center;
   }
   .nav-toggle-btn:hover { background: var(--surface-sunken); color: var(--ink); }
 
-  /* Spreadsheet grid — deliberately close to a real spreadsheet: frozen header and
-     first column, alternating row bands, drag-resizable columns, full-height canvas. */
-  .paygrid-wrap {
-    border: 1px solid var(--border); border-radius: 6px; overflow: auto; background: #fff;
-  }
-  table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; }
+  /* Spreadsheet grid — frozen header/first column/footer, vertical scroll only. */
+  .paygrid-wrap { border: 1px solid var(--border); border-radius: 6px; overflow-y: auto; overflow-x: hidden; background: #fff; }
+  table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; width: 100%; }
   table.paygrid th {
-    background: #e8edf2; border-right: 1px solid #cbd5e1; border-bottom: 2px solid #b8c4d0;
-    padding: 6px 6px; font-size: 10.5px; color: #33475b; font-weight: 700;
-    position: sticky; top: 0; z-index: 5;
+    background: #dbe3ea; border-right: 1px solid #b8c4d0; border-bottom: 2px solid #a9b7c4;
+    padding: 5px 5px; font-size: 10.5px; color: #2b3d4f; font-weight: 700;
+    position: sticky; top: 26px; z-index: 5;
     text-align: center; vertical-align: middle;
-    white-space: normal; word-break: break-word; line-height: 1.25;
-    height: 42px; position: relative; user-select: none;
+    white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.2;
+    height: 40px; user-select: none; position: sticky;
   }
-  table.paygrid th.pg-label-h { left: 0; z-index: 7; background: #dde5ec; text-align: left; }
+  table.paygrid tr.pg-group-row th {
+    top: 0; height: 26px; z-index: 6; background: #c6d3de; font-size: 10px;
+    letter-spacing: 0.8px; border-bottom: 1px solid #a9b7c4;
+  }
+  table.paygrid th.pg-group-empty { background: #dbe3ea; }
+  table.paygrid th.pg-label-h { left: 0; z-index: 8; background: #cfd9e2; text-align: left; }
+  table.paygrid tr.pg-group-row th:first-child { left: 0; z-index: 9; }
   table.paygrid td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0; overflow: hidden; }
   table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
-  table.paygrid tbody tr:nth-child(even) td { background: #f7f9fb; }
-  table.paygrid tbody tr:hover td { background: #eef4fb; }
+  table.paygrid tbody tr:nth-child(even) td { background: #f6f9fb; }
+  table.paygrid tbody tr:hover td { background: #eaf2fb; }
   table.paygrid td.pg-label {
-    padding: 5px 8px; font-weight: 500; position: sticky; left: 0; z-index: 4;
-    box-shadow: 1px 0 0 var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 4px 8px; position: sticky; left: 0; z-index: 4; box-shadow: 1px 0 0 var(--border);
   }
   table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
-  table.paygrid tbody tr:nth-child(even) td.pg-label { background: #f2f5f8; }
-  table.paygrid td.pg-calc { padding: 5px 8px; text-align: right; color: #46586b; }
-  table.paygrid td.pg-net { padding: 5px 8px; text-align: right; font-weight: 700; }
+  table.paygrid tbody tr:nth-child(even) td.pg-label { background: #f1f5f8; }
+  .pg-emp-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pg-emp-inc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  table.paygrid td.pg-calc { padding: 5px 7px; text-align: right; color: #5a6b7c; background-image: linear-gradient(rgba(0,0,0,0.014), rgba(0,0,0,0.014)); }
+  table.paygrid td.pg-net { padding: 5px 7px; text-align: right; font-weight: 700; }
   table.paygrid input.pg-cell {
-    width: 100%; border: none; padding: 5px 8px; font-size: 12px; font-family: inherit;
-    text-align: right; background: transparent; outline: none; box-sizing: border-box;
+    width: 100%; border: none; padding: 5px 7px; font-size: 12px; font-family: inherit;
+    text-align: right; background: transparent; outline: none; box-sizing: border-box; cursor: cell;
   }
-  table.paygrid input.pg-cell:focus {
-    background: #fff9e6; box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 3;
+  table.paygrid input.pg-cell:focus { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 3; }
+  table.paygrid input.pg-cell.pg-editing { background: #fff9e6; cursor: text; }
+  table.paygrid textarea.pg-text {
+    width: 100%; border: none; padding: 4px 7px; font-size: 11.5px; font-family: inherit;
+    background: transparent; outline: none; box-sizing: border-box; resize: none;
+    white-space: pre-wrap; word-break: break-word; line-height: 1.3;
   }
-  table.paygrid input.pg-cell:read-only { color: var(--muted); cursor: default; }
+  table.paygrid textarea.pg-text:focus { box-shadow: inset 0 0 0 2px #1a73e8; background: #fff9e6; }
   table.paygrid tfoot tr td {
-    background: #e8edf2 !important; font-weight: 700; padding: 7px 8px; text-align: right;
-    position: sticky; bottom: 0; z-index: 5; border-top: 2px solid #b8c4d0;
+    background: #dbe3ea !important; font-weight: 700; padding: 6px 7px; text-align: right;
+    position: sticky; bottom: 0; z-index: 5; border-top: 2px solid #a9b7c4;
   }
-  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 6; text-align: left; background: #dde5ec !important; }
-  /* drag handle sitting on the right edge of each header cell */
-  .pg-resizer {
-    position: absolute; top: 0; right: -3px; width: 7px; height: 100%;
-    cursor: col-resize; z-index: 8;
-  }
+  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 6; text-align: left; background: #cfd9e2 !important; }
+  .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 10; }
+  table.paygrid th { position: sticky; }
+  table.paygrid thead th { position: sticky; }
   .pg-resizer:hover { background: #1a73e8; opacity: 0.35; }
   body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
 
@@ -2432,29 +2449,52 @@
     renderPayrollGrid();
   }
 
-  // Column definitions drive both the header and the body, so widths, order and
-  // resizing all stay in sync from one place.
+  // Column definitions drive header, body and footer from one place. Grouped under
+  // EARNINGS / DEDUCTIONS headers to match the layout of the existing Google Sheet.
   const PG_COLS = [
-    { key: 'employee',          label: 'Employee',       w: 190, type: 'label' },
-    { key: 'basic_wages',       label: 'Basic Wages',    w: 95,  type: 'input' },
-    { key: 'days_in_month',     label: 'Days in Month',  w: 70,  type: 'input' },
-    { key: 'working_days',      label: 'Working Days',   w: 75,  type: 'input' },
-    { key: 'absent_days',       label: 'Absent',         w: 65,  type: 'input' },
-    { key: 'ot_hours',          label: 'OT Hours',       w: 70,  type: 'input' },
-    { key: 'ot_days',           label: 'OT Days',        w: 65,  type: 'calc' },
-    { key: 'salary_amount',     label: 'Salary',         w: 90,  type: 'calc' },
-    { key: 'ot_charges',        label: 'OT Charges',     w: 85,  type: 'calc' },
-    { key: 'incentives',        label: 'Incentives',     w: 80,  type: 'input' },
-    { key: 'total_earnings',    label: 'Total Earnings', w: 95,  type: 'calc' },
-    { key: 'advance_deduction', label: 'Advance',        w: 80,  type: 'input' },
-    { key: 'loan_deduction',    label: 'Loan',           w: 80,  type: 'input' },
-    { key: 'other_deduction',   label: 'Other Ded.',     w: 75,  type: 'input' },
-    { key: 'esi_amount',        label: 'ESI',            w: 70,  type: 'calc' },
-    { key: 'total_deductions',  label: 'Total Ded.',     w: 85,  type: 'calc' },
-    { key: 'net_payable',       label: 'Net Payable',    w: 100, type: 'net'  },
-    { key: 'slip',              label: 'Slip',           w: 60,  type: 'action' },
+    { key: 'employee',          label: 'Employee',       w: 200, type: 'label', group: '' },
+    { key: 'basic_wages',       label: 'Basic Wages',    w: 95,  type: 'calc',  group: '' },
+    { key: 'days_in_month',     label: 'Days in Month',  w: 62,  type: 'calc',  group: '' },
+    { key: 'working_days',      label: 'Present Days',   w: 68,  type: 'input', group: '' },
+    { key: 'absent_days',       label: 'Absent Days',    w: 62,  type: 'calc',  group: '' },
+    { key: 'ot_hours',          label: 'OT Hours',       w: 62,  type: 'input', group: '' },
+    { key: 'ot_days',           label: 'OT Days',        w: 58,  type: 'calc',  group: '' },
+    { key: 'salary_amount',     label: 'Salary',         w: 88,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'ot_charges',        label: 'OT Charges',     w: 82,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'incentives',        label: 'Incentives',     w: 78,  type: 'input', group: 'EARNINGS' },
+    { key: 'total_earnings',    label: 'Total Earnings', w: 92,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'incentive_remarks', label: 'Incentive Remarks', w: 150, type: 'text', group: '' },
+    { key: 'advance_deduction', label: 'Advance',        w: 78,  type: 'input', group: 'DEDUCTIONS' },
+    { key: 'loan_deduction',    label: 'Loan',           w: 78,  type: 'input', group: 'DEDUCTIONS' },
+    { key: 'esi_amount',        label: 'ESI',            w: 66,  type: 'calc',  group: 'DEDUCTIONS' },
+    { key: 'total_deductions',  label: 'Total Deductions', w: 92, type: 'calc', group: 'DEDUCTIONS' },
+    { key: 'net_payable',       label: 'Net Payable',    w: 98,  type: 'net',   group: '' },
+    { key: 'slip',              label: 'Slip',           w: 56,  type: 'action', group: '' },
   ];
-  let pgWidths = {};   // { colKey: px } — loaded from the server, shared across months
+  const PG_SUMMABLE = ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction','loan_deduction','esi_amount','total_deductions','net_payable'];
+  let pgWidths = {};
+
+  // Days at the current salary: calendar days from the increment date up to the start of
+  // the payroll month, plus the days actually worked in this month.
+  function parseLocalDate(s) {
+    if (!s) return null;
+    const [y, m, d] = String(s).split('T')[0].split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  function daysSinceIncrement(incrementDate, periodYear, periodMonth, workingDays) {
+    const inc = parseLocalDate(incrementDate);
+    if (!inc) return null;
+    const periodStart = new Date(periodYear, periodMonth - 1, 1);
+    const worked = Math.round(Number(workingDays) || 0);
+    if (inc > periodStart) return worked;
+    return Math.round((periodStart - inc) / 86400000) + worked;
+  }
+  function incrementLabel(e, period) {
+    const inc = parseLocalDate(e.employees?.last_increment_date);
+    if (!inc) return '<span style="color:var(--muted);">increment — not recorded</span>';
+    const days = daysSinceIncrement(e.employees.last_increment_date, period.period_year, period.period_month, e.working_days);
+    return `increment - ${MONTH_NAMES[inc.getMonth()]} ${inc.getFullYear()} (${days} Days)`;
+  }
 
   function renderPayrollGrid() {
     const { period, entries } = currentPayrollSheet;
@@ -2464,29 +2504,41 @@
     const sum = (f) => entries.reduce((s, e) => s + Number(e[f] || 0), 0);
     const wOf = (col) => pgWidths[col.key] || col.w;
 
+    // Group header row: spans over the EARNINGS and DEDUCTIONS blocks, blank elsewhere.
+    let groupCells = '';
+    for (let i = 0; i < PG_COLS.length; ) {
+      const g = PG_COLS[i].group;
+      let span = 1;
+      while (i + span < PG_COLS.length && PG_COLS[i + span].group === g && g !== '') span++;
+      groupCells += g
+        ? `<th colspan="${span}" class="pg-group">${g}</th>`
+        : `<th colspan="${span}" class="pg-group pg-group-empty"></th>`;
+      i += span;
+    }
+
     const bodyCell = (e, col) => {
+      const w = `style="width:${wOf(col)}px;"`;
       if (col.type === 'label') {
-        return `<td class="pg-label" style="width:${wOf(col)}px;">${e.employees?.name || '—'}<div style="font-size:10px; color:var(--muted);">${e.employees?.employee_code || ''}</div></td>`;
+        return `<td class="pg-label" ${w}>
+          <div class="pg-emp-name">${e.employees?.name || '—'} - ${e.employees?.employee_code || ''}</div>
+          <div class="pg-emp-inc" data-inc-for="${e.id}">${incrementLabel(e, period)}</div>
+        </td>`;
       }
       if (col.type === 'action') {
-        return `<td style="width:${wOf(col)}px; text-align:center; padding:4px 6px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:2px 7px; font-size:10.5px;">Slip</button></td>`;
+        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 4px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:2px 6px; font-size:10.5px;">Slip</button></td>`;
+      }
+      if (col.type === 'text') {
+        return `<td ${w}><textarea class="pg-cell pg-text" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" rows="2" ${canEdit ? '' : 'readonly'}>${e[col.key] || ''}</textarea></td>`;
       }
       if (col.type === 'input') {
-        return `<td style="width:${wOf(col)}px;"><input class="pg-cell" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" value="${Number(e[col.key] || 0)}" ${canEdit ? '' : 'readonly'} inputmode="decimal" /></td>`;
+        return `<td ${w}><input class="pg-cell" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" value="${Number(e[col.key] || 0)}" readonly inputmode="decimal" /></td>`;
       }
       const cls = col.type === 'net' ? 'pg-net' : 'pg-calc';
-      return `<td class="${cls}" style="width:${wOf(col)}px;" data-calc="${col.key}" data-id="${e.id}">${Number(e[col.key] || 0).toFixed(2)}</td>`;
-    };
-
-    const footCell = (col) => {
-      if (col.key === 'employee') return `<td class="pg-label" style="width:${wOf(col)}px;">TOTAL — ${entries.length} employees</td>`;
-      const summable = ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction','loan_deduction','other_deduction','esi_amount','total_deductions','net_payable'];
-      if (!summable.includes(col.key)) return `<td style="width:${wOf(col)}px;"></td>`;
-      return `<td style="width:${wOf(col)}px;" id="tot_${col.key}">${sum(col.key).toFixed(2)}</td>`;
+      return `<td class="${cls}" ${w} data-calc="${col.key}" data-id="${e.id}">${Number(e[col.key] || 0).toFixed(2)}</td>`;
     };
 
     document.getElementById('salaryCalcContent').innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:12px;">
           <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
           <div>
@@ -2495,7 +2547,7 @@
           </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn btn-sm btn-outline" id="payResetColsBtn" title="Reset column widths">Reset Columns</button>
+          <button class="btn btn-sm btn-outline" id="payResetColsBtn">Reset Columns</button>
           ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
           ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post to Ledgers</button>` : ''}
         </div>
@@ -2505,16 +2557,21 @@
       <div class="paygrid-wrap" id="paygridWrap">
         <table class="paygrid" id="paygridTable">
           <colgroup>${PG_COLS.map(col => `<col data-col="${col.key}" style="width:${wOf(col)}px;" />`).join('')}</colgroup>
-          <thead><tr>
-            ${PG_COLS.map(col => `<th class="${col.type === 'label' ? 'pg-label-h' : ''}" data-col="${col.key}">${col.label}<span class="pg-resizer" data-col="${col.key}"></span></th>`).join('')}
-          </tr></thead>
+          <thead>
+            <tr class="pg-group-row">${groupCells}</tr>
+            <tr>${PG_COLS.map(col => `<th class="${col.type === 'label' ? 'pg-label-h' : ''}" data-col="${col.key}">${col.label}<span class="pg-resizer" data-col="${col.key}"></span></th>`).join('')}</tr>
+          </thead>
           <tbody>
             ${entries.map((e, i) => `<tr data-row="${i}">${PG_COLS.map(col => bodyCell(e, col)).join('')}</tr>`).join('')}
           </tbody>
-          <tfoot><tr>${PG_COLS.map(col => footCell(col)).join('')}</tr></tfoot>
+          <tfoot><tr>${PG_COLS.map(col => {
+            if (col.key === 'employee') return `<td class="pg-label" style="width:${wOf(col)}px;">TOTAL — ${entries.length} employees</td>`;
+            if (!PG_SUMMABLE.includes(col.key)) return `<td style="width:${wOf(col)}px;"></td>`;
+            return `<td style="width:${wOf(col)}px;" id="tot_${col.key}">${sum(col.key).toFixed(2)}</td>`;
+          }).join('')}</tr></tfoot>
         </table>
       </div>
-      ${!locked ? `<p style="font-size:11.5px; color:var(--muted); margin:8px 0 0;">Arrow keys move between cells. <strong>Enter</strong> moves right and wraps to the next employee. Drag a column edge to resize — widths are remembered for every future month. Nothing reaches the ledgers until you press Finalise.</p>` : ''}
+      ${!locked ? `<p style="font-size:11.5px; color:var(--muted); margin:6px 0 0;">Arrow keys move between cells. <strong>Enter</strong> starts editing; Enter again saves and moves right. <strong>Esc</strong> cancels. Grey columns are calculated. Drag a column edge to resize — widths carry over to every future month.</p>` : ''}
     `;
 
     sizePayrollGrid();
@@ -2534,42 +2591,33 @@
     document.querySelectorAll('.pay-slip-btn').forEach(b => b.addEventListener('click', () => openSalarySlip(b.dataset.id)));
   }
 
-  // Give the grid the full remaining height of the window rather than a fixed slice,
-  // so it behaves like a real spreadsheet canvas instead of a small boxed table.
   function sizePayrollGrid() {
     const wrap = document.getElementById('paygridWrap');
     if (!wrap) return;
     const top = wrap.getBoundingClientRect().top;
-    wrap.style.height = Math.max(320, window.innerHeight - top - 52) + 'px';
+    wrap.style.height = Math.max(300, window.innerHeight - top - 46) + 'px';
   }
   window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
 
-  // Drag the right edge of any header cell to resize that column. The chosen widths are
-  // saved centrally, so next month's sheet opens with the same layout already applied.
   function wirePayrollColumnResize() {
     document.querySelectorAll('.pg-resizer').forEach(handle => {
       handle.addEventListener('mousedown', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
+        ev.preventDefault(); ev.stopPropagation();
         const colKey = handle.dataset.col;
         const colEl = document.querySelector(`col[data-col="${colKey}"]`);
         const startX = ev.clientX;
         const startW = colEl.offsetWidth || parseInt(colEl.style.width, 10) || 80;
         document.body.classList.add('pg-resizing');
-
         const onMove = (e2) => {
           const newW = Math.max(45, startW + (e2.clientX - startX));
           colEl.style.width = newW + 'px';
-          document.querySelectorAll(`[data-col="${colKey}"]`).forEach(el => {
-            if (el.tagName === 'TH' || el.tagName === 'TD') el.style.width = newW + 'px';
-          });
           pgWidths[colKey] = newW;
         };
         const onUp = async () => {
           document.body.classList.remove('pg-resizing');
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
-          try { await apiPayroll({ action: 'save_column_widths', widths: pgWidths }); } catch (e) { /* layout only — not worth interrupting the user */ }
+          try { await apiPayroll({ action: 'save_column_widths', widths: pgWidths }); } catch (e) { /* layout only */ }
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -2577,50 +2625,98 @@
     });
   }
 
-  // Spreadsheet keyboard behaviour: arrows move in all four directions, Enter moves
-  // right and wraps to the next employee, Tab/Shift+Tab also work.
+  // Spreadsheet cell behaviour: a cell is SELECTED by default (read-only, arrow keys move
+  // between cells). Enter switches that cell into EDIT mode; Enter again commits and moves
+  // right; Esc cancels and restores the previous value. Typing a digit on a selected cell
+  // starts editing straight away, as a spreadsheet would.
+  function pgEnterEdit(input) {
+    if (!input.readOnly) return;
+    input.dataset.prev = input.value;
+    input.readOnly = false;
+    input.classList.add('pg-editing');
+    input.select();
+  }
+  function pgExitEdit(input, commit) {
+    if (input.readOnly) return;
+    if (!commit && input.dataset.prev !== undefined) input.value = input.dataset.prev;
+    input.readOnly = true;
+    input.classList.remove('pg-editing');
+    if (commit) input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   function wirePayrollGridKeys() {
-    const cells = Array.from(document.querySelectorAll('.pg-cell:not([readonly])'));
+    const cells = Array.from(document.querySelectorAll('.pg-cell:not(.pg-text)'));
     const perRow = PG_COLS.filter(c => c.type === 'input').length;
 
     cells.forEach((input, idx) => {
-      input.addEventListener('focus', () => input.select());
+      input.addEventListener('mousedown', () => { setTimeout(() => pgEnterEdit(input), 0); });
 
       input.addEventListener('keydown', (ev) => {
-        const atStart = input.selectionStart === 0 && input.selectionEnd === 0;
-        const atEnd = input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
-        let target = null;
+        const editing = !input.readOnly;
 
-        if (ev.key === 'Enter') target = cells[idx + 1];                 // wraps into next row naturally
-        else if (ev.key === 'ArrowRight' && atEnd) target = cells[idx + 1];
-        else if (ev.key === 'ArrowLeft' && atStart) target = cells[idx - 1];
+        if (ev.key === 'Escape' && editing) { ev.preventDefault(); pgExitEdit(input, false); return; }
+
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          if (!editing) { pgEnterEdit(input); return; }
+          pgExitEdit(input, true);
+          const next = cells[idx + 1];
+          if (next) { next.focus(); }
+          return;
+        }
+
+        // While editing, arrows belong to the text cursor, not the grid.
+        if (editing) return;
+
+        let target = null;
+        if (ev.key === 'ArrowRight') target = cells[idx + 1];
+        else if (ev.key === 'ArrowLeft') target = cells[idx - 1];
         else if (ev.key === 'ArrowDown') target = cells[idx + perRow];
         else if (ev.key === 'ArrowUp') target = cells[idx - perRow];
+        else if (ev.key === 'Tab') return;   // let the browser handle tabbing
+        else if (/^[0-9.]$/.test(ev.key)) { pgEnterEdit(input); input.value = ''; return; }
         else return;
 
         ev.preventDefault();
-        if (target) {
-          target.focus();
-          target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-        }
+        if (target) { target.focus(); target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); }
       });
+
+      input.addEventListener('blur', () => { if (!input.readOnly) pgExitEdit(input, true); });
 
       input.addEventListener('change', () => {
         const msg = document.getElementById('payGridMsg');
+        const entry = currentPayrollSheet.entries.find(e => e.id === input.dataset.id);
+        if (!entry) return;
         const val = input.value.trim();
+
         if (val !== '' && isNaN(Number(val))) {
           msg.className = 'msg error'; msg.textContent = 'Only numbers are allowed in this column.';
-          input.value = 0; return;
+          input.value = 0; entry[input.dataset.field] = 0; recalcRowPreview(entry.id); markPayrollDirty(); return;
         }
         if (Number(val) < 0) {
           msg.className = 'msg error'; msg.textContent = 'Negative values are not allowed.';
-          input.value = 0; return;
+          input.value = 0; entry[input.dataset.field] = 0; recalcRowPreview(entry.id); markPayrollDirty(); return;
         }
+        // Present days beyond the length of the month is a data-entry mistake, so it is
+        // rejected and reset rather than quietly rounded down.
+        if (input.dataset.field === 'working_days' && Number(val) > Number(entry.days_in_month)) {
+          msg.className = 'msg error';
+          msg.textContent = `Present days cannot exceed ${entry.days_in_month} days for ${entry.employees?.name || 'this employee'}. The cell has been reset to 0.`;
+          input.value = 0; entry.working_days = 0; recalcRowPreview(entry.id); markPayrollDirty(); return;
+        }
+
         msg.className = 'msg';
-        const entry = currentPayrollSheet.entries.find(e => e.id === input.dataset.id);
-        if (entry) entry[input.dataset.field] = Number(val || 0);
-        recalcRowPreview(input.dataset.id);
+        entry[input.dataset.field] = Number(val || 0);
+        recalcRowPreview(entry.id);
         markPayrollDirty();
+      });
+    });
+
+    // Incentive remarks are free text and behave like an ordinary textarea.
+    document.querySelectorAll('.pg-text').forEach(ta => {
+      ta.addEventListener('change', () => {
+        const entry = currentPayrollSheet.entries.find(e => e.id === ta.dataset.id);
+        if (entry) { entry.incentive_remarks = ta.value; markPayrollDirty(); }
       });
     });
   }
@@ -2650,16 +2746,21 @@
     const esiApplicable = !!e.employees?.esi_applicable;
     const esi = (esiApplicable && basic <= ceiling) ? Math.round(salary * (rate / 100) * 100) / 100 : 0;
 
-    const ded = Math.round(((Number(e.loan_deduction) || 0) + (Number(e.advance_deduction) || 0) + (Number(e.other_deduction) || 0) + esi) * 100) / 100;
+    const ded = Math.round(((Number(e.loan_deduction) || 0) + (Number(e.advance_deduction) || 0) + esi) * 100) / 100;
     const net = Math.round((earnings - ded) * 100) / 100;
+    const absent = Math.round((dim - (Number(e.working_days) || 0)) * 100) / 100;
 
-    Object.assign(e, { ot_days: otDays, salary_amount: salary, ot_charges: otCharges, total_earnings: earnings, esi_amount: esi, total_deductions: ded, net_payable: net });
+    Object.assign(e, { absent_days: absent, ot_days: otDays, salary_amount: salary, ot_charges: otCharges, total_earnings: earnings, esi_amount: esi, total_deductions: ded, net_payable: net });
 
     const setCell = (field, value) => {
       const td = document.querySelector(`[data-calc="${field}"][data-id="${entryId}"]`);
       if (td) td.textContent = Number(value).toFixed(2);
     };
+    setCell('absent_days', absent);
     setCell('ot_days', otDays);
+    // The days-at-current-salary figure includes this month's present days, so it moves too
+    const incEl = document.querySelector(`[data-inc-for="${entryId}"]`);
+    if (incEl) incEl.innerHTML = incrementLabel(e, period);
     setCell('salary_amount', salary);
     setCell('ot_charges', otCharges);
     setCell('total_earnings', earnings);
@@ -2688,11 +2789,10 @@
     setButtonLoading(btn, true, 'Saving');
     const payload = currentPayrollSheet.entries.map(e => ({
       id: e.id, employee_id: e.employee_id,
-      basic_wages: e.basic_wages, days_in_month: e.days_in_month,
-      working_days: e.working_days, absent_days: e.absent_days,
-      ot_hours: e.ot_hours, incentives: e.incentives,
+      working_days: e.working_days, ot_hours: e.ot_hours,
+      incentives: e.incentives, incentive_remarks: e.incentive_remarks || null,
       loan_deduction: e.loan_deduction, advance_deduction: e.advance_deduction,
-      other_deduction: e.other_deduction, remarks: e.remarks || null,
+      remarks: e.remarks || null,
     }));
     const res = await apiPayroll({ action: 'save_payroll_entries', period_id: currentPayrollSheet.period.id, entries: payload });
     setButtonLoading(btn, false);
@@ -2731,6 +2831,9 @@
   }
 
   async function openSalarySlip(entryId) {
+    // The slip is generated from what is stored on the server, so unsaved grid edits
+    // would not appear on it. Better to say so than to print a stale figure.
+    if (payrollDirty && !confirm('You have unsaved changes. The slip will show the last saved figures. Continue anyway?')) return;
     const res = await apiPayroll({ action: 'get_salary_slip', entry_id: entryId });
     if (!res.success) { alert(res.error); return; }
     const s = res.slip;
@@ -2765,7 +2868,6 @@
               ${row('Advance', fmtMoney(s.advance_deduction))}
               ${row('Loan', fmtMoney(s.loan_deduction))}
               ${row('ESI', fmtMoney(s.esi_amount))}
-              ${row('Other', fmtMoney(s.other_deduction))}
               <tr style="border-top:1px solid #ccc;"><td style="padding:5px 8px; font-weight:700;">Total Deductions</td><td style="padding:5px 8px; text-align:right; font-weight:700;">${fmtMoney(s.total_deductions)}</td></tr>
             </table>
           </div>
@@ -4911,14 +5013,29 @@
   }
 
   // --- Restore session on page refresh instead of forcing re-login ---
-  document.getElementById('navToggleBtn').addEventListener('click', () => {
+  function setNavCollapsed(collapsed) {
     const shell = document.getElementById('appShell');
-    const collapsed = shell.classList.toggle('nav-collapsed');
+    shell.classList.toggle('nav-collapsed', collapsed);
     sessionStorage.setItem('nav_collapsed', collapsed ? '1' : '0');
+  }
+  document.getElementById('navToggleBtn').addEventListener('click', () => {
+    setNavCollapsed(!document.getElementById('appShell').classList.contains('nav-collapsed'));
   });
   if (sessionStorage.getItem('nav_collapsed') === '1') {
     document.getElementById('appShell').classList.add('nav-collapsed');
   }
+  // Tooltips for the collapsed state, taken from each item's own label.
+  document.querySelectorAll('#sidebarNav .nav-item').forEach(btn => {
+    const label = btn.querySelector('.nav-label')?.textContent?.trim();
+    if (label) btn.setAttribute('data-tip', label);
+  });
+  // Clicking a group while collapsed would otherwise appear to do nothing, since the
+  // child list is hidden — so expand the sidebar first, then let the normal toggle run.
+  document.querySelectorAll('#sidebarNav .nav-parent').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (document.getElementById('appShell').classList.contains('nav-collapsed')) setNavCollapsed(false);
+    }, true);
+  });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     if (sessionToken) {
