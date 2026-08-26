@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787770426';</script>
+<script>window.__BUILD_VERSION__ = '1787770531';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -301,7 +301,9 @@
     background: transparent; outline: none; box-sizing: border-box; resize: none;
     white-space: pre-wrap; word-break: break-word; line-height: 1.3;
   }
-  table.paygrid textarea.pg-text:focus { box-shadow: inset 0 0 0 2px #1a73e8; background: #fff9e6; }
+  table.paygrid textarea.pg-text { cursor: cell; }
+  table.paygrid textarea.pg-text:read-only { cursor: cell; }
+  table.paygrid textarea.pg-text.pg-editing { background: #fff9e6; cursor: text; }
   table.paygrid tfoot tr td {
     background: #dbe3ea !important; font-weight: 700; padding: 6px 7px; text-align: right;
     position: sticky; bottom: 0; z-index: 5; border-top: 2px solid #a9b7c4;
@@ -2475,7 +2477,7 @@
   ];
   // Navigable columns get a coordinate; label/action/text columns are skipped by arrows.
   PG_COLS.forEach((col) => { col._c = null; });
-  (() => { let n = 0; PG_COLS.forEach(col => { if (col.type === 'input' || col.type === 'calc' || col.type === 'net') col._c = n++; }); })();
+  (() => { let n = 0; PG_COLS.forEach(col => { if (col.type === 'input' || col.type === 'calc' || col.type === 'net' || col.type === 'text') col._c = n++; }); })();
   const PG_NAV_COL_COUNT = PG_COLS.filter(c => c._c !== null).length;
 
   const PG_SUMMABLE = ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction','loan_deduction','esi_amount','total_deductions','net_payable'];
@@ -2528,7 +2530,7 @@
         return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 4px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:2px 6px; font-size:10.5px;">Slip</button></td>`;
       }
       if (col.type === 'text') {
-        return `<td ${w}><textarea class="pg-cell pg-text" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" rows="2" ${canEdit ? '' : 'readonly'}>${e[col.key] || ''}</textarea></td>`;
+        return `<td ${w}><textarea class="pg-cell pg-text pg-nav" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" rows="2" readonly>${e[col.key] || ''}</textarea></td>`;
       }
       if (col.type === 'input') {
         return `<td ${w}><input class="pg-cell pg-nav" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" value="${Number(e[col.key] || 0)}" readonly inputmode="decimal" /></td>`;
@@ -2660,6 +2662,8 @@
 
     grid.querySelectorAll('.pg-nav').forEach(cell => {
       const isInput = cell.tagName === 'INPUT';
+      const isText = cell.tagName === 'TEXTAREA';
+      const isEditable = isInput || isText;
       const r = Number(cell.dataset.r);
       const col = Number(cell.dataset.c);
 
@@ -2668,13 +2672,15 @@
       });
 
       cell.addEventListener('keydown', (ev) => {
-        const editing = isInput && !cell.readOnly;
+        const editing = isEditable && !cell.readOnly;
 
         if (ev.key === 'Escape' && editing) { ev.preventDefault(); pgExitEdit(cell, false); return; }
 
         if (ev.key === 'Enter') {
+          // Shift+Enter adds a line break inside a remarks cell rather than committing
+          if (isText && editing && ev.shiftKey) return;
           ev.preventDefault();
-          if (!isInput) { focusCell(at(r + 1, col) || cell); return; }   // read-only: just move on
+          if (!isEditable) { focusCell(at(r + 1, col) || cell); return; }   // read-only: just move on
           if (!editing) { pgEnterEdit(cell); return; }
           pgExitEdit(cell, true);
           // A rejected value keeps the selection on the cell so it can be corrected;
@@ -2695,11 +2701,20 @@
         else if (ev.key === 'ArrowDown') target = at(r + 1, col);
         else if (ev.key === 'ArrowUp') target = at(r - 1, col);
         else if (isInput && /^[0-9.]$/.test(ev.key)) { pgEnterEdit(cell); cell.value = ''; return; }
+        else if (isText && ev.key.length === 1 && !ev.ctrlKey && !ev.metaKey) { pgEnterEdit(cell); cell.value = ''; return; }
         else return;
 
         ev.preventDefault();
         focusCell(target);
       });
+
+      if (isText) {
+        cell.addEventListener('blur', () => { if (!cell.readOnly) pgExitEdit(cell, true); });
+        cell.addEventListener('change', () => {
+          const entry = currentPayrollSheet.entries.find(e => e.id === cell.dataset.id);
+          if (entry) { entry.incentive_remarks = cell.value; markPayrollDirty(); }
+        });
+      }
 
       if (isInput) {
         cell.addEventListener('blur', () => { if (!cell.readOnly) pgExitEdit(cell, true); });
@@ -2741,13 +2756,6 @@
       }
     });
 
-    // Incentive remarks are free text and behave like an ordinary textarea.
-    grid.querySelectorAll('.pg-text').forEach(ta => {
-      ta.addEventListener('change', () => {
-        const entry = currentPayrollSheet.entries.find(e => e.id === ta.dataset.id);
-        if (entry) { entry.incentive_remarks = ta.value; markPayrollDirty(); }
-      });
-    });
   }
 
   function markPayrollDirty() {
