@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787773811';</script>
+<script>window.__BUILD_VERSION__ = '1787774107';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -300,6 +300,7 @@
   }
   table.paygrid input.pg-cell.pg-editing { background: #fff9e6; cursor: text; }
   table.paygrid .pg-nav.pg-selected { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 8; }
+  table.paygrid button.pg-nav.pg-selected { box-shadow: 0 0 0 2px #1a73e8; }
   table.paygrid td.pg-readonly-cell { outline: none; cursor: default; }
   table.paygrid textarea.pg-text {
     width: 100%; border: none; padding: 4px 7px; font-size: 11.5px; font-family: inherit;
@@ -2481,7 +2482,7 @@
   ];
   // Navigable columns get a coordinate; label/action/text columns are skipped by arrows.
   PG_COLS.forEach((col) => { col._c = null; });
-  (() => { let n = 0; PG_COLS.forEach(col => { if (col.type === 'input' || col.type === 'calc' || col.type === 'net' || col.type === 'text') col._c = n++; }); })();
+  (() => { let n = 0; PG_COLS.forEach(col => { if (col.type !== 'label') col._c = n++; }); })();
   const PG_NAV_COL_COUNT = PG_COLS.filter(c => c._c !== null).length;
 
   const PG_SUMMABLE = ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction','loan_deduction','esi_amount','total_deductions','net_payable'];
@@ -2531,7 +2532,7 @@
         </td>`;
       }
       if (col.type === 'action') {
-        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 4px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:2px 6px; font-size:10.5px;">Slip</button></td>`;
+        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 4px;"><button class="btn btn-sm btn-outline pay-slip-btn pg-nav" data-id="${e.id}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" style="padding:2px 6px; font-size:10.5px;">Slip</button></td>`;
       }
       if (col.type === 'text') {
         return `<td ${w}><textarea class="pg-cell pg-text pg-nav" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" rows="2" readonly>${e[col.key] || ''}</textarea></td>`;
@@ -2667,12 +2668,13 @@
     grid.querySelectorAll('.pg-nav').forEach(cell => {
       const isInput = cell.tagName === 'INPUT';
       const isText = cell.tagName === 'TEXTAREA';
+      const isAction = cell.tagName === 'BUTTON';
       const isEditable = isInput || isText;
       const r = Number(cell.dataset.r);
       const col = Number(cell.dataset.c);
 
       cell.addEventListener('mousedown', () => {
-        setTimeout(() => { focusCell(cell); if (isInput) pgEnterEdit(cell); }, 0);
+        setTimeout(() => { focusCell(cell); if (isEditable) pgEnterEdit(cell); }, 0);
       });
 
       cell.addEventListener('keydown', (ev) => {
@@ -2684,6 +2686,8 @@
           // Shift+Enter adds a line break inside a remarks cell rather than committing
           if (isText && editing && ev.shiftKey) return;
           ev.preventDefault();
+          // On the Slip button, Enter does what clicking it does: open the salary slip.
+          if (isAction) { cell.click(); return; }
           if (!isEditable) {
             // Read-only cells can't be edited, so Enter simply advances the same way it
             // does everywhere else: right, wrapping to the next row at the end.
