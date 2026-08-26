@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787770352';</script>
+<script>window.__BUILD_VERSION__ = '1787770426';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2677,6 +2677,9 @@
           if (!isInput) { focusCell(at(r + 1, col) || cell); return; }   // read-only: just move on
           if (!editing) { pgEnterEdit(cell); return; }
           pgExitEdit(cell, true);
+          // A rejected value keeps the selection on the cell so it can be corrected;
+          // the reset handler refocuses and reopens it for editing.
+          if (cell.dataset.invalid) return;
           // Move to the next navigable cell on the right, wrapping to the next row
           let next = at(r, col + 1);
           if (!next && r + 1 < rowCount) next = at(r + 1, 0);
@@ -2710,6 +2713,16 @@
             msg.className = 'msg error'; msg.textContent = text;
             cell.value = 0; entry[cell.dataset.field] = 0;
             recalcRowPreview(entry.id); markPayrollDirty();
+            // Flag the cell so the Enter handler knows not to advance past it.
+            cell.dataset.invalid = '1';
+            // Deferred so the popup doesn't fire from inside the change/blur event, then
+            // the cursor goes straight back into the offending cell ready for a retype.
+            setTimeout(() => {
+              alert(text);
+              delete cell.dataset.invalid;
+              focusCell(cell);
+              pgEnterEdit(cell);
+            }, 0);
           };
 
           if (val !== '' && isNaN(Number(val))) return reset('Only numbers are allowed in this column.');
