@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787770531';</script>
+<script>window.__BUILD_VERSION__ = '1787773811';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -257,63 +257,67 @@
   }
   .nav-toggle-btn:hover { background: var(--surface-sunken); color: var(--ink); }
 
-  /* Spreadsheet grid — frozen header/first column/footer, vertical scroll only. */
-  .paygrid-wrap { border: 1px solid var(--border); border-radius: 6px; overflow-y: auto; overflow-x: hidden; background: #fff; }
-  table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; width: 100%; }
+  /* Spreadsheet grid. Horizontal scrolling is necessary here: the full column set is
+     wider than any screen, and hiding the overflow made the deduction columns
+     unreachable. The employee column, header and totals row stay frozen instead. */
+  .paygrid-wrap { border: 1px solid var(--border); border-radius: 6px; overflow: auto; background: #fff; }
+  table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; width: max-content; }
   table.paygrid th {
     background: #dbe3ea; border-right: 1px solid #b8c4d0; border-bottom: 2px solid #a9b7c4;
-    padding: 5px 5px; font-size: 10.5px; color: #2b3d4f; font-weight: 700;
-    position: sticky; top: 26px; z-index: 5;
+    padding: 5px 6px; font-size: 10.5px; color: #2b3d4f; font-weight: 700;
+    position: sticky; top: 24px; z-index: 5;
     text-align: center; vertical-align: middle;
     white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.2;
-    height: 40px; user-select: none; position: sticky;
+    height: 38px; user-select: none; position: sticky;
   }
   table.paygrid tr.pg-group-row th {
-    top: 0; height: 26px; z-index: 6; background: #c6d3de; font-size: 10px;
-    letter-spacing: 0.8px; border-bottom: 1px solid #a9b7c4;
+    top: 0; height: 24px; z-index: 6; background: #c6d3de; font-size: 10px;
+    letter-spacing: 0.9px; border-bottom: 1px solid #a9b7c4;
   }
   table.paygrid th.pg-group-empty { background: #dbe3ea; }
-  table.paygrid th.pg-label-h { left: 0; z-index: 8; background: #cfd9e2; text-align: left; }
-  table.paygrid tr.pg-group-row th:first-child { left: 0; z-index: 9; }
+  /* The frozen first column needs a solid background and a higher stacking order than the
+     body cells, or rows slide visibly underneath it while scrolling sideways. */
+  table.paygrid th.pg-label-h { left: 0; z-index: 9; background: #cfd9e2; text-align: left; }
+  table.paygrid tr.pg-group-row th:first-child { left: 0; z-index: 10; background: #c6d3de; }
   table.paygrid td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0; overflow: hidden; }
   table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
   table.paygrid tbody tr:nth-child(even) td { background: #f6f9fb; }
   table.paygrid tbody tr:hover td { background: #eaf2fb; }
   table.paygrid td.pg-label {
-    padding: 4px 8px; position: sticky; left: 0; z-index: 4; box-shadow: 1px 0 0 var(--border);
+    padding: 4px 8px; position: sticky; left: 0; z-index: 7;
+    border-right: 2px solid #b8c4d0;
   }
   table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
-  table.paygrid tbody tr:nth-child(even) td.pg-label { background: #f1f5f8; }
+  table.paygrid tbody tr:nth-child(even) td.pg-label { background: #eef3f7; }
+  table.paygrid tbody tr:hover td.pg-label { background: #e4eefa; }
   .pg-emp-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pg-emp-inc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  table.paygrid td.pg-calc { padding: 5px 7px; text-align: right; color: #5a6b7c; background-image: linear-gradient(rgba(0,0,0,0.014), rgba(0,0,0,0.014)); }
-  table.paygrid td.pg-net { padding: 5px 7px; text-align: right; font-weight: 700; }
+  table.paygrid td.pg-calc { padding: 5px 7px; text-align: right; color: #5a6b7c; }
+  table.paygrid td.pg-net { padding: 5px 7px; text-align: right; font-weight: 700; color: #14532d; }
   table.paygrid input.pg-cell {
     width: 100%; border: none; padding: 5px 7px; font-size: 12px; font-family: inherit;
     text-align: right; background: transparent; outline: none; box-sizing: border-box; cursor: cell;
   }
-  table.paygrid input.pg-cell:focus { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 3; }
   table.paygrid input.pg-cell.pg-editing { background: #fff9e6; cursor: text; }
-  table.paygrid .pg-nav.pg-selected { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 3; }
+  table.paygrid .pg-nav.pg-selected { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 8; }
   table.paygrid td.pg-readonly-cell { outline: none; cursor: default; }
   table.paygrid textarea.pg-text {
     width: 100%; border: none; padding: 4px 7px; font-size: 11.5px; font-family: inherit;
     background: transparent; outline: none; box-sizing: border-box; resize: none;
-    white-space: pre-wrap; word-break: break-word; line-height: 1.3;
+    white-space: pre-wrap; word-break: break-word; line-height: 1.3; cursor: cell;
   }
-  table.paygrid textarea.pg-text { cursor: cell; }
-  table.paygrid textarea.pg-text:read-only { cursor: cell; }
   table.paygrid textarea.pg-text.pg-editing { background: #fff9e6; cursor: text; }
   table.paygrid tfoot tr td {
     background: #dbe3ea !important; font-weight: 700; padding: 6px 7px; text-align: right;
-    position: sticky; bottom: 0; z-index: 5; border-top: 2px solid #a9b7c4;
+    position: sticky; bottom: 0; z-index: 7; border-top: 2px solid #a9b7c4;
   }
-  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 6; text-align: left; background: #cfd9e2 !important; }
-  .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 10; }
-  table.paygrid th { position: sticky; }
-  table.paygrid thead th { position: sticky; }
-  .pg-resizer:hover { background: #1a73e8; opacity: 0.35; }
+  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 8; text-align: left; background: #cfd9e2 !important; }
+  .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 11; }
+  .pg-resizer:hover { background: #1a73e8; opacity: 0.4; }
   body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
+  /* Compact toolbar so the grid gets as much vertical space as possible */
+  .pay-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .pay-hint { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
 
   /* Modal — used for create/edit forms so the list view stays clean and separate */
   .modal-overlay {
@@ -2456,24 +2460,24 @@
   // Column definitions drive header, body and footer from one place. Grouped under
   // EARNINGS / DEDUCTIONS headers to match the layout of the existing Google Sheet.
   const PG_COLS = [
-    { key: 'employee',          label: 'Employee',       w: 200, type: 'label', group: '' },
-    { key: 'basic_wages',       label: 'Basic Wages',    w: 95,  type: 'calc',  group: '' },
-    { key: 'days_in_month',     label: 'Days in Month',  w: 62,  type: 'calc',  group: '' },
-    { key: 'working_days',      label: 'Present Days',   w: 68,  type: 'input', group: '' },
-    { key: 'absent_days',       label: 'Absent Days',    w: 62,  type: 'calc',  group: '' },
-    { key: 'ot_hours',          label: 'OT Hours',       w: 62,  type: 'input', group: '' },
-    { key: 'ot_days',           label: 'OT Days',        w: 58,  type: 'calc',  group: '' },
-    { key: 'salary_amount',     label: 'Salary',         w: 88,  type: 'calc',  group: 'EARNINGS' },
-    { key: 'ot_charges',        label: 'OT Charges',     w: 82,  type: 'calc',  group: 'EARNINGS' },
-    { key: 'incentives',        label: 'Incentives',     w: 78,  type: 'input', group: 'EARNINGS' },
-    { key: 'total_earnings',    label: 'Total Earnings', w: 92,  type: 'calc',  group: 'EARNINGS' },
-    { key: 'incentive_remarks', label: 'Incentive Remarks', w: 150, type: 'text', group: '' },
-    { key: 'advance_deduction', label: 'Advance',        w: 78,  type: 'input', group: 'DEDUCTIONS' },
-    { key: 'loan_deduction',    label: 'Loan',           w: 78,  type: 'input', group: 'DEDUCTIONS' },
-    { key: 'esi_amount',        label: 'ESI',            w: 66,  type: 'calc',  group: 'DEDUCTIONS' },
-    { key: 'total_deductions',  label: 'Total Deductions', w: 92, type: 'calc', group: 'DEDUCTIONS' },
-    { key: 'net_payable',       label: 'Net Payable',    w: 98,  type: 'net',   group: '' },
-    { key: 'slip',              label: 'Slip',           w: 56,  type: 'action', group: '' },
+    { key: 'employee',          label: 'Employee',       w: 175, type: 'label', group: '' },
+    { key: 'basic_wages',       label: 'Basic Wages',    w: 80,  type: 'calc',  group: '' },
+    { key: 'days_in_month',     label: 'Days in Month',  w: 52,  type: 'calc',  group: '' },
+    { key: 'working_days',      label: 'Present Days',   w: 56,  type: 'input', group: '' },
+    { key: 'absent_days',       label: 'Absent Days',    w: 52,  type: 'calc',  group: '' },
+    { key: 'ot_hours',          label: 'OT Hours',       w: 52,  type: 'input', group: '' },
+    { key: 'ot_days',           label: 'OT Days',        w: 50,  type: 'calc',  group: '' },
+    { key: 'salary_amount',     label: 'Salary',         w: 78,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'ot_charges',        label: 'OT Charges',     w: 74,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'incentives',        label: 'Incentives',     w: 66,  type: 'input', group: 'EARNINGS' },
+    { key: 'total_earnings',    label: 'Total Earnings', w: 82,  type: 'calc',  group: 'EARNINGS' },
+    { key: 'incentive_remarks', label: 'Incentive Remarks', w: 120, type: 'text', group: '' },
+    { key: 'advance_deduction', label: 'Advance',        w: 68,  type: 'input', group: 'DEDUCTIONS' },
+    { key: 'loan_deduction',    label: 'Loan',           w: 68,  type: 'input', group: 'DEDUCTIONS' },
+    { key: 'esi_amount',        label: 'ESI',            w: 58,  type: 'calc',  group: 'DEDUCTIONS' },
+    { key: 'total_deductions',  label: 'Total Deductions', w: 82, type: 'calc', group: 'DEDUCTIONS' },
+    { key: 'net_payable',       label: 'Net Payable',    w: 88,  type: 'net',   group: '' },
+    { key: 'slip',              label: 'Slip',           w: 50,  type: 'action', group: '' },
   ];
   // Navigable columns get a coordinate; label/action/text columns are skipped by arrows.
   PG_COLS.forEach((col) => { col._c = null; });
@@ -2542,8 +2546,8 @@
     };
 
     document.getElementById('salaryCalcContent').innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pay-toolbar">
+        <div style="display:flex; align-items:center; gap:10px;">
           <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
           <div>
             <span style="font-size:15px; font-weight:600;">${monthLabel(period.period_month, period.period_year)}</span>
@@ -2575,7 +2579,7 @@
           }).join('')}</tr></tfoot>
         </table>
       </div>
-      ${!locked ? `<p style="font-size:11.5px; color:var(--muted); margin:6px 0 0;">Arrow keys move between cells. <strong>Enter</strong> starts editing; Enter again saves and moves right. <strong>Esc</strong> cancels. Grey columns are calculated. Drag a column edge to resize — widths carry over to every future month.</p>` : ''}
+      ${!locked ? `<p class="pay-hint">Arrow keys move between cells. <strong>Enter</strong> starts editing; Enter again saves and moves right. <strong>Esc</strong> cancels. Grey columns are calculated. Drag a column edge to resize — widths carry over to every future month.</p>` : ''}
     `;
 
     sizePayrollGrid();
@@ -2599,7 +2603,7 @@
     const wrap = document.getElementById('paygridWrap');
     if (!wrap) return;
     const top = wrap.getBoundingClientRect().top;
-    wrap.style.height = Math.max(300, window.innerHeight - top - 46) + 'px';
+    wrap.style.height = Math.max(300, window.innerHeight - top - 34) + 'px';
   }
   window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
 
@@ -2680,7 +2684,14 @@
           // Shift+Enter adds a line break inside a remarks cell rather than committing
           if (isText && editing && ev.shiftKey) return;
           ev.preventDefault();
-          if (!isEditable) { focusCell(at(r + 1, col) || cell); return; }   // read-only: just move on
+          if (!isEditable) {
+            // Read-only cells can't be edited, so Enter simply advances the same way it
+            // does everywhere else: right, wrapping to the next row at the end.
+            let n = at(r, col + 1);
+            if (!n && r + 1 < rowCount) n = at(r + 1, 0);
+            focusCell(n || cell);
+            return;
+          }
           if (!editing) { pgEnterEdit(cell); return; }
           pgExitEdit(cell, true);
           // A rejected value keeps the selection on the cell so it can be corrected;
