@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787594015';</script>
+<script>window.__BUILD_VERSION__ = '1787765909';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -229,6 +229,29 @@
     overflow: hidden;
   }
   .panel.panel-no-clip { overflow: visible; }
+
+  /* Spreadsheet-style payroll grid — mirrors the layout of the existing Google Sheet */
+  table.paygrid { border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%; }
+  table.paygrid th {
+    background: var(--surface-sunken); border: 1px solid var(--border);
+    padding: 6px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--muted); font-weight: 600; white-space: nowrap;
+    position: sticky; top: 0; z-index: 5;
+  }
+  table.paygrid td { border: 1px solid var(--border); padding: 0; white-space: nowrap; }
+  table.paygrid td.pg-label { padding: 5px 8px; background: var(--surface-sunken); font-weight: 500; position: sticky; left: 0; z-index: 4; }
+  table.paygrid th.pg-label-h { position: sticky; left: 0; z-index: 6; }
+  table.paygrid td.pg-calc { padding: 5px 8px; text-align: right; background: #fafbfc; color: var(--ink); }
+  table.paygrid td.pg-net { padding: 5px 8px; text-align: right; font-weight: 700; background: #f3f8f4; }
+  table.paygrid input.pg-cell {
+    width: 100%; border: none; padding: 5px 8px; font-size: 12px; font-family: inherit;
+    text-align: right; background: transparent; outline: none;
+  }
+  table.paygrid input.pg-cell:focus {
+    background: #fff8e1; box-shadow: inset 0 0 0 2px var(--steel);
+  }
+  table.paygrid input.pg-cell:read-only { background: #fafbfc; color: var(--muted); cursor: default; }
+  table.paygrid tr.pg-total td { background: var(--surface-sunken); font-weight: 700; padding: 7px 8px; text-align: right; }
 
   /* Modal — used for create/edit forms so the list view stays clean and separate */
   .modal-overlay {
@@ -703,6 +726,10 @@
             <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
             <span class="nav-label">HR Dropdowns</span>
           </button>
+          <button class="nav-item level-3" data-view="salary-calculator">
+            <svg class="ic-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg>
+            <span class="nav-label">Salary Calculator</span>
+          </button>
           <button class="nav-item level-3" data-view="loans-advances">
             <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             <span class="nav-label">Loans &amp; Advances</span>
@@ -800,6 +827,12 @@
     <div id="view-documentation" class="view-content" style="display:none">
       <div class="content">
         <div id="documentationContent"></div>
+      </div>
+    </div>
+
+    <div id="view-salary-calculator" class="view-content" style="display:none">
+      <div class="content">
+        <div id="salaryCalcContent"></div>
       </div>
     </div>
 
@@ -964,6 +997,15 @@
     return res.json();
   }
 
+  async function apiPayroll(payload) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/payroll-actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ requester_id: currentUser.id, ...payload })
+    });
+    return res.json();
+  }
+
   async function apiHRMS(payload) {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/hrms-actions`, {
       method: 'POST',
@@ -1020,6 +1062,7 @@
     'employee-master': 'employee_master.view',
     'hr-dropdowns': 'employee_master.view',
     'loans-advances': 'loans_advances.view',
+    'salary-calculator': 'payroll.view',
     'vendor-master': 'vendor_master.view',
   };
 
@@ -1172,6 +1215,7 @@
     'employee-master': ['Employee Master', 'Add and manage employee records'],
     'hr-dropdowns': ['HR Dropdowns', 'Supporting master data used across HR'],
     'loans-advances': ['Loans & Advances', 'Employee loan and advance ledger'],
+    'salary-calculator': ['Salary Calculator', 'Monthly salary sheets and salary slips'],
     'vendor-master': ['Vendor', 'Register and manage vendors, GST registrations, and bank accounts'],
     'admin-panel': ['Admin Panel', 'Role-based permissions and administration'],
     'documentation': ['Documentation', 'Every design decision made across this ERP, and why'],
@@ -1207,6 +1251,9 @@
       };
       document.head.appendChild(script);
     }
+    if (viewKey === 'salary-calculator') {
+      loadPayrollPeriods();
+    }
     if (viewKey === 'loans-advances') {
       loadLoansAdvances(); // always refresh — balances change as repayments are recorded
     }
@@ -1224,6 +1271,7 @@
       'employee-master': ['tree-control-panel', 'tree-hr'],
       'hr-dropdowns': ['tree-control-panel', 'tree-hr'],
       'loans-advances': ['tree-control-panel', 'tree-hr'],
+      'salary-calculator': ['tree-control-panel', 'tree-hr'],
       'vendor-master': ['tree-control-panel'],
       'admin-panel': ['tree-control-panel'],
       'documentation': ['tree-control-panel'],
@@ -2196,6 +2244,448 @@
         alert(`${res.auto_filled.name} was automatically set to ${res.auto_filled.date} (the day after Diwali).`);
       }
       loadHolidays();
+    });
+  }
+
+
+  // ============ SALARY CALCULATOR ============
+  // Deliberately mirrors the company's existing Google Sheet: same columns, same order,
+  // same formulas. All arithmetic is done server-side; the numbers shown here are what
+  // the server calculated and stored, never what the browser worked out on its own.
+  let payrollPeriods = null;
+  let currentPayrollSheet = null;   // { period, entries }
+  let payrollDirty = false;
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // The typeable columns, in Enter/Tab order. Everything else is calculated.
+  const PG_EDITABLE = ['basic_wages','days_in_month','working_days','absent_days','ot_hours','incentives','loan_deduction','advance_deduction','other_deduction'];
+
+  function monthLabel(m, y) {
+    return `${MONTH_NAMES[m - 1]} ${y}`;
+  }
+
+  async function loadPayrollPeriods() {
+    showSpinner('salaryCalcContent');
+    const res = await apiPayroll({ action: 'get_payroll_periods' });
+    if (!res.success) {
+      document.getElementById('salaryCalcContent').innerHTML = `<div class="msg error" style="display:block">${res.error}</div>`;
+      return;
+    }
+    payrollPeriods = res.periods;
+    currentPayrollSheet = null;
+    renderPayrollPeriodList();
+  }
+
+  function renderPayrollPeriodList() {
+    const canCreate = isOwnerUser || myPermissionKeys.includes('payroll.create');
+    const rows = payrollPeriods || [];
+
+    document.getElementById('salaryCalcContent').innerHTML = `<div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Salary Sheets<span class="count-chip">${rows.length}</span></span>
+        ${canCreate ? `<button class="btn btn-sm" id="payCreateBtn">+ Create Salary Sheet</button>` : ''}
+      </div>
+      <div class="panel-body">
+        <div class="table-scroll">
+          <table class="ledger"><thead><tr>
+            <th>Month</th><th>Status</th><th>Created</th><th>Finalised</th><th>Action</th>
+          </tr></thead><tbody>
+            ${rows.length === 0 ? `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:18px;">No salary sheets yet. Create one to get started.</td></tr>` : rows.map(p => `
+              <tr class="${p.status === 'finalised' ? 'row-approved' : 'row-open'}">
+                <td><strong>${monthLabel(p.period_month, p.period_year)}</strong></td>
+                <td><span class="status-tag ${p.status === 'finalised' ? 'approved' : 'calculated'}">${p.status}</span></td>
+                <td>${fmtShortDate(p.created_at)}</td>
+                <td>${p.finalised_at ? fmtShortDate(p.finalised_at) : '—'}</td>
+                <td class="action-cell">
+                  <div style="display:flex; gap:4px;">
+                    <button class="btn btn-sm btn-outline pay-open-btn" data-id="${p.id}">${p.status === 'finalised' ? 'View' : 'Open'}</button>
+                    ${p.status === 'draft' && (isOwnerUser || myPermissionKeys.includes('payroll.finalise')) ? `<button class="btn btn-sm btn-outline pay-del-btn" data-id="${p.id}" style="color:var(--danger); border-color:#efd2cf;">Delete</button>` : ''}
+                  </div>
+                </td>
+              </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById('payCreateBtn')?.addEventListener('click', openCreatePayrollModal);
+    document.querySelectorAll('.pay-open-btn').forEach(b => b.addEventListener('click', () => openPayrollSheet(b.dataset.id)));
+    document.querySelectorAll('.pay-del-btn').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete this draft salary sheet? Nothing has been posted to any ledger yet, so this is safe.')) return;
+      const res = await apiPayroll({ action: 'delete_payroll_period', period_id: b.dataset.id });
+      if (!res.success) { alert(res.error); return; }
+      loadPayrollPeriods();
+    }));
+  }
+
+  function openCreatePayrollModal() {
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    const thisMonth = now.getMonth() + 1;   // 1-based
+    // Default to LAST month, since salary for a month is normally prepared after it ends.
+    const defMonth = thisMonth === 1 ? 12 : thisMonth - 1;
+    const defYear = thisMonth === 1 ? thisYear - 1 : thisYear;
+    // Offer the previous year too — in January you're usually creating December's sheet.
+    const years = [thisYear, thisYear - 1];
+
+    openModal('Create Salary Sheet', `
+      <p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;">Choose the month this salary sheet is for. Every active employee will be added automatically, with their loan and advance amounts pre-filled from the ledgers.</p>
+      <div class="form-grid">
+        <div class="field"><label>Month *</label><select id="pay_month">
+          ${MONTH_NAMES.map((n, i) => `<option value="${i + 1}" ${i + 1 === defMonth ? 'selected' : ''}>${n}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>Year *</label><select id="pay_year">
+          ${years.map(y => `<option value="${y}" ${y === defYear ? 'selected' : ''}>${y}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="msg" id="payCreateMsg"></div>
+    `, `
+      <button class="btn btn-outline" id="payCreateCancel">Cancel</button>
+      <button class="btn" id="payCreateSave">Create Sheet</button>
+    `);
+
+    document.getElementById('payCreateCancel').addEventListener('click', closeModal);
+    document.getElementById('payCreateSave').addEventListener('click', async () => {
+      const msg = document.getElementById('payCreateMsg');
+      msg.className = 'msg';
+      const btn = document.getElementById('payCreateSave');
+      setButtonLoading(btn, true, 'Creating');
+      const res = await apiPayroll({
+        action: 'create_payroll_period',
+        period_month: document.getElementById('pay_month').value,
+        period_year: document.getElementById('pay_year').value,
+      });
+      setButtonLoading(btn, false);
+      if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+      closeModal();
+      const created = res.period;
+      payrollPeriods = [created, ...(payrollPeriods || [])];
+      openPayrollSheet(created.id);
+    });
+  }
+
+  async function openPayrollSheet(periodId) {
+    showSpinner('salaryCalcContent');
+    const res = await apiPayroll({ action: 'get_payroll_sheet', period_id: periodId });
+    if (!res.success) {
+      document.getElementById('salaryCalcContent').innerHTML = `<div class="msg error" style="display:block">${res.error}</div>`;
+      return;
+    }
+    currentPayrollSheet = res;
+    payrollDirty = false;
+    renderPayrollGrid();
+  }
+
+  function renderPayrollGrid() {
+    const { period, entries } = currentPayrollSheet;
+    const locked = period.status === 'finalised';
+    const canEdit = !locked && (isOwnerUser || myPermissionKeys.includes('payroll.edit'));
+    const canFinalise = !locked && (isOwnerUser || myPermissionKeys.includes('payroll.finalise'));
+
+    const sum = (f) => entries.reduce((s, e) => s + Number(e[f] || 0), 0);
+
+    const cell = (e, field, readOnly) => `<td><input class="pg-cell" data-id="${e.id}" data-field="${field}" value="${Number(e[field] || 0)}" ${readOnly || !canEdit ? 'readonly' : ''} inputmode="decimal" /></td>`;
+
+    document.getElementById('salaryCalcContent').innerHTML = `<div class="panel panel-no-clip">
+      <div class="panel-header" style="flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:25; background:#fff;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
+          <div>
+            <span class="panel-title">${monthLabel(period.period_month, period.period_year)}</span>
+            <span class="status-tag ${locked ? 'approved' : 'calculated'}" style="margin-left:6px;">${period.status}</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
+          ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post to Ledgers</button>` : ''}
+        </div>
+      </div>
+      <div class="panel-body" style="padding-top:12px;">
+        ${locked ? `<div class="msg success" style="display:block; margin-bottom:12px;">This sheet is finalised. Loan and advance deductions have been posted to the ledgers and it can no longer be edited.</div>`
+          : `<p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Type in the white cells. Press <strong>Enter</strong> to move to the next cell on the right; at the end of a row it wraps to the next employee. Grey columns are calculated automatically. Nothing is deducted from any ledger until you press Finalise.</p>`}
+        <div class="msg" id="payGridMsg"></div>
+        <div class="table-scroll" style="max-height:62vh; overflow:auto;">
+          <table class="paygrid">
+            <thead><tr>
+              <th class="pg-label-h">Employee</th>
+              <th>Basic Wages</th><th>Days in Month</th><th>Working Days</th><th>Absent</th>
+              <th>OT Hours</th><th>OT Days</th>
+              <th>Salary</th><th>OT Charges</th><th>Incentives</th><th>Total Earnings</th>
+              <th>Advance</th><th>Loan</th><th>Other Ded.</th><th>ESI</th><th>Total Ded.</th>
+              <th>Net Payable</th><th>Slip</th>
+            </tr></thead>
+            <tbody>
+              ${entries.map((e, rowIdx) => `<tr data-row="${rowIdx}">
+                <td class="pg-label">${e.employees?.name || '—'}<div style="font-size:10px; color:var(--muted);">${e.employees?.employee_code || ''}</div></td>
+                ${cell(e, 'basic_wages')}
+                ${cell(e, 'days_in_month')}
+                ${cell(e, 'working_days')}
+                ${cell(e, 'absent_days')}
+                ${cell(e, 'ot_hours')}
+                <td class="pg-calc" data-calc="ot_days" data-id="${e.id}">${Number(e.ot_days || 0).toFixed(2)}</td>
+                <td class="pg-calc" data-calc="salary_amount" data-id="${e.id}">${Number(e.salary_amount || 0).toFixed(2)}</td>
+                <td class="pg-calc" data-calc="ot_charges" data-id="${e.id}">${Number(e.ot_charges || 0).toFixed(2)}</td>
+                ${cell(e, 'incentives')}
+                <td class="pg-calc" data-calc="total_earnings" data-id="${e.id}">${Number(e.total_earnings || 0).toFixed(2)}</td>
+                ${cell(e, 'advance_deduction')}
+                ${cell(e, 'loan_deduction')}
+                ${cell(e, 'other_deduction')}
+                <td class="pg-calc" data-calc="esi_amount" data-id="${e.id}">${Number(e.esi_amount || 0).toFixed(2)}</td>
+                <td class="pg-calc" data-calc="total_deductions" data-id="${e.id}">${Number(e.total_deductions || 0).toFixed(2)}</td>
+                <td class="pg-net" data-calc="net_payable" data-id="${e.id}">${Number(e.net_payable || 0).toFixed(2)}</td>
+                <td style="text-align:center; padding:4px 6px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:3px 8px; font-size:11px;">Slip</button></td>
+              </tr>`).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="pg-total">
+                <td class="pg-label" style="text-align:left;">TOTAL — ${entries.length} employees</td>
+                <td colspan="6"></td>
+                <td id="tot_salary">${sum('salary_amount').toFixed(2)}</td>
+                <td id="tot_ot">${sum('ot_charges').toFixed(2)}</td>
+                <td id="tot_inc">${sum('incentives').toFixed(2)}</td>
+                <td id="tot_earn">${sum('total_earnings').toFixed(2)}</td>
+                <td id="tot_adv">${sum('advance_deduction').toFixed(2)}</td>
+                <td id="tot_loan">${sum('loan_deduction').toFixed(2)}</td>
+                <td id="tot_oth">${sum('other_deduction').toFixed(2)}</td>
+                <td id="tot_esi">${sum('esi_amount').toFixed(2)}</td>
+                <td id="tot_ded">${sum('total_deductions').toFixed(2)}</td>
+                <td id="tot_net">${sum('net_payable').toFixed(2)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById('payBackBtn').addEventListener('click', () => {
+      if (payrollDirty && !confirm('You have unsaved changes. Leave without saving?')) return;
+      loadPayrollPeriods();
+    });
+
+    if (canEdit) wirePayrollGridKeys();
+    document.getElementById('paySaveBtn')?.addEventListener('click', savePayrollGrid);
+    document.getElementById('payFinaliseBtn')?.addEventListener('click', finalisePayrollSheet);
+    document.querySelectorAll('.pay-slip-btn').forEach(b => b.addEventListener('click', () => openSalarySlip(b.dataset.id)));
+  }
+
+  // Spreadsheet-style keyboard navigation, matching how the Google Sheet is used:
+  // Enter moves right; at the last editable cell of a row it wraps to the first cell of
+  // the next row. Arrow keys and Tab also work, because muscle memory varies.
+  function wirePayrollGridKeys() {
+    const cells = Array.from(document.querySelectorAll('.pg-cell:not([readonly])'));
+    const perRow = PG_EDITABLE.length;
+
+    cells.forEach((input, idx) => {
+      input.addEventListener('focus', () => input.select());
+
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const next = cells[idx + 1];        // wraps naturally into the next row
+          if (next) { next.focus(); } else { input.blur(); }
+        } else if (ev.key === 'ArrowDown') {
+          ev.preventDefault();
+          cells[idx + perRow]?.focus();
+        } else if (ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          cells[idx - perRow]?.focus();
+        }
+      });
+
+      input.addEventListener('change', () => {
+        const val = input.value.trim();
+        if (val !== '' && isNaN(Number(val))) {
+          document.getElementById('payGridMsg').className = 'msg error';
+          document.getElementById('payGridMsg').textContent = 'Only numbers are allowed in this column.';
+          input.value = 0;
+          return;
+        }
+        if (Number(val) < 0) {
+          document.getElementById('payGridMsg').className = 'msg error';
+          document.getElementById('payGridMsg').textContent = 'Negative values are not allowed.';
+          input.value = 0;
+          return;
+        }
+        document.getElementById('payGridMsg').className = 'msg';
+        const entry = currentPayrollSheet.entries.find(e => e.id === input.dataset.id);
+        if (entry) entry[input.dataset.field] = Number(val || 0);
+        recalcRowPreview(input.dataset.id);
+        markPayrollDirty();
+      });
+    });
+  }
+
+  function markPayrollDirty() {
+    payrollDirty = true;
+    const btn = document.getElementById('paySaveBtn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+  }
+
+  // A local preview only, so the row reacts instantly while typing. The authoritative
+  // figures always come back from the server on save — this is never what gets stored.
+  function recalcRowPreview(entryId) {
+    const e = currentPayrollSheet.entries.find(x => x.id === entryId);
+    if (!e) return;
+    const period = currentPayrollSheet.period;
+    const basic = Number(e.basic_wages) || 0;
+    const dim = Number(e.days_in_month) || 30;
+    const perDay = dim > 0 ? basic / dim : 0;
+    const otDays = (Number(e.ot_hours) || 0) / 8;
+    const salary = Math.round(perDay * (Number(e.working_days) || 0) * 100) / 100;
+    const otCharges = Math.round(perDay * otDays * 100) / 100;
+    const earnings = Math.round((salary + otCharges + (Number(e.incentives) || 0)) * 100) / 100;
+
+    const ceiling = Number(period.esi_wage_ceiling ?? 21000);
+    const rate = Number(period.esi_employee_rate ?? 0.75);
+    const esiApplicable = !!e.employees?.esi_applicable;
+    const esi = (esiApplicable && basic <= ceiling) ? Math.round(salary * (rate / 100) * 100) / 100 : 0;
+
+    const ded = Math.round(((Number(e.loan_deduction) || 0) + (Number(e.advance_deduction) || 0) + (Number(e.other_deduction) || 0) + esi) * 100) / 100;
+    const net = Math.round((earnings - ded) * 100) / 100;
+
+    Object.assign(e, { ot_days: otDays, salary_amount: salary, ot_charges: otCharges, total_earnings: earnings, esi_amount: esi, total_deductions: ded, net_payable: net });
+
+    const setCell = (field, value) => {
+      const td = document.querySelector(`[data-calc="${field}"][data-id="${entryId}"]`);
+      if (td) td.textContent = Number(value).toFixed(2);
+    };
+    setCell('ot_days', otDays);
+    setCell('salary_amount', salary);
+    setCell('ot_charges', otCharges);
+    setCell('total_earnings', earnings);
+    setCell('esi_amount', esi);
+    setCell('total_deductions', ded);
+    setCell('net_payable', net);
+    refreshPayrollTotals();
+  }
+
+  function refreshPayrollTotals() {
+    const entries = currentPayrollSheet.entries;
+    const sum = (f) => entries.reduce((s, e) => s + Number(e[f] || 0), 0).toFixed(2);
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('tot_salary', sum('salary_amount'));
+    set('tot_ot', sum('ot_charges'));
+    set('tot_inc', sum('incentives'));
+    set('tot_earn', sum('total_earnings'));
+    set('tot_adv', sum('advance_deduction'));
+    set('tot_loan', sum('loan_deduction'));
+    set('tot_oth', sum('other_deduction'));
+    set('tot_esi', sum('esi_amount'));
+    set('tot_ded', sum('total_deductions'));
+    set('tot_net', sum('net_payable'));
+  }
+
+  async function savePayrollGrid() {
+    const btn = document.getElementById('paySaveBtn');
+    const msg = document.getElementById('payGridMsg');
+    msg.className = 'msg';
+    setButtonLoading(btn, true, 'Saving');
+    const payload = currentPayrollSheet.entries.map(e => ({
+      id: e.id, employee_id: e.employee_id,
+      basic_wages: e.basic_wages, days_in_month: e.days_in_month,
+      working_days: e.working_days, absent_days: e.absent_days,
+      ot_hours: e.ot_hours, incentives: e.incentives,
+      loan_deduction: e.loan_deduction, advance_deduction: e.advance_deduction,
+      other_deduction: e.other_deduction, remarks: e.remarks || null,
+    }));
+    const res = await apiPayroll({ action: 'save_payroll_entries', period_id: currentPayrollSheet.period.id, entries: payload });
+    setButtonLoading(btn, false);
+    if (!res.success) { msg.className = 'msg error'; msg.textContent = res.error; return; }
+    payrollDirty = false;
+    btn.disabled = true;
+    btn.textContent = 'Saved';
+    msg.className = 'msg success';
+    msg.textContent = `Saved ${res.saved} rows.`;
+    // Reload so the displayed figures are the server's, not the local preview
+    openPayrollSheet(currentPayrollSheet.period.id);
+  }
+
+  async function finalisePayrollSheet() {
+    if (payrollDirty) { alert('Please save your changes before finalising.'); return; }
+    const p = currentPayrollSheet.period;
+    const totalNet = currentPayrollSheet.entries.reduce((s, e) => s + Number(e.net_payable || 0), 0);
+    const totalLoan = currentPayrollSheet.entries.reduce((s, e) => s + Number(e.loan_deduction || 0), 0);
+    const totalAdv = currentPayrollSheet.entries.reduce((s, e) => s + Number(e.advance_deduction || 0), 0);
+
+    if (!confirm(
+      `Finalise the salary sheet for ${monthLabel(p.period_month, p.period_year)}?\n\n` +
+      `Net payable: ${fmtMoney(totalNet)}\n` +
+      `Loan deductions to post: ${fmtMoney(totalLoan)}\n` +
+      `Advance recoveries to post: ${fmtMoney(totalAdv)}\n\n` +
+      `These amounts will be deducted from the loan and advance ledgers, and the sheet will become read-only. This cannot be undone.`
+    )) return;
+
+    const btn = document.getElementById('payFinaliseBtn');
+    setButtonLoading(btn, true, 'Finalising');
+    const res = await apiPayroll({ action: 'finalise_payroll', period_id: p.id });
+    setButtonLoading(btn, false);
+    if (!res.success) { alert(res.error); return; }
+    alert(res.message);
+    openPayrollSheet(p.id);
+  }
+
+  async function openSalarySlip(entryId) {
+    const res = await apiPayroll({ action: 'get_salary_slip', entry_id: entryId });
+    if (!res.success) { alert(res.error); return; }
+    const s = res.slip;
+    const emp = s.employees || {};
+    const per = s.payroll_periods || {};
+    const row = (label, value) => `<tr><td style="padding:4px 8px; color:var(--muted);">${label}</td><td style="padding:4px 8px; text-align:right; font-weight:600;">${value}</td></tr>`;
+
+    const slipHtml = `
+      <div id="slipPrintArea" style="font-family:Inter,sans-serif; color:#111;">
+        <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:14px;">
+          <div style="font-size:16px; font-weight:700;">RAGHBIR ERECTORS &amp; FABRICATORS</div>
+          <div style="font-size:12px; margin-top:2px;">Salary Slip — ${monthLabel(per.period_month, per.period_year)}</div>
+        </div>
+        <table style="width:100%; font-size:12px; margin-bottom:14px;">
+          <tr><td style="padding:3px 0;"><strong>Name:</strong> ${emp.name || ''}</td><td style="padding:3px 0;"><strong>Code:</strong> ${emp.employee_code || ''}</td></tr>
+          <tr><td style="padding:3px 0;"><strong>Department:</strong> ${emp.departments?.name || '—'}</td><td style="padding:3px 0;"><strong>Designation:</strong> ${emp.designations?.name || '—'}</td></tr>
+          <tr><td style="padding:3px 0;"><strong>Working Days:</strong> ${Number(s.working_days)} / ${Number(s.days_in_month)}</td><td style="padding:3px 0;"><strong>OT Hours:</strong> ${Number(s.ot_hours)}</td></tr>
+        </table>
+        <div style="display:flex; gap:16px;">
+          <div style="flex:1;">
+            <div style="font-weight:700; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:4px;">EARNINGS</div>
+            <table style="width:100%; font-size:12px;">
+              ${row('Salary', fmtMoney(s.salary_amount))}
+              ${row('OT Charges (' + Number(s.ot_days).toFixed(2) + ' days)', fmtMoney(s.ot_charges))}
+              ${row('Incentives', fmtMoney(s.incentives))}
+              <tr style="border-top:1px solid #ccc;"><td style="padding:5px 8px; font-weight:700;">Total Earnings</td><td style="padding:5px 8px; text-align:right; font-weight:700;">${fmtMoney(s.total_earnings)}</td></tr>
+            </table>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:4px;">DEDUCTIONS</div>
+            <table style="width:100%; font-size:12px;">
+              ${row('Advance', fmtMoney(s.advance_deduction))}
+              ${row('Loan', fmtMoney(s.loan_deduction))}
+              ${row('ESI', fmtMoney(s.esi_amount))}
+              ${row('Other', fmtMoney(s.other_deduction))}
+              <tr style="border-top:1px solid #ccc;"><td style="padding:5px 8px; font-weight:700;">Total Deductions</td><td style="padding:5px 8px; text-align:right; font-weight:700;">${fmtMoney(s.total_deductions)}</td></tr>
+            </table>
+          </div>
+        </div>
+        <div style="margin-top:16px; padding:10px 14px; background:#f3f8f4; border:1px solid #111; display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
+          <span>NET PAYABLE</span><span>${fmtMoney(s.net_payable)}</span>
+        </div>
+        <div style="margin-top:20px; font-size:10px; color:#666; text-align:center;">This is a computer-generated salary slip and does not require a signature.</div>
+      </div>`;
+
+    openModal(`Salary Slip — ${emp.name || ''}`, slipHtml, `
+      <button class="btn btn-outline" id="slipCloseBtn">Close</button>
+      <button class="btn" id="slipPrintBtn">Print / Save PDF</button>
+    `);
+
+    document.getElementById('slipCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('slipPrintBtn').addEventListener('click', () => {
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>Salary Slip - ${emp.name || ''} - ${monthLabel(per.period_month, per.period_year)}</title>
+        <style>body{font-family:Inter,Arial,sans-serif;padding:28px;max-width:720px;margin:0 auto;}table{border-collapse:collapse;}</style>
+        </head><body>${document.getElementById('slipPrintArea').innerHTML}</body></html>`);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 250);
     });
   }
 
