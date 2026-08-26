@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787765909';</script>
+<script>window.__BUILD_VERSION__ = '1787766674';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -230,28 +230,69 @@
   }
   .panel.panel-no-clip { overflow: visible; }
 
-  /* Spreadsheet-style payroll grid — mirrors the layout of the existing Google Sheet */
-  table.paygrid { border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%; }
-  table.paygrid th {
-    background: var(--surface-sunken); border: 1px solid var(--border);
-    padding: 6px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
-    color: var(--muted); font-weight: 600; white-space: nowrap;
-    position: sticky; top: 0; z-index: 5;
+  /* Collapsible sidebar */
+  .sidebar { transition: width 0.16s ease; }
+  .app-shell.nav-collapsed .sidebar { width: 52px; }
+  .app-shell.nav-collapsed .sidebar .nav-label,
+  .app-shell.nav-collapsed .sidebar .nav-arrow,
+  .app-shell.nav-collapsed .sidebar .nav-section-label,
+  .app-shell.nav-collapsed .sidebar .sidebar-brand .tag { display: none; }
+  .app-shell.nav-collapsed .sidebar .nav-children { display: none !important; }
+  .app-shell.nav-collapsed .sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  .app-shell.nav-collapsed .sidebar .sidebar-brand { justify-content: center; }
+  .nav-toggle-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    padding: 4px 6px; border-radius: 5px; display: flex; align-items: center;
   }
-  table.paygrid td { border: 1px solid var(--border); padding: 0; white-space: nowrap; }
-  table.paygrid td.pg-label { padding: 5px 8px; background: var(--surface-sunken); font-weight: 500; position: sticky; left: 0; z-index: 4; }
-  table.paygrid th.pg-label-h { position: sticky; left: 0; z-index: 6; }
-  table.paygrid td.pg-calc { padding: 5px 8px; text-align: right; background: #fafbfc; color: var(--ink); }
-  table.paygrid td.pg-net { padding: 5px 8px; text-align: right; font-weight: 700; background: #f3f8f4; }
+  .nav-toggle-btn:hover { background: var(--surface-sunken); color: var(--ink); }
+
+  /* Spreadsheet grid — deliberately close to a real spreadsheet: frozen header and
+     first column, alternating row bands, drag-resizable columns, full-height canvas. */
+  .paygrid-wrap {
+    border: 1px solid var(--border); border-radius: 6px; overflow: auto; background: #fff;
+  }
+  table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; }
+  table.paygrid th {
+    background: #e8edf2; border-right: 1px solid #cbd5e1; border-bottom: 2px solid #b8c4d0;
+    padding: 6px 6px; font-size: 10.5px; color: #33475b; font-weight: 700;
+    position: sticky; top: 0; z-index: 5;
+    text-align: center; vertical-align: middle;
+    white-space: normal; word-break: break-word; line-height: 1.25;
+    height: 42px; position: relative; user-select: none;
+  }
+  table.paygrid th.pg-label-h { left: 0; z-index: 7; background: #dde5ec; text-align: left; }
+  table.paygrid td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0; overflow: hidden; }
+  table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
+  table.paygrid tbody tr:nth-child(even) td { background: #f7f9fb; }
+  table.paygrid tbody tr:hover td { background: #eef4fb; }
+  table.paygrid td.pg-label {
+    padding: 5px 8px; font-weight: 500; position: sticky; left: 0; z-index: 4;
+    box-shadow: 1px 0 0 var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
+  table.paygrid tbody tr:nth-child(even) td.pg-label { background: #f2f5f8; }
+  table.paygrid td.pg-calc { padding: 5px 8px; text-align: right; color: #46586b; }
+  table.paygrid td.pg-net { padding: 5px 8px; text-align: right; font-weight: 700; }
   table.paygrid input.pg-cell {
     width: 100%; border: none; padding: 5px 8px; font-size: 12px; font-family: inherit;
-    text-align: right; background: transparent; outline: none;
+    text-align: right; background: transparent; outline: none; box-sizing: border-box;
   }
   table.paygrid input.pg-cell:focus {
-    background: #fff8e1; box-shadow: inset 0 0 0 2px var(--steel);
+    background: #fff9e6; box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 3;
   }
-  table.paygrid input.pg-cell:read-only { background: #fafbfc; color: var(--muted); cursor: default; }
-  table.paygrid tr.pg-total td { background: var(--surface-sunken); font-weight: 700; padding: 7px 8px; text-align: right; }
+  table.paygrid input.pg-cell:read-only { color: var(--muted); cursor: default; }
+  table.paygrid tfoot tr td {
+    background: #e8edf2 !important; font-weight: 700; padding: 7px 8px; text-align: right;
+    position: sticky; bottom: 0; z-index: 5; border-top: 2px solid #b8c4d0;
+  }
+  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 6; text-align: left; background: #dde5ec !important; }
+  /* drag handle sitting on the right edge of each header cell */
+  .pg-resizer {
+    position: absolute; top: 0; right: -3px; width: 7px; height: 100%;
+    cursor: col-resize; z-index: 8;
+  }
+  .pg-resizer:hover { background: #1a73e8; opacity: 0.35; }
+  body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
 
   /* Modal — used for create/edit forms so the list view stays clean and separate */
   .modal-overlay {
@@ -690,9 +731,14 @@
 
 <div class="app-shell" id="appShell" style="display:none">
   <div class="sidebar">
-    <div class="sidebar-brand">
-      <div class="name">REF</div>
-      <div class="tag">ERP</div>
+    <div class="sidebar-brand" style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:baseline; gap:6px;">
+        <div class="name">REF</div>
+        <div class="tag">ERP</div>
+      </div>
+      <button class="nav-toggle-btn" id="navToggleBtn" title="Collapse / expand menu" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
       <button class="nav-item" data-view="home">
@@ -703,6 +749,22 @@
         <svg class="ic-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14M5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM19 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 17V9l2-5h10l4 5h2v8"/></svg>
         <span class="nav-label">Km Tracker</span>
       </button>
+
+      <button class="nav-item nav-parent" data-toggle="tree-hrms">
+        <svg class="ic-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-label">HRMS</span>
+        <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <div class="nav-children" id="tree-hrms" style="display:none">
+        <button class="nav-item level-2" data-view="salary-calculator">
+          <svg class="ic-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg>
+          <span class="nav-label">Salary Calculator</span>
+        </button>
+        <button class="nav-item level-2" data-view="loans-advances">
+          <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="nav-label">Loans &amp; Advances</span>
+        </button>
+      </div>
 
       <button class="nav-item nav-parent" data-toggle="tree-control-panel">
         <svg class="ic-slate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -725,14 +787,6 @@
           <button class="nav-item level-3" data-view="hr-dropdowns">
             <svg class="ic-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
             <span class="nav-label">HR Dropdowns</span>
-          </button>
-          <button class="nav-item level-3" data-view="salary-calculator">
-            <svg class="ic-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg>
-            <span class="nav-label">Salary Calculator</span>
-          </button>
-          <button class="nav-item level-3" data-view="loans-advances">
-            <svg class="ic-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <span class="nav-label">Loans &amp; Advances</span>
           </button>
         </div>
         <button class="nav-item level-2" data-view="vendor-master">
@@ -1270,8 +1324,8 @@
     const VIEW_ANCESTOR_TREES = {
       'employee-master': ['tree-control-panel', 'tree-hr'],
       'hr-dropdowns': ['tree-control-panel', 'tree-hr'],
-      'loans-advances': ['tree-control-panel', 'tree-hr'],
-      'salary-calculator': ['tree-control-panel', 'tree-hr'],
+      'loans-advances': ['tree-hrms'],
+      'salary-calculator': ['tree-hrms'],
       'vendor-master': ['tree-control-panel'],
       'admin-panel': ['tree-control-panel'],
       'documentation': ['tree-control-panel'],
@@ -2258,9 +2312,6 @@
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // The typeable columns, in Enter/Tab order. Everything else is calculated.
-  const PG_EDITABLE = ['basic_wages','days_in_month','working_days','absent_days','ot_hours','incentives','loan_deduction','advance_deduction','other_deduction'];
-
   function monthLabel(m, y) {
     return `${MONTH_NAMES[m - 1]} ${y}`;
   }
@@ -2367,7 +2418,11 @@
 
   async function openPayrollSheet(periodId) {
     showSpinner('salaryCalcContent');
-    const res = await apiPayroll({ action: 'get_payroll_sheet', period_id: periodId });
+    const [res, wRes] = await Promise.all([
+      apiPayroll({ action: 'get_payroll_sheet', period_id: periodId }),
+      apiPayroll({ action: 'get_column_widths' }),
+    ]);
+    if (wRes?.success && wRes.widths) pgWidths = wRes.widths;
     if (!res.success) {
       document.getElementById('salaryCalcContent').innerHTML = `<div class="msg error" style="display:block">${res.error}</div>`;
       return;
@@ -2377,138 +2432,191 @@
     renderPayrollGrid();
   }
 
+  // Column definitions drive both the header and the body, so widths, order and
+  // resizing all stay in sync from one place.
+  const PG_COLS = [
+    { key: 'employee',          label: 'Employee',       w: 190, type: 'label' },
+    { key: 'basic_wages',       label: 'Basic Wages',    w: 95,  type: 'input' },
+    { key: 'days_in_month',     label: 'Days in Month',  w: 70,  type: 'input' },
+    { key: 'working_days',      label: 'Working Days',   w: 75,  type: 'input' },
+    { key: 'absent_days',       label: 'Absent',         w: 65,  type: 'input' },
+    { key: 'ot_hours',          label: 'OT Hours',       w: 70,  type: 'input' },
+    { key: 'ot_days',           label: 'OT Days',        w: 65,  type: 'calc' },
+    { key: 'salary_amount',     label: 'Salary',         w: 90,  type: 'calc' },
+    { key: 'ot_charges',        label: 'OT Charges',     w: 85,  type: 'calc' },
+    { key: 'incentives',        label: 'Incentives',     w: 80,  type: 'input' },
+    { key: 'total_earnings',    label: 'Total Earnings', w: 95,  type: 'calc' },
+    { key: 'advance_deduction', label: 'Advance',        w: 80,  type: 'input' },
+    { key: 'loan_deduction',    label: 'Loan',           w: 80,  type: 'input' },
+    { key: 'other_deduction',   label: 'Other Ded.',     w: 75,  type: 'input' },
+    { key: 'esi_amount',        label: 'ESI',            w: 70,  type: 'calc' },
+    { key: 'total_deductions',  label: 'Total Ded.',     w: 85,  type: 'calc' },
+    { key: 'net_payable',       label: 'Net Payable',    w: 100, type: 'net'  },
+    { key: 'slip',              label: 'Slip',           w: 60,  type: 'action' },
+  ];
+  let pgWidths = {};   // { colKey: px } — loaded from the server, shared across months
+
   function renderPayrollGrid() {
     const { period, entries } = currentPayrollSheet;
     const locked = period.status === 'finalised';
     const canEdit = !locked && (isOwnerUser || myPermissionKeys.includes('payroll.edit'));
     const canFinalise = !locked && (isOwnerUser || myPermissionKeys.includes('payroll.finalise'));
-
     const sum = (f) => entries.reduce((s, e) => s + Number(e[f] || 0), 0);
+    const wOf = (col) => pgWidths[col.key] || col.w;
 
-    const cell = (e, field, readOnly) => `<td><input class="pg-cell" data-id="${e.id}" data-field="${field}" value="${Number(e[field] || 0)}" ${readOnly || !canEdit ? 'readonly' : ''} inputmode="decimal" /></td>`;
+    const bodyCell = (e, col) => {
+      if (col.type === 'label') {
+        return `<td class="pg-label" style="width:${wOf(col)}px;">${e.employees?.name || '—'}<div style="font-size:10px; color:var(--muted);">${e.employees?.employee_code || ''}</div></td>`;
+      }
+      if (col.type === 'action') {
+        return `<td style="width:${wOf(col)}px; text-align:center; padding:4px 6px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:2px 7px; font-size:10.5px;">Slip</button></td>`;
+      }
+      if (col.type === 'input') {
+        return `<td style="width:${wOf(col)}px;"><input class="pg-cell" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" value="${Number(e[col.key] || 0)}" ${canEdit ? '' : 'readonly'} inputmode="decimal" /></td>`;
+      }
+      const cls = col.type === 'net' ? 'pg-net' : 'pg-calc';
+      return `<td class="${cls}" style="width:${wOf(col)}px;" data-calc="${col.key}" data-id="${e.id}">${Number(e[col.key] || 0).toFixed(2)}</td>`;
+    };
 
-    document.getElementById('salaryCalcContent').innerHTML = `<div class="panel panel-no-clip">
-      <div class="panel-header" style="flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:25; background:#fff;">
+    const footCell = (col) => {
+      if (col.key === 'employee') return `<td class="pg-label" style="width:${wOf(col)}px;">TOTAL — ${entries.length} employees</td>`;
+      const summable = ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction','loan_deduction','other_deduction','esi_amount','total_deductions','net_payable'];
+      if (!summable.includes(col.key)) return `<td style="width:${wOf(col)}px;"></td>`;
+      return `<td style="width:${wOf(col)}px;" id="tot_${col.key}">${sum(col.key).toFixed(2)}</td>`;
+    };
+
+    document.getElementById('salaryCalcContent').innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
         <div style="display:flex; align-items:center; gap:12px;">
           <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
           <div>
-            <span class="panel-title">${monthLabel(period.period_month, period.period_year)}</span>
+            <span style="font-size:15px; font-weight:600;">${monthLabel(period.period_month, period.period_year)}</span>
             <span class="status-tag ${locked ? 'approved' : 'calculated'}" style="margin-left:6px;">${period.status}</span>
           </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-sm btn-outline" id="payResetColsBtn" title="Reset column widths">Reset Columns</button>
           ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
           ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post to Ledgers</button>` : ''}
         </div>
       </div>
-      <div class="panel-body" style="padding-top:12px;">
-        ${locked ? `<div class="msg success" style="display:block; margin-bottom:12px;">This sheet is finalised. Loan and advance deductions have been posted to the ledgers and it can no longer be edited.</div>`
-          : `<p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Type in the white cells. Press <strong>Enter</strong> to move to the next cell on the right; at the end of a row it wraps to the next employee. Grey columns are calculated automatically. Nothing is deducted from any ledger until you press Finalise.</p>`}
-        <div class="msg" id="payGridMsg"></div>
-        <div class="table-scroll" style="max-height:62vh; overflow:auto;">
-          <table class="paygrid">
-            <thead><tr>
-              <th class="pg-label-h">Employee</th>
-              <th>Basic Wages</th><th>Days in Month</th><th>Working Days</th><th>Absent</th>
-              <th>OT Hours</th><th>OT Days</th>
-              <th>Salary</th><th>OT Charges</th><th>Incentives</th><th>Total Earnings</th>
-              <th>Advance</th><th>Loan</th><th>Other Ded.</th><th>ESI</th><th>Total Ded.</th>
-              <th>Net Payable</th><th>Slip</th>
-            </tr></thead>
-            <tbody>
-              ${entries.map((e, rowIdx) => `<tr data-row="${rowIdx}">
-                <td class="pg-label">${e.employees?.name || '—'}<div style="font-size:10px; color:var(--muted);">${e.employees?.employee_code || ''}</div></td>
-                ${cell(e, 'basic_wages')}
-                ${cell(e, 'days_in_month')}
-                ${cell(e, 'working_days')}
-                ${cell(e, 'absent_days')}
-                ${cell(e, 'ot_hours')}
-                <td class="pg-calc" data-calc="ot_days" data-id="${e.id}">${Number(e.ot_days || 0).toFixed(2)}</td>
-                <td class="pg-calc" data-calc="salary_amount" data-id="${e.id}">${Number(e.salary_amount || 0).toFixed(2)}</td>
-                <td class="pg-calc" data-calc="ot_charges" data-id="${e.id}">${Number(e.ot_charges || 0).toFixed(2)}</td>
-                ${cell(e, 'incentives')}
-                <td class="pg-calc" data-calc="total_earnings" data-id="${e.id}">${Number(e.total_earnings || 0).toFixed(2)}</td>
-                ${cell(e, 'advance_deduction')}
-                ${cell(e, 'loan_deduction')}
-                ${cell(e, 'other_deduction')}
-                <td class="pg-calc" data-calc="esi_amount" data-id="${e.id}">${Number(e.esi_amount || 0).toFixed(2)}</td>
-                <td class="pg-calc" data-calc="total_deductions" data-id="${e.id}">${Number(e.total_deductions || 0).toFixed(2)}</td>
-                <td class="pg-net" data-calc="net_payable" data-id="${e.id}">${Number(e.net_payable || 0).toFixed(2)}</td>
-                <td style="text-align:center; padding:4px 6px;"><button class="btn btn-sm btn-outline pay-slip-btn" data-id="${e.id}" style="padding:3px 8px; font-size:11px;">Slip</button></td>
-              </tr>`).join('')}
-            </tbody>
-            <tfoot>
-              <tr class="pg-total">
-                <td class="pg-label" style="text-align:left;">TOTAL — ${entries.length} employees</td>
-                <td colspan="6"></td>
-                <td id="tot_salary">${sum('salary_amount').toFixed(2)}</td>
-                <td id="tot_ot">${sum('ot_charges').toFixed(2)}</td>
-                <td id="tot_inc">${sum('incentives').toFixed(2)}</td>
-                <td id="tot_earn">${sum('total_earnings').toFixed(2)}</td>
-                <td id="tot_adv">${sum('advance_deduction').toFixed(2)}</td>
-                <td id="tot_loan">${sum('loan_deduction').toFixed(2)}</td>
-                <td id="tot_oth">${sum('other_deduction').toFixed(2)}</td>
-                <td id="tot_esi">${sum('esi_amount').toFixed(2)}</td>
-                <td id="tot_ded">${sum('total_deductions').toFixed(2)}</td>
-                <td id="tot_net">${sum('net_payable').toFixed(2)}</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+      ${locked ? `<div class="msg success" style="display:block; margin-bottom:8px;">This sheet is finalised. Deductions have been posted to the ledgers and it can no longer be edited.</div>` : ''}
+      <div class="msg" id="payGridMsg"></div>
+      <div class="paygrid-wrap" id="paygridWrap">
+        <table class="paygrid" id="paygridTable">
+          <colgroup>${PG_COLS.map(col => `<col data-col="${col.key}" style="width:${wOf(col)}px;" />`).join('')}</colgroup>
+          <thead><tr>
+            ${PG_COLS.map(col => `<th class="${col.type === 'label' ? 'pg-label-h' : ''}" data-col="${col.key}">${col.label}<span class="pg-resizer" data-col="${col.key}"></span></th>`).join('')}
+          </tr></thead>
+          <tbody>
+            ${entries.map((e, i) => `<tr data-row="${i}">${PG_COLS.map(col => bodyCell(e, col)).join('')}</tr>`).join('')}
+          </tbody>
+          <tfoot><tr>${PG_COLS.map(col => footCell(col)).join('')}</tr></tfoot>
+        </table>
       </div>
-    </div>`;
+      ${!locked ? `<p style="font-size:11.5px; color:var(--muted); margin:8px 0 0;">Arrow keys move between cells. <strong>Enter</strong> moves right and wraps to the next employee. Drag a column edge to resize — widths are remembered for every future month. Nothing reaches the ledgers until you press Finalise.</p>` : ''}
+    `;
 
+    sizePayrollGrid();
     document.getElementById('payBackBtn').addEventListener('click', () => {
       if (payrollDirty && !confirm('You have unsaved changes. Leave without saving?')) return;
       loadPayrollPeriods();
     });
-
     if (canEdit) wirePayrollGridKeys();
+    wirePayrollColumnResize();
+    document.getElementById('payResetColsBtn').addEventListener('click', async () => {
+      pgWidths = {};
+      await apiPayroll({ action: 'save_column_widths', widths: {} });
+      renderPayrollGrid();
+    });
     document.getElementById('paySaveBtn')?.addEventListener('click', savePayrollGrid);
     document.getElementById('payFinaliseBtn')?.addEventListener('click', finalisePayrollSheet);
     document.querySelectorAll('.pay-slip-btn').forEach(b => b.addEventListener('click', () => openSalarySlip(b.dataset.id)));
   }
 
-  // Spreadsheet-style keyboard navigation, matching how the Google Sheet is used:
-  // Enter moves right; at the last editable cell of a row it wraps to the first cell of
-  // the next row. Arrow keys and Tab also work, because muscle memory varies.
+  // Give the grid the full remaining height of the window rather than a fixed slice,
+  // so it behaves like a real spreadsheet canvas instead of a small boxed table.
+  function sizePayrollGrid() {
+    const wrap = document.getElementById('paygridWrap');
+    if (!wrap) return;
+    const top = wrap.getBoundingClientRect().top;
+    wrap.style.height = Math.max(320, window.innerHeight - top - 52) + 'px';
+  }
+  window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
+
+  // Drag the right edge of any header cell to resize that column. The chosen widths are
+  // saved centrally, so next month's sheet opens with the same layout already applied.
+  function wirePayrollColumnResize() {
+    document.querySelectorAll('.pg-resizer').forEach(handle => {
+      handle.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const colKey = handle.dataset.col;
+        const colEl = document.querySelector(`col[data-col="${colKey}"]`);
+        const startX = ev.clientX;
+        const startW = colEl.offsetWidth || parseInt(colEl.style.width, 10) || 80;
+        document.body.classList.add('pg-resizing');
+
+        const onMove = (e2) => {
+          const newW = Math.max(45, startW + (e2.clientX - startX));
+          colEl.style.width = newW + 'px';
+          document.querySelectorAll(`[data-col="${colKey}"]`).forEach(el => {
+            if (el.tagName === 'TH' || el.tagName === 'TD') el.style.width = newW + 'px';
+          });
+          pgWidths[colKey] = newW;
+        };
+        const onUp = async () => {
+          document.body.classList.remove('pg-resizing');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          try { await apiPayroll({ action: 'save_column_widths', widths: pgWidths }); } catch (e) { /* layout only — not worth interrupting the user */ }
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  // Spreadsheet keyboard behaviour: arrows move in all four directions, Enter moves
+  // right and wraps to the next employee, Tab/Shift+Tab also work.
   function wirePayrollGridKeys() {
     const cells = Array.from(document.querySelectorAll('.pg-cell:not([readonly])'));
-    const perRow = PG_EDITABLE.length;
+    const perRow = PG_COLS.filter(c => c.type === 'input').length;
 
     cells.forEach((input, idx) => {
       input.addEventListener('focus', () => input.select());
 
       input.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') {
-          ev.preventDefault();
-          const next = cells[idx + 1];        // wraps naturally into the next row
-          if (next) { next.focus(); } else { input.blur(); }
-        } else if (ev.key === 'ArrowDown') {
-          ev.preventDefault();
-          cells[idx + perRow]?.focus();
-        } else if (ev.key === 'ArrowUp') {
-          ev.preventDefault();
-          cells[idx - perRow]?.focus();
+        const atStart = input.selectionStart === 0 && input.selectionEnd === 0;
+        const atEnd = input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+        let target = null;
+
+        if (ev.key === 'Enter') target = cells[idx + 1];                 // wraps into next row naturally
+        else if (ev.key === 'ArrowRight' && atEnd) target = cells[idx + 1];
+        else if (ev.key === 'ArrowLeft' && atStart) target = cells[idx - 1];
+        else if (ev.key === 'ArrowDown') target = cells[idx + perRow];
+        else if (ev.key === 'ArrowUp') target = cells[idx - perRow];
+        else return;
+
+        ev.preventDefault();
+        if (target) {
+          target.focus();
+          target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         }
       });
 
       input.addEventListener('change', () => {
+        const msg = document.getElementById('payGridMsg');
         const val = input.value.trim();
         if (val !== '' && isNaN(Number(val))) {
-          document.getElementById('payGridMsg').className = 'msg error';
-          document.getElementById('payGridMsg').textContent = 'Only numbers are allowed in this column.';
-          input.value = 0;
-          return;
+          msg.className = 'msg error'; msg.textContent = 'Only numbers are allowed in this column.';
+          input.value = 0; return;
         }
         if (Number(val) < 0) {
-          document.getElementById('payGridMsg').className = 'msg error';
-          document.getElementById('payGridMsg').textContent = 'Negative values are not allowed.';
-          input.value = 0;
-          return;
+          msg.className = 'msg error'; msg.textContent = 'Negative values are not allowed.';
+          input.value = 0; return;
         }
-        document.getElementById('payGridMsg').className = 'msg';
+        msg.className = 'msg';
         const entry = currentPayrollSheet.entries.find(e => e.id === input.dataset.id);
         if (entry) entry[input.dataset.field] = Number(val || 0);
         recalcRowPreview(input.dataset.id);
@@ -2563,18 +2671,14 @@
 
   function refreshPayrollTotals() {
     const entries = currentPayrollSheet.entries;
-    const sum = (f) => entries.reduce((s, e) => s + Number(e[f] || 0), 0).toFixed(2);
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('tot_salary', sum('salary_amount'));
-    set('tot_ot', sum('ot_charges'));
-    set('tot_inc', sum('incentives'));
-    set('tot_earn', sum('total_earnings'));
-    set('tot_adv', sum('advance_deduction'));
-    set('tot_loan', sum('loan_deduction'));
-    set('tot_oth', sum('other_deduction'));
-    set('tot_esi', sum('esi_amount'));
-    set('tot_ded', sum('total_deductions'));
-    set('tot_net', sum('net_payable'));
+    // Footer cell ids are derived from the column keys in PG_COLS, so this stays correct
+    // automatically if columns are ever added or reordered.
+    ['salary_amount','ot_charges','incentives','total_earnings','advance_deduction',
+     'loan_deduction','other_deduction','esi_amount','total_deductions','net_payable']
+      .forEach(f => {
+        const el = document.getElementById('tot_' + f);
+        if (el) el.textContent = entries.reduce((s, e) => s + Number(e[f] || 0), 0).toFixed(2);
+      });
   }
 
   async function savePayrollGrid() {
@@ -4807,6 +4911,15 @@
   }
 
   // --- Restore session on page refresh instead of forcing re-login ---
+  document.getElementById('navToggleBtn').addEventListener('click', () => {
+    const shell = document.getElementById('appShell');
+    const collapsed = shell.classList.toggle('nav-collapsed');
+    sessionStorage.setItem('nav_collapsed', collapsed ? '1' : '0');
+  });
+  if (sessionStorage.getItem('nav_collapsed') === '1') {
+    document.getElementById('appShell').classList.add('nav-collapsed');
+  }
+
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     if (sessionToken) {
       try { await apiErpAuth({ action: 'logout', token: sessionToken }); } catch (e) { /* proceed with local logout regardless */ }
