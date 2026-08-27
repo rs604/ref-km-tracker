@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787808094';</script>
+<script>window.__BUILD_VERSION__ = '1787808347';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -242,7 +242,14 @@
   .app-shell.nav-collapsed .sidebar .sidebar-brand .tag { display: none; }
   .app-shell.nav-collapsed .sidebar .nav-children { display: none !important; }
   .app-shell.nav-collapsed .sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
-  .app-shell.nav-collapsed .sidebar .sidebar-brand { justify-content: center; }
+  /* At 52px wide there isn't room for the brand text and the toggle together — the
+     40px of side padding alone left only 12px — so the text goes and the toggle stays,
+     centred, since it is the only way back to the expanded menu. */
+  .app-shell.nav-collapsed .sidebar .sidebar-brand .name { display: none; }
+  .app-shell.nav-collapsed .sidebar .sidebar-brand {
+    justify-content: center; padding: 18px 0;
+  }
+  .app-shell.nav-collapsed .sidebar .nav-toggle-btn { margin: 0; }
   /* When collapsed, hovering an icon shows a tooltip with the item's name. */
   .app-shell.nav-collapsed .sidebar .nav-item { position: relative; }
   .app-shell.nav-collapsed .sidebar .nav-item::after {
@@ -255,10 +262,10 @@
   .app-shell.nav-collapsed .sidebar .nav-item:hover::after { opacity: 1; }
 
   .nav-toggle-btn {
-    background: none; border: none; cursor: pointer; color: var(--muted);
-    padding: 4px 6px; border-radius: 5px; display: flex; align-items: center;
+    background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.75);
+    padding: 5px 6px; border-radius: 5px; display: flex; align-items: center; flex-shrink: 0;
   }
-  .nav-toggle-btn:hover { background: var(--surface-sunken); color: var(--ink); }
+  .nav-toggle-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
   /* Spreadsheet grid. Horizontal scrolling is necessary: the full column set is wider
      than any screen, and hiding the overflow made the deduction columns unreachable.
