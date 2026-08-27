@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787808347';</script>
+<script>window.__BUILD_VERSION__ = '1787808725';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -216,6 +216,9 @@
   }
   .topbar-title { font-size: 17px; font-weight: 650; }
   .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .topbar-divider { width: 1px; align-self: stretch; margin: 2px 0; background: var(--border); }
+  /* No buttons on this page means no divider to draw */
+  #topbarActions:empty + .topbar-divider { display: none; }
   .user-chip { font-size: 12.5px; color: var(--muted); text-align: right; }
   .user-chip .name { color: var(--ink); font-weight: 600; }
 
@@ -844,12 +847,16 @@
 
   <div class="main">
     <div class="topbar">
-      <div>
-        <div class="topbar-title" id="pageTitle">Km Tracker</div>
-        <div class="topbar-sub" id="pageSub">Daily odometer tracking, approvals, and payments</div>
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+        <div id="topbarLead" style="display:flex; align-items:center;"></div>
+        <div style="min-width:0;">
+          <div class="topbar-title" id="pageTitle">Km Tracker</div>
+          <div class="topbar-sub" id="pageSub">Daily odometer tracking, approvals, and payments</div>
+        </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
         <div id="topbarActions" style="display:flex; align-items:center; gap:8px;"></div>
+        <div class="topbar-divider"></div>
         <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
         <button class="btn btn-sm btn-outline" id="logoutBtn" type="button">Log out</button>
       </div>
@@ -1011,6 +1018,12 @@
   // Lets a view put its own controls into the page header, keeping the body clear.
   function setTopbarActions(html) {
     const slot = document.getElementById('topbarActions');
+    if (slot) slot.innerHTML = html || '';
+  }
+
+  // Sits to the left of the page title, for things like a Back button.
+  function setTopbarLead(html) {
+    const slot = document.getElementById('topbarLead');
     if (slot) slot.innerHTML = html || '';
   }
 
@@ -1323,7 +1336,7 @@
       payrollDirty = false;
     }
     if (viewKey !== 'salary-calculator') {
-      setTopbarActions('');
+      setTopbarActions(''); setTopbarLead('');
       document.querySelector('#view-salary-calculator .content')?.classList.remove('content-flush');
     }
     document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === viewKey));
@@ -2378,7 +2391,7 @@
   }
 
   function renderPayrollPeriodList() {
-    setTopbarActions('');
+    setTopbarActions(''); setTopbarLead('');
     document.querySelector('#view-salary-calculator .content')?.classList.remove('content-flush');
     document.getElementById('pageTitle').textContent = 'Salary Calculator';
     document.getElementById('pageSub').textContent = 'Monthly salary sheets and salary slips';
@@ -2589,15 +2602,14 @@
     `;
 
     // The sheet's own controls live in the page header, so the grid gets the full width
+    setTopbarLead(`<button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>`);
     setTopbarActions(`
-      <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
-      <span class="status-tag ${locked ? 'approved' : 'calculated'}">${period.status}</span>
       <button class="btn btn-sm btn-outline" id="payResetColsBtn">Reset Columns</button>
       ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
       ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post</button>` : ''}
     `);
     document.getElementById('pageTitle').textContent = `Salary Sheet — ${monthLabel(period.period_month, period.period_year)}`;
-    document.getElementById('pageSub').textContent = `${entries.length} employees`;
+    document.getElementById('pageSub').innerHTML = `<span class="status-tag ${locked ? 'approved' : 'calculated'}">${period.status}</span> <span style="margin-left:6px;">${entries.length} employees</span>`;
     document.querySelector('#view-salary-calculator .content')?.classList.add('content-flush');
 
     sizePayrollGrid();
