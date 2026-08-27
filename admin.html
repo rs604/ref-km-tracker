@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787776483';</script>
+<script>window.__BUILD_VERSION__ = '1787808094';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -220,6 +220,9 @@
   .user-chip .name { color: var(--ink); font-weight: 600; }
 
   .content { padding: 24px 28px; flex: 1; }
+  /* The salary sheet runs edge to edge and scrolls with the page rather than inside a box */
+  .content.content-flush { padding: 0; }
+  .sidebar { position: sticky; left: 0; z-index: 60; }
 
   .panel {
     background: var(--surface);
@@ -260,12 +263,12 @@
   /* Spreadsheet grid. Horizontal scrolling is necessary: the full column set is wider
      than any screen, and hiding the overflow made the deduction columns unreachable.
      The employee column, header and totals row stay frozen instead. */
-  .paygrid-wrap { border: 1px solid var(--border); overflow: auto; background: #fff; }
+  .paygrid-wrap { border-top: 1px solid var(--border); background: #fff; }
   table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; width: max-content; }
   table.paygrid th {
     background: #e3e9ee; border-right: 1px solid #c3ced8; border-bottom: 1px solid #9fb0bf;
     padding: 4px 5px; font-size: 10.5px; color: #2b3d4f; font-weight: 700;
-    position: sticky; top: 0; z-index: 5;
+    position: sticky; top: 0; z-index: 15;
     text-align: center; vertical-align: middle;
     white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.15;
     height: 34px; user-select: none; position: sticky;
@@ -273,7 +276,7 @@
   /* Earnings and deductions are distinguished by colour instead of a banner row */
   table.paygrid th.pg-h-earn { background: #d8ecdd; color: #14532d; }
   table.paygrid th.pg-h-ded  { background: #f7dedd; color: #7c2d2d; }
-  table.paygrid th.pg-label-h { left: 0; z-index: 9; background: #d4dde5; text-align: left; }
+  table.paygrid th.pg-label-h { left: 0; z-index: 20; background: #d4dde5; text-align: left; }
   table.paygrid td { border-right: 1px solid #e6ebf0; border-bottom: 1px solid #e6ebf0; padding: 0; overflow: hidden; }
   table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
   table.paygrid tbody tr:nth-child(even) td { background: #f7fafc; }
@@ -281,7 +284,7 @@
   /* The frozen first column needs a solid background in every row state, or rows show
      through it while scrolling sideways. */
   table.paygrid td.pg-label {
-    padding: 3px 7px; position: sticky; left: 0; z-index: 7;
+    padding: 3px 7px; position: sticky; left: 0; z-index: 12;
     border-right: 1px solid #9fb0bf;
   }
   table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
@@ -307,9 +310,9 @@
   table.paygrid textarea.pg-text.pg-editing { background: #fff9e6; cursor: text; }
   table.paygrid tfoot tr td {
     background: #e3e9ee !important; font-weight: 700; padding: 5px 6px; text-align: right;
-    position: sticky; bottom: 0; z-index: 7; border-top: 1px solid #9fb0bf;
+    position: sticky; bottom: 0; z-index: 14; border-top: 1px solid #9fb0bf;
   }
-  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 8; text-align: left; background: #d4dde5 !important; }
+  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 18; text-align: left; background: #d4dde5 !important; }
   .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 11; }
   .pg-resizer:hover { background: #1a73e8; opacity: 0.4; }
   body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
@@ -839,6 +842,7 @@
         <div class="topbar-sub" id="pageSub">Daily odometer tracking, approvals, and payments</div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
+        <div id="topbarActions" style="display:flex; align-items:center; gap:8px;"></div>
         <div class="user-chip"><span class="name" id="userName"></span><br/><span id="userRole"></span></div>
         <button class="btn btn-sm btn-outline" id="logoutBtn" type="button">Log out</button>
       </div>
@@ -995,6 +999,12 @@
   function closeModal() {
     document.getElementById('appModalOverlay')?.remove();
     document.removeEventListener('keydown', modalEscHandler);
+  }
+
+  // Lets a view put its own controls into the page header, keeping the body clear.
+  function setTopbarActions(html) {
+    const slot = document.getElementById('topbarActions');
+    if (slot) slot.innerHTML = html || '';
   }
 
   function showSpinner(containerId, label) {
@@ -1299,6 +1309,16 @@
 
   function switchMainView(viewKey) {
     if (!viewTitles[viewKey]) viewKey = 'home';
+    // Leaving the salary sheet by the sidebar is just as destructive as pressing Back,
+    // so it gets the same confirmation rather than silently dropping the work.
+    if (payrollDirty && viewKey !== 'salary-calculator') {
+      if (!confirm('You have unsaved changes on the salary sheet. Leave without saving?')) return;
+      payrollDirty = false;
+    }
+    if (viewKey !== 'salary-calculator') {
+      setTopbarActions('');
+      document.querySelector('#view-salary-calculator .content')?.classList.remove('content-flush');
+    }
     document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === viewKey));
     document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
     document.getElementById('view-' + viewKey).style.display = 'block';
@@ -2351,6 +2371,10 @@
   }
 
   function renderPayrollPeriodList() {
+    setTopbarActions('');
+    document.querySelector('#view-salary-calculator .content')?.classList.remove('content-flush');
+    document.getElementById('pageTitle').textContent = 'Salary Calculator';
+    document.getElementById('pageSub').textContent = 'Monthly salary sheets and salary slips';
     const canCreate = isOwnerUser || myPermissionKeys.includes('payroll.create');
     const rows = payrollPeriods || [];
 
@@ -2531,22 +2555,8 @@
     };
 
     document.getElementById('salaryCalcContent').innerHTML = `
-      <div class="pay-toolbar">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
-          <div>
-            <span style="font-size:15px; font-weight:600;">${monthLabel(period.period_month, period.period_year)}</span>
-            <span class="status-tag ${locked ? 'approved' : 'calculated'}" style="margin-left:6px;">${period.status}</span>
-          </div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn btn-sm btn-outline" id="payResetColsBtn">Reset Columns</button>
-          ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
-          ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post to Ledgers</button>` : ''}
-        </div>
-      </div>
-      ${locked ? `<div class="msg success" style="display:block; margin-bottom:8px;">This sheet is finalised. Deductions have been posted to the ledgers and it can no longer be edited.</div>` : ''}
-      <div class="msg" id="payGridMsg"></div>
+      ${locked ? `<div class="msg success" style="display:block; margin:8px 16px;">This sheet is finalised. Deductions have been posted to the ledgers and it can no longer be edited.</div>` : ''}
+      <div class="msg" id="payGridMsg" style="margin:0 16px;"></div>
       <div class="paygrid-wrap" id="paygridWrap">
         <table class="paygrid" id="paygridTable">
           <colgroup>${PG_COLS.map(col => `<col data-col="${col.key}" style="width:${wOf(col)}px;" />`).join('')}</colgroup>
@@ -2568,8 +2578,20 @@
           }).join('')}</tr></tfoot>
         </table>
       </div>
-      ${!locked ? `<p class="pay-hint">Arrow keys move between cells. <strong>Enter</strong> starts editing; Enter again saves and moves right. <strong>Esc</strong> cancels. Grey columns are calculated. Drag a column edge to resize — widths carry over to every future month.</p>` : ''}
+      ${!locked ? `<p class="pay-hint" style="margin:4px 16px 10px;">Arrow keys move between cells. <strong>Enter</strong> starts editing; Enter again saves and moves right. <strong>Esc</strong> cancels. Grey columns are calculated. Drag a column edge to resize — widths carry over to every future month.</p>` : ''}
     `;
+
+    // The sheet's own controls live in the page header, so the grid gets the full width
+    setTopbarActions(`
+      <button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>
+      <span class="status-tag ${locked ? 'approved' : 'calculated'}">${period.status}</span>
+      <button class="btn btn-sm btn-outline" id="payResetColsBtn">Reset Columns</button>
+      ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
+      ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post</button>` : ''}
+    `);
+    document.getElementById('pageTitle').textContent = `Salary Sheet — ${monthLabel(period.period_month, period.period_year)}`;
+    document.getElementById('pageSub').textContent = `${entries.length} employees`;
+    document.querySelector('#view-salary-calculator .content')?.classList.add('content-flush');
 
     sizePayrollGrid();
     document.getElementById('payBackBtn').addEventListener('click', () => {
@@ -2588,13 +2610,9 @@
     document.querySelectorAll('.pay-slip-btn').forEach(b => b.addEventListener('click', () => openSalarySlip(b.dataset.id)));
   }
 
-  function sizePayrollGrid() {
-    const wrap = document.getElementById('paygridWrap');
-    if (!wrap) return;
-    const top = wrap.getBoundingClientRect().top;
-    wrap.style.height = Math.max(300, window.innerHeight - top - 34) + 'px';
-  }
-  window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
+  // The grid no longer has its own scrollbox — the page scrolls in both directions and
+  // the header, footer and employee column stick to the viewport instead.
+  function sizePayrollGrid() { /* no fixed height needed any more */ }
 
   function wirePayrollColumnResize() {
     document.querySelectorAll('.pg-resizer').forEach(handle => {
@@ -2760,6 +2778,15 @@
     });
 
   }
+
+  // Closing the tab or refreshing would otherwise discard a sheet's worth of typing
+  // without any warning at all — the Back button prompt only covered one exit route.
+  window.addEventListener('beforeunload', (ev) => {
+    if (!payrollDirty) return;
+    ev.preventDefault();
+    ev.returnValue = '';
+    return '';
+  });
 
   function markPayrollDirty() {
     payrollDirty = true;
