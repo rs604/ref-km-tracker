@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787808725';</script>
+<script>window.__BUILD_VERSION__ = '1787808981';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -226,6 +226,11 @@
   /* The salary sheet runs edge to edge and scrolls with the page rather than inside a box */
   .content.content-flush { padding: 0; }
   .sidebar { position: sticky; left: 0; z-index: 60; }
+  /* The frozen employee column must park just past the sidebar, otherwise it sticks to
+     the viewport edge and slides underneath it. This tracks the sidebar's real width so
+     it stays correct when the menu is collapsed. */
+  .app-shell { --nav-w: var(--sidebar-w); }
+  .app-shell.nav-collapsed { --nav-w: 52px; }
 
   .panel {
     background: var(--surface);
@@ -286,7 +291,7 @@
   /* Earnings and deductions are distinguished by colour instead of a banner row */
   table.paygrid th.pg-h-earn { background: #d8ecdd; color: #14532d; }
   table.paygrid th.pg-h-ded  { background: #f7dedd; color: #7c2d2d; }
-  table.paygrid th.pg-label-h { left: 0; z-index: 20; background: #d4dde5; text-align: left; }
+  table.paygrid th.pg-label-h { left: var(--nav-w); z-index: 20; background: #d4dde5; text-align: left; }
   table.paygrid td { border-right: 1px solid #e6ebf0; border-bottom: 1px solid #e6ebf0; padding: 0; overflow: hidden; }
   table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
   table.paygrid tbody tr:nth-child(even) td { background: #f7fafc; }
@@ -294,7 +299,7 @@
   /* The frozen first column needs a solid background in every row state, or rows show
      through it while scrolling sideways. */
   table.paygrid td.pg-label {
-    padding: 3px 7px; position: sticky; left: 0; z-index: 12;
+    padding: 3px 7px; position: sticky; left: var(--nav-w); z-index: 12;
     border-right: 1px solid #9fb0bf;
   }
   table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
@@ -322,7 +327,7 @@
     background: #e3e9ee !important; font-weight: 700; padding: 5px 6px; text-align: right;
     position: sticky; bottom: 0; z-index: 14; border-top: 1px solid #9fb0bf;
   }
-  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 18; text-align: left; background: #d4dde5 !important; }
+  table.paygrid tfoot tr td.pg-label { left: var(--nav-w); z-index: 18; text-align: left; background: #d4dde5 !important; }
   .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 11; }
   .pg-resizer:hover { background: #1a73e8; opacity: 0.4; }
   body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
@@ -2736,8 +2741,10 @@
         if (editing) return;   // while typing, arrows belong to the text cursor
 
         let target = null;
-        if (ev.key === 'ArrowRight') target = at(r, col + 1) || (r + 1 < rowCount ? at(r + 1, 0) : null);
-        else if (ev.key === 'ArrowLeft') target = at(r, col - 1) || (r > 0 ? at(r - 1, PG_NAV_COL_COUNT - 1) : null);
+        // Left and right stay within the row and simply stop at either end; moving
+        // between employees is what up and down are for.
+        if (ev.key === 'ArrowRight') target = at(r, col + 1);
+        else if (ev.key === 'ArrowLeft') target = at(r, col - 1);
         else if (ev.key === 'ArrowDown') target = at(r + 1, col);
         else if (ev.key === 'ArrowUp') target = at(r - 1, col);
         else if (isInput && /^[0-9.]$/.test(ev.key)) { pgEnterEdit(cell); cell.value = ''; return; }
