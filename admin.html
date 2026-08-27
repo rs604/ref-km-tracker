@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787838113';</script>
+<script>window.__BUILD_VERSION__ = '1787838443';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -2610,11 +2610,11 @@
     `;
 
     // The sheet's own controls live in the page header, so the grid gets the full width
-    setTopbarLead(`<button class="btn btn-sm btn-outline" id="payBackBtn">‹ Back</button>`);
+    setTopbarLead(`<button class="btn btn-sm btn-outline" id="payBackBtn" title="Return to the list of salary sheets.">‹ Back</button>`);
     setTopbarActions(`
-      <button class="btn btn-sm btn-outline" id="payResetColsBtn">Reset Columns</button>
-      ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled>Save</button>` : ''}
-      ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn">Finalise &amp; Post</button>` : ''}
+      <button class="btn btn-sm btn-outline" id="payResetColsBtn" title="Reset all column widths back to their defaults.">Reset Columns</button>
+      ${canEdit ? `<button class="btn btn-sm" id="paySaveBtn" disabled title="Save your figures to the database. The sheet stays editable and nothing is deducted from any loan or advance ledger yet.">Save Draft</button>` : ''}
+      ${canFinalise ? `<button class="btn btn-sm btn-outline" id="payFinaliseBtn" title="Lock this sheet and post the deductions: loan amounts are recorded against each loan and advance amounts reduce each outstanding advance. This cannot be undone.">Finalise &amp; Post</button>` : ''}
     `);
     document.getElementById('pageTitle').textContent = `Salary Sheet — ${monthLabel(period.period_month, period.period_year)}`;
     document.getElementById('pageSub').innerHTML = `<span class="status-tag ${locked ? 'approved' : 'calculated'}">${period.status}</span> <span style="margin-left:6px;">${entries.length} employees</span>`;
@@ -2850,7 +2850,7 @@
   function markPayrollDirty() {
     payrollDirty = true;
     const btn = document.getElementById('paySaveBtn');
-    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Draft'; }
   }
 
   // A local preview only, so the row reacts instantly while typing. The authoritative
