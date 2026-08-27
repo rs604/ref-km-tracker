@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787821095';</script>
+<script>window.__BUILD_VERSION__ = '1787838113';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -316,7 +316,7 @@
   /* Inherits the standard .btn look (steel fill, 6px corners) so it matches Save;
      only the grid-specific sizing is adjusted here. */
   table.paygrid button.pay-slip-btn {
-    width: 100%; padding: 5px 8px; font-size: 11px; white-space: nowrap;
+    padding: 4px 10px; font-size: 10.5px; white-space: nowrap;
   }
   table.paygrid button.pg-nav.pg-selected { box-shadow: 0 0 0 2px #0b3d91; }
   table.paygrid td.pg-readonly-cell { outline: none; cursor: default; }
@@ -2568,7 +2568,7 @@
         </td>`;
       }
       if (col.type === 'action') {
-        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 5px;"><button class="btn btn-sm pay-slip-btn pg-nav" data-id="${e.id}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}">View Slip</button></td>`;
+        return `<td style="width:${wOf(col)}px; text-align:center; padding:4px 8px;"><button class="btn btn-sm pay-slip-btn pg-nav" data-id="${e.id}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}">View Slip</button></td>`;
       }
       if (col.type === 'text') {
         return `<td ${w}><textarea class="pg-cell pg-text pg-nav" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" rows="2" readonly>${e[col.key] || ''}</textarea></td>`;
