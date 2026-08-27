@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787809363';</script>
+<script>window.__BUILD_VERSION__ = '1787809423';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -310,14 +310,11 @@
   }
   table.paygrid input.pg-cell.pg-editing { background: #fff9e6; cursor: text; }
   table.paygrid .pg-nav.pg-selected { box-shadow: inset 0 0 0 2px #1a73e8; position: relative; z-index: 8; }
+  /* Inherits the standard .btn look (steel fill, 6px corners) so it matches Save;
+     only the grid-specific sizing is adjusted here. */
   table.paygrid button.pay-slip-btn {
-    width: 100%; border: 1px solid #1a5fb4; border-radius: 0;
-    background: #1a73e8; color: #fff;
-    font-family: inherit; font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.2px; padding: 4px 6px; cursor: pointer;
-    display: block; white-space: nowrap;
+    width: 100%; padding: 5px 8px; font-size: 11px; white-space: nowrap;
   }
-  table.paygrid button.pay-slip-btn:hover { background: #1558b8; }
   table.paygrid button.pg-nav.pg-selected { box-shadow: 0 0 0 2px #0b3d91; }
   table.paygrid td.pg-readonly-cell { outline: none; cursor: default; }
   table.paygrid textarea.pg-text {
@@ -2568,7 +2565,7 @@
         </td>`;
       }
       if (col.type === 'action') {
-        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 5px;"><button class="pay-slip-btn pg-nav" data-id="${e.id}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}">View Slip</button></td>`;
+        return `<td ${w} style="width:${wOf(col)}px; text-align:center; padding:3px 5px;"><button class="btn btn-sm pay-slip-btn pg-nav" data-id="${e.id}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}">View Slip</button></td>`;
       }
       if (col.type === 'text') {
         return `<td ${w}><textarea class="pg-cell pg-text pg-nav" data-id="${e.id}" data-field="${col.key}" data-col="${col.key}" data-r="${e._r}" data-c="${col._c}" rows="2" readonly>${e[col.key] || ''}</textarea></td>`;
