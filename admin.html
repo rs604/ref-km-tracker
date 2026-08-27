@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787808981';</script>
+<script>window.__BUILD_VERSION__ = '1787809196';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -225,12 +225,7 @@
   .content { padding: 24px 28px; flex: 1; }
   /* The salary sheet runs edge to edge and scrolls with the page rather than inside a box */
   .content.content-flush { padding: 0; }
-  .sidebar { position: sticky; left: 0; z-index: 60; }
-  /* The frozen employee column must park just past the sidebar, otherwise it sticks to
-     the viewport edge and slides underneath it. This tracks the sidebar's real width so
-     it stays correct when the menu is collapsed. */
-  .app-shell { --nav-w: var(--sidebar-w); }
-  .app-shell.nav-collapsed { --nav-w: 52px; }
+
 
   .panel {
     background: var(--surface);
@@ -278,7 +273,7 @@
   /* Spreadsheet grid. Horizontal scrolling is necessary: the full column set is wider
      than any screen, and hiding the overflow made the deduction columns unreachable.
      The employee column, header and totals row stay frozen instead. */
-  .paygrid-wrap { border-top: 1px solid var(--border); background: #fff; }
+  .paygrid-wrap { border-top: 1px solid var(--border); background: #fff; overflow: auto; }
   table.paygrid { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; width: max-content; }
   table.paygrid th {
     background: #e3e9ee; border-right: 1px solid #c3ced8; border-bottom: 1px solid #9fb0bf;
@@ -291,7 +286,7 @@
   /* Earnings and deductions are distinguished by colour instead of a banner row */
   table.paygrid th.pg-h-earn { background: #d8ecdd; color: #14532d; }
   table.paygrid th.pg-h-ded  { background: #f7dedd; color: #7c2d2d; }
-  table.paygrid th.pg-label-h { left: var(--nav-w); z-index: 20; background: #d4dde5; text-align: left; }
+  table.paygrid th.pg-label-h { left: 0; z-index: 20; background: #d4dde5; text-align: left; }
   table.paygrid td { border-right: 1px solid #e6ebf0; border-bottom: 1px solid #e6ebf0; padding: 0; overflow: hidden; }
   table.paygrid tbody tr:nth-child(odd) td { background: #ffffff; }
   table.paygrid tbody tr:nth-child(even) td { background: #f7fafc; }
@@ -299,7 +294,7 @@
   /* The frozen first column needs a solid background in every row state, or rows show
      through it while scrolling sideways. */
   table.paygrid td.pg-label {
-    padding: 3px 7px; position: sticky; left: var(--nav-w); z-index: 12;
+    padding: 3px 7px; position: sticky; left: 0; z-index: 12;
     border-right: 1px solid #9fb0bf;
   }
   table.paygrid tbody tr:nth-child(odd) td.pg-label { background: #fbfcfd; }
@@ -327,7 +322,7 @@
     background: #e3e9ee !important; font-weight: 700; padding: 5px 6px; text-align: right;
     position: sticky; bottom: 0; z-index: 14; border-top: 1px solid #9fb0bf;
   }
-  table.paygrid tfoot tr td.pg-label { left: var(--nav-w); z-index: 18; text-align: left; background: #d4dde5 !important; }
+  table.paygrid tfoot tr td.pg-label { left: 0; z-index: 18; text-align: left; background: #d4dde5 !important; }
   .pg-resizer { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 11; }
   .pg-resizer:hover { background: #1a73e8; opacity: 0.4; }
   body.pg-resizing { cursor: col-resize !important; user-select: none !important; }
@@ -2634,9 +2629,35 @@
     document.querySelectorAll('.pay-slip-btn').forEach(b => b.addEventListener('click', () => openSalarySlip(b.dataset.id)));
   }
 
-  // The grid no longer has its own scrollbox — the page scrolls in both directions and
-  // the header, footer and employee column stick to the viewport instead.
-  function sizePayrollGrid() { /* no fixed height needed any more */ }
+  // Fill the remaining window height so the sheet still uses the whole screen, while
+  // keeping its own scroll context — which is what makes the frozen header, footer and
+  // employee column actually hold their position.
+  function sizePayrollGrid() {
+    const wrap = document.getElementById('paygridWrap');
+    if (!wrap) return;
+    const top = wrap.getBoundingClientRect().top + (window.scrollY || 0);
+    wrap.style.height = Math.max(300, window.innerHeight - top - 4) + 'px';
+  }
+  window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
+
+  // scrollIntoView can't see the frozen column or header: they overlap the cell without
+  // the browser considering it hidden, so a cell tucked behind them is left off-screen.
+  // This scrolls by the exact overlap instead.
+  function ensureCellVisible(el) {
+    const wrap = document.getElementById('paygridWrap');
+    if (!wrap || !el) return;
+    const wr = wrap.getBoundingClientRect();
+    const cr = el.getBoundingClientRect();
+    const frozenW = wrap.querySelector('td.pg-label')?.getBoundingClientRect().width || 0;
+    const headH = wrap.querySelector('thead')?.getBoundingClientRect().height || 0;
+    const footH = wrap.querySelector('tfoot')?.getBoundingClientRect().height || 0;
+
+    if (cr.left < wr.left + frozenW) wrap.scrollLeft -= (wr.left + frozenW - cr.left);
+    else if (cr.right > wr.right) wrap.scrollLeft += (cr.right - wr.right);
+
+    if (cr.top < wr.top + headH) wrap.scrollTop -= (wr.top + headH - cr.top);
+    else if (cr.bottom > wr.bottom - footH) wrap.scrollTop += (cr.bottom - (wr.bottom - footH));
+  }
 
   function wirePayrollColumnResize() {
     document.querySelectorAll('.pg-resizer').forEach(handle => {
@@ -2691,7 +2712,7 @@
       grid.querySelectorAll('.pg-nav.pg-selected').forEach(n => n.classList.remove('pg-selected'));
       el.classList.add('pg-selected');
       el.focus({ preventScroll: true });
-      el.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      ensureCellVisible(el);
     };
     const rowCount = currentPayrollSheet.entries.length;
 
