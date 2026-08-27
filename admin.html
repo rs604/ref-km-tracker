@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>REF ERP — Admin</title>
-<script>window.__BUILD_VERSION__ = '1787809423';</script>
+<script>window.__BUILD_VERSION__ = '1787821095';</script>
 <script>
 (function() {
   function checkVersion() {
@@ -213,6 +213,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 40;
   }
   .topbar-title { font-size: 17px; font-weight: 650; }
   .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -2641,7 +2644,11 @@
     const wrap = document.getElementById('paygridWrap');
     if (!wrap) return;
     const top = wrap.getBoundingClientRect().top + (window.scrollY || 0);
-    wrap.style.height = Math.max(300, window.innerHeight - top - 4) + 'px';
+    // max-height rather than height: the container then shrinks to fit a short sheet
+    // instead of leaving dead space under the totals row, but still caps at the window
+    // and scrolls internally once there are enough rows to need it.
+    wrap.style.height = '';
+    wrap.style.maxHeight = Math.max(220, window.innerHeight - top - 4) + 'px';
   }
   window.addEventListener('resize', () => { if (document.getElementById('paygridWrap')) sizePayrollGrid(); });
 
